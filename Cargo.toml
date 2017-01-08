@@ -1,0 +1,27 @@
+[package]
+name = "toyos"
+version = "0.1.0"
+authors = [
+        # Various customizations.
+        "Eric Kidd <git@randomhacks.net>",
+        # Original blog_os code.
+        "Philipp Oppermann <dev@phil-opp.com>"
+]
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+rlibc = "0.1.4"                 # Low-level functions like memcpy.
+spin = "0.3.4"                  # Spinlocks.
+x86 = "0.6.0"                   # CPU data structures.
+
+[dependencies.alloc_buddy_simple]
+path = "crates/alloc_buddy_simple"
+features = ["use-as-rust-allocator"]
+
+[dependencies.cpuio]
+path = "crates/cpuio"
+
+[dependencies.pic8259_simple]
+path = "crates/pic8259_simple"
