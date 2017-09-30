@@ -2,7 +2,7 @@
 
 ## Introduction
 
-eduOSi-rs is a computer operating system based on a monolithic architecture for educational purposes.
+eduOS-rs is a computer operating system based on a monolithic architecture for educational purposes.
 It is derived from following tutorials and software distributions.
 
 1. Philipp Oppermann's [excellent series of blog posts][opp].
@@ -18,12 +18,12 @@ First, we need to check out the source and rebuild the Rust runtime using a
 bare-metal target and no hardware floating point support:
 
 ```sh
+# Set up a Rust compiler. Please use the nightly release channel.
+curl https://sh.rustup.rs -sSf | sh
+
 # Get our source code.
 git clone git@github.com:RWTH-OS/eduOS-rs.git
 cd eduOS-rs
-
-# Set up a Rust compiler. Please use the nightly release channel.
-curl https://sh.rustup.rs -sSf | sh
 
 # Get a copy of the Rust source code so we can rebuild core
 # for a bare-metal target.
