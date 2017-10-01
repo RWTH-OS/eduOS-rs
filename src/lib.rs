@@ -6,13 +6,14 @@ extern crate rlibc;
 extern crate spin;
 extern crate x86;
 
-use core::fmt::Write;
-
 // These need to be visible to the linker, so we need to export them.
 pub use runtime_glue::*;
+pub use logging::*;
 
 #[macro_use]
 mod macros;
+#[macro_use]
+mod logging;
 mod runtime_glue;
 mod arch;
 mod console;
