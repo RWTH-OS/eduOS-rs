@@ -28,7 +28,7 @@ static mut SCHUTDOWN_PORT: cpuio::Port<u8> = unsafe { cpuio::Port::new(0xf4) };
 pub fn halt() {
 	loop {
 		unsafe {
-			asm!("hlt");
+			asm!("hlt" :::: "volatile");
 		}
 	}
 }
