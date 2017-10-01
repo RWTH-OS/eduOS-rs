@@ -26,6 +26,8 @@
 ;;;
 ;;; The actual boot code of our kernel.
 
+%include 'common.inc'
+
 global start
 global gdt64_code_offset
 global HEAP_BOTTOM
@@ -65,10 +67,25 @@ start:
 ;;;
 ;;; al: Error code.
 error:
-        mov dword [0xb8000], 0x4f524f45
-        mov dword [0xb8004], 0x4f3a4f52
-        mov dword [0xb8008], 0x4f204f20
-        mov byte  [0xb800a], al
+        ; save error code
+        mov ecx, eax
+        ; print ERR: to COM1
+        mov edx, COM1
+        mov eax, 'E'
+        out dx, ax
+        mov eax, 'R'
+        out dx, ax
+        out dx, ax
+        mov eax, ':'
+        out dx, ax
+        mov eax, ' '
+        out dx, ax
+        mov eax, ecx
+        add eax, 0x30
+        out dx, ax
+        mov eax, '\n'
+        out dx, ax
+        ; halt system
         hlt
 
 ;;; Make sure we were loaded by multiboot.

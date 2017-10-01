@@ -37,5 +37,7 @@ section .text
 bits 64
 long_mode_start:
         call rust_main
-
+        ; halt system
+l1:
         hlt
+        jmp l1
