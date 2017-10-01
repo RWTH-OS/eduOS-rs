@@ -48,7 +48,7 @@ Step by step (here branch by branch) the operating system design will be introdu
 This tutorial shows the steps to develop from a minimal kernel to Unix-like computer operating system.
 Currently, following stages of development are available:
 
-0. stage0 - Smallest HelloWorld of the World 
+0. stage0 - Smallest HelloWorld of the World
 
    Description of loading a minimal 32bit kernel
 
@@ -62,6 +62,7 @@ Currently, following stages of development are available:
 6. [http://www.noteblok.net/2014/06/14/bachelor](http://www.noteblok.net/2014/06/14/bachelor)
 7. [https://sourceware.org/newlib/](https://sourceware.org/newlib/)
 8. [http://rwth-os.github.io/eduOS/][http://rwth-os.github.io/eduOS/]
+9. [https://intermezzos.github.io](https://intermezzos.github.io)
 
 ## Licensing
 
