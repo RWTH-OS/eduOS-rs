@@ -73,3 +73,7 @@ Currently, following stages of development are available:
 eduOS-rs is licensed under the [MIT license][LICENSE-MIT].
 
 [LICENSE-MIT]: http://opensource.org/licenses/MIT
+
+### Contact
+
+* Stefan Lankes, [Institute for Automation of Complex Power Systems](http://www.acs.eonerc.rwth-aachen.de/), [E.ON Energy Research Center](http://www.eonerc.rwth-aachen.de/), [RWTH Aachen University](http://www.rwth-aachen.de/), Germany, E-mail: <slankes@eonerc.rwth-aachen.de>
