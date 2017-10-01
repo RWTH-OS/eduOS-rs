@@ -1,5 +1,7 @@
 # eduOS-rs - A teaching operating system written in Rust
 
+[![Build Status](https://travis-ci.org/RWTH-OS/eduOS-rs.svg?branch=master)](https://travis-ci.org/RWTH-OS/eduOS-rs)
+
 ## Introduction
 
 eduOS-rs is a computer operating system based on a monolithic architecture for educational purposes.
@@ -7,9 +9,11 @@ It is derived from following tutorials and software distributions.
 
 1. Philipp Oppermann's [excellent series of blog posts][opp].
 2. Erik Kidd's [toyos-rs][kidd], which is an extension of Philipp Opermann's kernel.
+3. Stefan Lankes [eduos][slankes], which is the old teaching kernel written in C.
 
 [opp]: http://blog.phil-opp.com/
 [kidd]: http://www.randomhacks.net/bare-metal-rust/
+[stlankes]: http://rwth-os.github.io/eduOS/
 [rust-barebones-kernel]: https://github.com/thepowersgang/rust-barebones-kernel
 
 ## Building
