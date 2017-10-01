@@ -1,0 +1,9 @@
+# Site settings
+title: eduOS - A teaching operating system
+tag_text: eduOS
+description: eduOS is a Unix-like computer operating system based on a monolithic architecture for educational purposes with the aim to get a deeper knowledge in the design of system software.
+
+# Build settings
+markdown: kramdown
+
+exclude: ["README.md"]
