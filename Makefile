@@ -3,7 +3,7 @@
 arch ?= x86_64
 target ?= $(arch)-unknown-none-gnu
 
-rust_os := target/$(target)/debug/libtoyos.a
+rust_os := target/$(target)/debug/libeduos_rs.a
 kernel := build/kernel-$(arch)
 
 linker_script := src/arch/$(arch)/linker.ld
@@ -31,7 +31,7 @@ clean:
 
 run: $(kernel).elf
 	@echo QEMU $(kernel).elf
-	@qemu-system-x86_64 -kernel $(kernel).elf -serial stdio
+	@qemu-system-x86_64 -display none -smp 1 -net nic,model=rtl8139 -kernel $(kernel).elf -serial stdio
 
 debug: $(kernel).elf
 	@echo QEMU -d int $(kernel).elf
@@ -66,9 +66,8 @@ installed_target_libs := \
 
 runtime_rlibs := \
 	$(installed_target_libs)/libcore.rlib \
-	$(installed_target_libs)/liballoc.rlib \
 	$(installed_target_libs)/libstd_unicode.rlib \
-	$(installed_target_libs)/librustc_unicode.rlib \
+	$(installed_target_libs)/liballoc.rlib \
 	$(installed_target_libs)/libcollections.rlib
 
 RUSTC := \
@@ -85,5 +84,5 @@ $(installed_target_libs):
 
 $(installed_target_libs)/%.rlib: rust/src/%/lib.rs $(installed_target_libs)
 	@echo RUSTC $<
-	@$(RUSTC) $<
-	@echo Check $(installed_target_libs)
+	@$(RUSTC) --crate-type rlib --crate-name $(shell basename $@ | sed s,lib,, | sed s,.rlib,,) $<
+	@echo Check $@

@@ -1,27 +1,38 @@
 [package]
-name = "toyos"
+name = "eduos-rs"
 version = "0.1.0"
-authors = [
-        # Various customizations.
-        "Eric Kidd <git@randomhacks.net>",
-        # Original blog_os code.
-        "Philipp Oppermann <dev@phil-opp.com>"
-]
+authors = ["Stefan Lankes <slankes@eonerc.rwth-aachen.de>"]
 
 [lib]
 crate-type = ["staticlib"]
 
 [dependencies]
-rlibc = "0.1.4"                 # Low-level functions like memcpy.
-spin = "0.3.4"                  # Spinlocks.
-x86 = "0.6.0"                   # CPU data structures.
+rlibc = "1.0.0"	# Low-level functions like memcpy.
+raw-cpuid = "3.0.0"
+spin = "0.4.6"	# Spinlocks.
+cpuio = "0.2.0"
 
-[dependencies.alloc_buddy_simple]
-path = "crates/alloc_buddy_simple"
-features = ["use-as-rust-allocator"]
+[dependencies.x86]
+version = "0.7"
+default-features = false
 
-[dependencies.cpuio]
-path = "crates/cpuio"
 
-[dependencies.pic8259_simple]
-path = "crates/pic8259_simple"
+# The development profile, used for `cargo build`.
+[profile.dev]
+opt-level = 0      # controls the `--opt-level` the compiler builds with
+debug = true       # controls whether the compiler passes `-C debuginfo`
+                   # a value of `true` is equivalent to `2`
+rpath = false      # controls whether the compiler passes `-C rpath`
+lto = false        # controls `-C lto` for binaries and staticlibs
+debug-assertions = true # controls whether debug assertions are enabled
+codegen-units = 1  # controls whether the compiler passes `-C codegen-units`
+                   # `codegen-units` is ignored when `lto = true`
+
+# The release profile, used for `cargo build --release`.
+[profile.release]
+opt-level = 3
+debug = false
+rpath = false
+lto = true
+debug-assertions = false
+codegen-units = 1
