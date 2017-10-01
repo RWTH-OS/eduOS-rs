@@ -9,7 +9,7 @@ It is derived from following tutorials and software distributions.
 
 1. Philipp Oppermann's [excellent series of blog posts][opp].
 2. Erik Kidd's [toyos-rs][kidd], which is an extension of Philipp Opermann's kernel.
-3. Stefan Lankes [eduos][slankes], which is the old teaching kernel written in C.
+3. Stefan Lankes [eduos][stlankes], which is the old teaching kernel written in C.
 
 [opp]: http://blog.phil-opp.com/
 [kidd]: http://www.randomhacks.net/bare-metal-rust/
