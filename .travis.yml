@@ -15,6 +15,7 @@ script:
   - curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
   - make runtime
   - make
+  - make run
 
 env:
   global:
