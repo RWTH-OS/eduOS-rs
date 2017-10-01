@@ -32,6 +32,7 @@ extern crate x86;
 // These need to be visible to the linker, so we need to export them.
 pub use runtime_glue::*;
 pub use logging::*;
+pub use arch::x86_64::processor::*;
 
 #[macro_use]
 mod macros;
@@ -45,5 +46,7 @@ mod console;
 pub extern "C" fn rust_main() {
     println!("Hello world!");
 
-    loop {}
+    loop {
+		shutdown();
+	}
 }

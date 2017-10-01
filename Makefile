@@ -31,11 +31,11 @@ clean:
 
 run: $(kernel).elf
 	@echo QEMU $(kernel).elf
-	@qemu-system-x86_64 -display none -smp 1 -net nic,model=rtl8139 -kernel $(kernel).elf -serial stdio
+	@qemu-system-x86_64 -display none -smp 1 -net nic,model=rtl8139 -device isa-debug-exit,iobase=0xf4,iosize=0x04 -kernel $(kernel).elf -serial stdio 2>/dev/null || true
 
 debug: $(kernel).elf
 	@echo QEMU -d int $(kernel).elf
-	@qemu-system-x86_64 -kernel $(kernel).elf -d int -no-reboot -serial stdio
+	@qemu-system-x86_64 -display none -smp 1 -net nic,model=rtl8139 -device isa-debug-exit,iobase=0xf4,iosize=0x04  -kernel $(kernel).elf -d int -no-reboot -serial stdio
 
 $(kernel).elf: cargo $(assembly_object_files) $(linker_script)
 	@echo LD $(kernel).elf

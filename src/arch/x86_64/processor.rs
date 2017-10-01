@@ -21,5 +21,23 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-pub mod serial;
-pub mod processor;
+use cpuio;
+
+static mut shutdown_port: cpuio::Port<u8> = unsafe { cpuio::Port::new(0xf4) };
+
+pub fn halt() {
+	loop {
+		unsafe {
+			asm!("hlt");
+		}
+	}
+}
+
+pub fn shutdown() {
+	// shutdown, works only on Qemu
+	unsafe {
+		shutdown_port.write(0x00);
+	};
+
+	halt();
+}
