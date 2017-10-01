@@ -1,0 +1,21 @@
+sudo: required
+dist: trusty
+language: c
+
+git:
+  submodules: true
+
+before_install:
+  - echo "deb https://dl.bintray.com/rwth-os/hermitcore vivid main" | sudo tee -a /etc/apt/sources.list
+  - travis_retry sudo apt-get -qq update
+  - travis_retry sudo apt-get install -y curl wget qemu-system-x86 nasm texinfo libmpfr-dev libmpc-dev libgmp-dev libisl-dev flex bison packaging-dev rpm
+  - git submodule update --init rust
+
+script:
+  - curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
+  - make runtime
+  - make
+
+env:
+  global:
+    - PATH=$PATH:~/.cargo/bin
