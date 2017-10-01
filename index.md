@@ -1,15 +1,13 @@
 ---
 layout: default
-title : eduOS
+title : eduOS-rs
 ---
 
 <style>#forkongithub a{background:#000;color:#fff;text-decoration:none;font-family:arial,sans-serif;text-align:center;font-weight:bold;padding:5px 40px;font-size:1rem;line-height:2rem;position:relative;transition:0.5s;}#forkongithub a:hover{background:#c11;color:#fff;}#forkongithub a::before,#forkongithub a::after{content:"";width:100%;display:block;position:absolute;top:1px;left:0;height:1px;background:#fff;}#forkongithub a::after{bottom:1px;top:auto;}@media screen and (min-width:800px){#forkongithub{position:absolute;display:block;top:0;right:0;width:200px;overflow:hidden;height:200px;z-index:9999;}#forkongithub a{width:200px;position:absolute;top:60px;right:-60px;transform:rotate(45deg);-webkit-transform:rotate(45deg);-ms-transform:rotate(45deg);-moz-transform:rotate(45deg);-o-transform:rotate(45deg);box-shadow:4px 4px 10px rgba(0,0,0,0.8);}}</style><span id="forkongithub"><a href="https://github.com/RWTH-OS/eduOS-rs">Fork me on GitHub</a></span>
 
-# eduOS-rs - A teaching operating system written in Rust
+## A teaching operating system written in Rust
 
-[![Build Status](https://travis-ci.org/RWTH-OS/eduOS-rs.svg?branch=master)](https://travis-ci.org/RWTH-OS/eduOS-rs)
-
-## Introduction
+### Introduction
 
 eduOS-rs is a Unix-like computer operating system based on a monolithic architecture for educational purposes, which is developed for the course [Operating Systems][acsos] at the RWTH Aachen Univeristy.
 It is derived from following tutorials and software distributions.
@@ -24,7 +22,7 @@ It is derived from following tutorials and software distributions.
 [rust-barebones-kernel]: https://github.com/thepowersgang/rust-barebones-kernel
 [acsos]: http://www.os.rwth-aachen.de/
 
-## Building
+### Building
 
 First, we need to check out the source and rebuild the Rust runtime using a
 bare-metal target and no hardware floating point support:
@@ -49,7 +47,7 @@ From here, we should be able to build a kernel and run it using QEMU:
 make run
 ```
 
-## Overview of all branches
+### Overview of all branches
 
 Step by step (here branch by branch) the operating system design will be introduced.
 This tutorial shows the steps to develop from a minimal kernel to Unix-like computer operating system.
@@ -68,8 +66,9 @@ Currently, following stages of development are available:
 4. [http://www.os.rwth-aachen.de](http://www.os.rwth-aachen.de)
 5. [http://www.noteblok.net/2014/06/14/bachelor](http://www.noteblok.net/2014/06/14/bachelor)
 6. [https://sourceware.org/newlib/](https://sourceware.org/newlib/)
+7. [http://rwth-os.github.io/eduOS/][http://rwth-os.github.io/eduOS/]
 
-## Licensing
+### Licensing
 
 eduOS-rs is licensed under the [MIT license][LICENSE-MIT].
 
