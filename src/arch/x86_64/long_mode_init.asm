@@ -36,7 +36,12 @@ extern rust_main
 section .text
 bits 64
 long_mode_start:
+        ; clear DF flag => default value by entering a function
+        ; => see ABI
+        cld
+
         call rust_main
+
         ; halt system
 l1:
         hlt
