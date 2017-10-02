@@ -23,8 +23,6 @@
 
 use cpuio;
 
-static mut SCHUTDOWN_PORT: cpuio::Port<u8> = unsafe { cpuio::Port::new(0xf4) };
-
 pub fn halt() {
 	loop {
 		unsafe {
@@ -36,7 +34,8 @@ pub fn halt() {
 pub fn shutdown() {
 	// shutdown, works only on Qemu
 	unsafe {
-		SCHUTDOWN_PORT.write(0x00);
+		let mut shutdown_port : cpuio::Port<u8> = cpuio::Port::new(0xf4);
+		shutdown_port.write(0x00);
 	};
 
 	halt();
