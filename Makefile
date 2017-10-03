@@ -6,6 +6,13 @@ target ?= $(arch)-unknown-none-gnu
 rust_os := target/$(target)/debug/libeduos_rs.a
 kernel := build/kernel-$(arch)
 
+crossprefix :=
+uname_s := $(shell uname -s)
+
+ifeq ($(uname_s),Darwin)
+crossprefix += x86_64-elf-
+endif
+
 linker_script := src/arch/$(arch)/linker.ld
 grub_cfg := src/arch/$(arch)/grub.cfg
 assembly_header_files := $(wildcard src/arch/$(arch)/*.inc)
@@ -13,7 +20,7 @@ assembly_source_files := $(wildcard src/arch/$(arch)/*.asm)
 assembly_object_files := $(patsubst src/arch/$(arch)/%.asm, \
 	build/arch/$(arch)/%.o, $(assembly_source_files))
 
-crossprefix :=
+ld_for_target := $(crossprefix)ld
 objcopy_for_target := $(crossprefix)objcopy
 strip_debug := --strip-debug
 keep_debug := --only-keep-debug
@@ -39,7 +46,7 @@ debug: $(kernel).elf
 
 $(kernel).elf: cargo $(assembly_object_files) $(linker_script)
 	@echo LD $(kernel).elf
-	@ld -n --gc-sections -T $(linker_script) -o $(kernel).elf \
+	@$(ld_for_target) -n --gc-sections -T $(linker_script) -o $(kernel).elf \
 		$(assembly_object_files) $(rust_os)
 	@echo OBJCOPY $(kernel).sym
 	@$(objcopy_for_target) $(keep_debug) $(kernel).elf $(kernel).sym
