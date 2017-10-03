@@ -89,7 +89,7 @@ Currently, following stages of development are available:
 5. [http://www.os.rwth-aachen.de](http://www.os.rwth-aachen.de)
 6. [http://www.noteblok.net/2014/06/14/bachelor](http://www.noteblok.net/2014/06/14/bachelor)
 7. [https://sourceware.org/newlib/](https://sourceware.org/newlib/)
-8. [http://rwth-os.github.io/eduOS/][http://rwth-os.github.io/eduOS/]
+8. [http://rwth-os.github.io/eduOS/](http://rwth-os.github.io/eduOS/)
 9. [https://intermezzos.github.io](https://intermezzos.github.io)
 
 ### Licensing
