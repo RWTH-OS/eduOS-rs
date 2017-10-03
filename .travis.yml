@@ -2,21 +2,25 @@ sudo: required
 dist: trusty
 language: c
 
+services:
+  - docker
+
+env:
+  matrix:
+    - OS_TYPE=centos OS_VERSION=7 OS_CLOUDPACKAGE=el
+    - OS_TYPE=ubuntu OS_VERSION=16.04 OS_CLOUDPACKAGE=ubuntu
+
 git:
   submodules: true
 
 before_install:
   - echo "deb https://dl.bintray.com/rwth-os/hermitcore vivid main" | sudo tee -a /etc/apt/sources.list
   - travis_retry sudo apt-get -qq update
-  - travis_retry sudo apt-get install -y curl wget qemu-system-x86 nasm texinfo libmpfr-dev libmpc-dev libgmp-dev libisl-dev flex bison packaging-dev rpm
   - git submodule update --init rust
+  - echo 'DOCKER_OPTS="-H tcp://127.0.0.1:2375 -H unix:///var/run/docker.sock -s devicemapper"' | sudo tee /etc/default/docker > /dev/null
+  - sudo service docker restart
+  - sleep 5
+  - sudo docker pull ${OS_TYPE}:${OS_VERSION}
 
 script:
-  - curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
-  - make runtime
-  - make
-  #- make run
-
-env:
-  global:
-    - PATH=$PATH:~/.cargo/bin
+  - docker/setup_tests.sh ${OS_TYPE} ${OS_VERSION}
