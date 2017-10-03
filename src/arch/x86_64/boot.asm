@@ -30,8 +30,6 @@
 
 global start
 global gdt64_code_offset
-global HEAP_BOTTOM
-global HEAP_TOP
 
 extern long_mode_start
 
@@ -191,11 +189,6 @@ p3_table:
 stack_bottom:
         resb 8192
 stack_top:
-
-align 4096
-HEAP_BOTTOM:
-        resb 4*1024*1024
-HEAP_TOP:
 
 ;;; Global Description Table.  Used to set segmentation to the restricted
 ;;; values needed for 64-bit mode.
