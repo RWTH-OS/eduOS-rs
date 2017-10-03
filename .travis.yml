@@ -7,8 +7,8 @@ services:
 
 env:
   matrix:
-    - OS_TYPE=centos OS_VERSION=7 OS_CLOUDPACKAGE=el
-    - OS_TYPE=ubuntu OS_VERSION=16.04 OS_CLOUDPACKAGE=ubuntu
+    - OS_TYPE=centos OS_VERSION=7
+    - OS_TYPE=ubuntu OS_VERSION=16.04
 
 git:
   submodules: true
