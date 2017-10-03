@@ -9,21 +9,21 @@ OUTPUT_ARCH("i386:x86-64")
 ENTRY(start)
 
 SECTIONS {
-    /* Load the kernel reasonably high in memory to avoid special addresses. */
-    . = 1M;
+	/* Load the kernel reasonably high in memory to avoid special addresses. */
+	. = 1M;
 
 	kernel_start = .;
-    .boot :
-    {
-        /* This goes first. */
-        KEEP(*(.multiboot_header))
-    }
+	.boot :
+	{
+		/* This goes first. */
+		KEEP(*(.multiboot_header))
+	}
 
-    .text ALIGN(4096) : AT(ADDR(.text))
-    {
-        *(.text)
+	.text ALIGN(4096) : AT(ADDR(.text))
+	{
+		*(.text)
 		*(.text.*)
-    }
+	}
 
 	.rodata : AT(ADDR(.rodata))
 	{
@@ -32,16 +32,16 @@ SECTIONS {
 	}
 
 	.data ALIGN(4096) : AT(ADDR(.data))
-    {
-        *(.data)
+	{
+		*(.data)
 		*(.data.*)
-    }
+	}
 
 	.bss ALIGN(4096) : AT(ADDR(.bss))
-    {
+	{
 		__bss_start = .;
-        *(.bss)
+		*(.bss)
 		*(.bss.*)
-    }
+	}
 	kernel_end = .;
 }
