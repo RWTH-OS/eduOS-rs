@@ -12,12 +12,12 @@ yum -y clean all
 yum -y clean expire-cache
 
 # First, install all the needed packages.
-yum install -y curl wget qemu-system-x86 nasm texinfo flex bison
+yum install -y curl wget qemu-system-x86 nasm texinfo cmake
 
 elif [ "$OS_NAME" = "ubuntu" ]; then
 
 apt-get -qq update
-apt-get install -y curl wget qemu-system-x86 nasm texinfo
+apt-get install -y curl wget qemu-system-x86 nasm texinfo cmake
 
 fi
 
