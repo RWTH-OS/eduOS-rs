@@ -23,4 +23,4 @@ before_install:
   - sudo docker pull ${OS_TYPE}:${OS_VERSION}
 
 script:
-  - docker/setup_tests.sh ${OS_TYPE} ${OS_VERSION}
+  - ./setup_tests.sh ${OS_TYPE} ${OS_VERSION}
