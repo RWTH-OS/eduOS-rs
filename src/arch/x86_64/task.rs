@@ -21,6 +21,8 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+//! Architecture dependent interface to initialize a task
+
 use core::mem::size_of;
 use scheduler::task::*;
 use scheduler::{do_exit,get_current_taskid};
@@ -77,9 +79,8 @@ extern "C" fn leave_task() {
 	loop {}
 }
 
-impl TaskBase for Task {
-    // Instance method signatures; these will return a string.
-    fn create_default_frame(&mut self, func: extern fn())
+impl TaskFrame for Task {
+    fn create_stack_frame(&mut self, func: extern fn())
 	{
 		unsafe {
 			let mut stack: *mut u64 = (self.stack.top() - 16) as *mut u64;

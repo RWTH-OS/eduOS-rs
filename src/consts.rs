@@ -23,16 +23,18 @@
 
 #![allow(dead_code)]
 
-/// define the size of the kernel stack
+//! Configuration parameter of the kernel eduOS-rs
+
+/// Define the size of the kernel stack
 pub const KERNEL_STACK_SIZE : usize = 8192;
 
-/// define the maximum number of different tasks
+/// Define the maximum number of different tasks
 pub const MAX_TASKS : usize = 16;
 
-// size of a cache line on a x86_64 processor
+/// Size of a cache line on a x86_64 processor
 #[cfg(target_arch="x86_64")]
 pub const CACHE_LINE : usize = 64;
 
-// size of a page frame on a x86_64 processor
+/// Size of a page frame on a x86_64 processor
 #[cfg(target_arch="x86_64")]
 pub const PAGE_SIZE : usize = 4096;

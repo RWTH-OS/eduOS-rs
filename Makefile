@@ -26,7 +26,7 @@ strip_debug := --strip-debug
 keep_debug := --only-keep-debug
 output_format := -O elf32-i386
 
-.PHONY: all fmt clean run debug cargo
+.PHONY: all fmt clean run debug cargo docs
 
 all: $(kernel).elf
 
@@ -52,6 +52,10 @@ $(kernel).elf: cargo $(assembly_object_files) $(linker_script)
 	@$(objcopy_for_target) $(keep_debug) $(kernel).elf $(kernel).sym
 	@echo OBJCOPY $(kernel).elf
 	@$(objcopy_for_target) $(strip_debug) $(output_format) $(kernel).elf
+
+docs:
+	@echo DOC
+	@cargo doc
 
 cargo:
 	@echo CARGO

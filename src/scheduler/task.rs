@@ -105,9 +105,9 @@ pub struct Task {
 	pub stack: KernelStack,
 }
 
-pub trait TaskBase {
-    // Instance method signatures; these will return a string.
-    fn create_default_frame(&mut self, func: extern fn());
+pub trait TaskFrame {
+    /// Create the initial stack frame for a new task
+    fn create_stack_frame(&mut self, func: extern fn());
 }
 
 impl Task {

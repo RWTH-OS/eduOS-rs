@@ -24,6 +24,8 @@
 #![allow(dead_code)]
 #![allow(private_no_mangle_fns)]
 
+//! Interface to the scheduler
+
 use consts::*;
 use alloc::VecDeque;
 
@@ -34,11 +36,13 @@ mod scheduler;
 static mut SCHEDULER: scheduler::Scheduler = scheduler::Scheduler::new();
 
 extern {
+	/// The boot loader initialize a stack, which is later also required to
+	/// to boot other core. Consequently, the kernel has to replace with this
+	/// function the boot stack by a new one.
 	pub fn replace_boot_stack(stack_bottom: usize);
 }
 
-/// Init memory module
-/// Must be called once, and only once
+/// Initialite module, must be called once, and only once
 pub fn init() {
 	unsafe {
 		// boot task is implicitly task 0 and and the idle task of core 0
@@ -51,6 +55,7 @@ pub fn init() {
 	}
 }
 
+/// Create a new kernel task
 #[inline(always)]
 pub fn spawn(func: extern fn()) -> Result<task::TaskId, scheduler::SchedulerError> {
 	unsafe {
@@ -58,6 +63,7 @@ pub fn spawn(func: extern fn()) -> Result<task::TaskId, scheduler::SchedulerErro
 	}
 }
 
+/// Trigger the scheduler to switch to the next available task
 #[inline(always)]
 pub fn reschedule() {
 	unsafe {
@@ -65,6 +71,7 @@ pub fn reschedule() {
 	}
 }
 
+/// Terminate the current running task
 #[inline(always)]
 pub fn do_exit() {
 	unsafe {
@@ -72,6 +79,7 @@ pub fn do_exit() {
 	}
 }
 
+/// Get the TaskID of the current running task
 #[inline(always)]
 pub fn get_current_taskid() -> task::TaskId {
 	unsafe {

@@ -23,6 +23,8 @@
 
 #![allow(dead_code)]
 
+//! Architecture dependent interface
+
 // Export our platform-specific modules.
 #[cfg(target_arch="x86_64")]
 pub use self::x86_64::{serial,processor};
@@ -46,8 +48,7 @@ extern {
     static mut HEAP_TOP: u8;
 }
 
-/// Init memory module
-/// Must be called once, and only once
+/// Initialize module, must be called once, and only once
 pub fn init() {
 	processor::init();
 

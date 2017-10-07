@@ -47,10 +47,10 @@ mod macros;
 #[macro_use]
 mod logging;
 mod runtime_glue;
-mod consts;
-mod arch;
-mod console;
-mod scheduler;
+pub mod consts;
+pub mod arch;
+pub mod console;
+pub mod scheduler;
 
 #[global_allocator]
 static ALLOCATOR: allocator::Allocator = allocator::Allocator;
@@ -62,6 +62,11 @@ extern "C" fn foo() {
 	}
 }
 
+/// Rust entry point of the kernel
+///
+/// # Description
+///
+/// Boot loader calls this function to start the kernel
 #[no_mangle]
 pub extern "C" fn rust_main() {
 	arch::init();

@@ -27,6 +27,8 @@
 
 #![allow(private_no_mangle_fns)]
 
+use arch;
+
 #[lang = "eh_personality"]
 extern "C" fn eh_personality() {
 }
@@ -37,7 +39,10 @@ extern "C" fn panic_fmt(
     -> !
 {
     println!("PANIC: {}:{}: {}", file, line, args);
-    loop {}
+
+	loop {
+		arch::processor::halt();
+	}
 }
 
 #[no_mangle]
@@ -45,5 +50,8 @@ extern "C" fn panic_fmt(
 pub fn _Unwind_Resume()
 {
     println!("UNWIND!");
-    loop {}
+
+	loop {
+		arch::processor::halt();
+	}
 }

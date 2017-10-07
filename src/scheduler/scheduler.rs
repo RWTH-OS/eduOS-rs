@@ -37,17 +37,17 @@ pub enum SchedulerError {
 
 #[derive(Debug)]
 pub struct Scheduler {
-	pub task_table: [Task; MAX_TASKS],
 	pub current_task: TaskId,
-	pub ready_queue: Option<VecDeque<TaskId>>
+	pub ready_queue: Option<VecDeque<TaskId>>,
+	pub task_table: [Task; MAX_TASKS]
 }
 
 impl Scheduler {
 	pub const fn new() -> Scheduler {
 		Scheduler {
-			task_table: [Task::new(); MAX_TASKS],
 			current_task: TaskId::from(0),
-			ready_queue: None
+			ready_queue: None,
+			task_table: [Task::new(); MAX_TASKS]
 		}
 	}
 
@@ -57,7 +57,7 @@ impl Scheduler {
 				self.task_table[i].status = TaskStatus::TaskReady;
 				// TaskID == Position in our task table
 				self.task_table[i].id = TaskId::from(i);
-				self.task_table[i].create_default_frame(func);
+				self.task_table[i].create_stack_frame(func);
 				self.ready_queue.as_mut().unwrap().push_back(TaskId::from(i));
 
 				info!("create task with id {}", self.task_table[i].id);

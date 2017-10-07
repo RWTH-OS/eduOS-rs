@@ -23,6 +23,8 @@
 
 #![allow(dead_code)]
 
+//! Interface to initialize the processor and to detect CPU features
+
 use cpuio;
 use x86::*;
 
