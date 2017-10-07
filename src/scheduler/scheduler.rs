@@ -106,7 +106,7 @@ impl Scheduler {
 					self.task_table[old_task.into()].status = TaskStatus::TaskInvalid;
 				}
 
-				debug!("switch task from {} to {}", old_task.into(), self.current_task);
+				debug!("switch task from {} to {}", old_task, self.current_task);
 				unsafe {
 					switch(&mut self.task_table[old_task.into()].last_stack_pointer,
 						self.task_table[self.current_task.into()].last_stack_pointer);
