@@ -35,11 +35,14 @@ global HEAP_TOP
 
 extern long_mode_start
 
+KERNEL_STACK_SIZE equ 8192
+PAGE_SIZE equ 4096
+
 ;;; Our main entry point.  Invoked by out boot loader.
 section .text
 bits 32
 start:
-        mov esp, stack_top               ; Use our temporary stack.
+        mov esp, stack_top-16              ; Use our temporary stack.
 
         ;; Sanity-check our system.
         call test_multiboot
@@ -172,30 +175,51 @@ enable_paging:
         mov cr0, eax
         ret
 
+bits 64
+global replace_boot_stack
+replace_boot_stack:
+		; rdi = 1st argument = desination address
+		; set rsp to the new stack
+		sub rsp, stack_bottom
+		add rsp, rdi
+		; recalculate rbp
+		sub rbp, stack_bottom
+		add rbp, rdi
+
+		; copy boot stack to the new one
+		cld
+		mov rcx, KERNEL_STACK_SIZE
+		mov rsi, stack_bottom
+		rep movsb
+
+		ret
+
 section .bss
 
 ;;; P4 page table for configuring virtual memory.  Must be aligned on a
 ;;; 4096-byte boundary.
-align 4096
+align PAGE_SIZE
 p4_table:
-        resb 4096
+        resb PAGE_SIZE
 
 ;;; P3 page table for configuring virtual memory.  Must be aligned on a
 ;;; 4096-byte boundary.
 p3_table:
-        resb 4096
+        resb PAGE_SIZE
 
 ;;; Our kernel stack.  We want to make this large enough so that we don't
 ;;; need to worry about overflowing it until we figure out how to set up
 ;;; a guard page and print errors on page faults.
+align PAGE_SIZE
 stack_bottom:
-        resb 8192
+        resb KERNEL_STACK_SIZE
 stack_top:
 
 align 4096
 HEAP_BOTTOM:
         resb 4*1024*1024
 HEAP_TOP:
+
 
 ;;; Global Description Table.  Used to set segmentation to the restricted
 ;;; values needed for 64-bit mode.

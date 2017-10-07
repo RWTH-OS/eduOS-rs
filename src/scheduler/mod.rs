@@ -21,63 +21,60 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#![feature(asm)]
-#![feature(const_fn)]
-#![feature(lang_items)]
-#![feature(repr_align)]
-#![feature(attr_literals)]
-#![feature(collections)]
-#![feature(alloc, global_allocator, allocator_api, heap_api)]
+#![allow(dead_code)]
+#![allow(private_no_mangle_fns)]
 
-#![no_std]
+use consts::*;
+use alloc::VecDeque;
 
-extern crate cpuio;
-extern crate rlibc;
-extern crate spin;
-extern crate x86;
-extern crate alloc;
-extern crate alloc_kernel as allocator;
-
-// These need to be visible to the linker, so we need to export them.
-pub use runtime_glue::*;
-pub use logging::*;
-
-#[macro_use]
-mod macros;
-#[macro_use]
-mod logging;
-mod runtime_glue;
-mod consts;
-mod arch;
-mod console;
+/// task control block
+pub mod task;
 mod scheduler;
 
-#[global_allocator]
-static ALLOCATOR: allocator::Allocator = allocator::Allocator;
+static mut SCHEDULER: scheduler::Scheduler = scheduler::Scheduler::new();
 
-extern "C" fn foo() {
-	for _i in 0..5 {
-		println!("hello from task {}", scheduler::get_current_taskid());
-		scheduler::reschedule();
+extern {
+	pub fn replace_boot_stack(stack_bottom: usize);
+}
+
+/// Init memory module
+/// Must be called once, and only once
+pub fn init() {
+	unsafe {
+		// boot task is implicitly task 0 and and the idle task of core 0
+		SCHEDULER.task_table[0].status = task::TaskStatus::TaskIdle;
+		SCHEDULER.task_table[0].id = task::TaskId::from(0);
+		SCHEDULER.ready_queue = Some(VecDeque::with_capacity(MAX_TASKS));
+
+		// replace temporary boot stack by the kernel stack of the boot task
+		replace_boot_stack(SCHEDULER.task_table[0].stack.bottom());
 	}
 }
 
-#[no_mangle]
-pub extern "C" fn rust_main() {
-	arch::init();
-	scheduler::init();
-
-	info!("Hello from eduOS-rs!");
-
-	for _i in 0..4 {
-		match scheduler::spawn(foo) {
-			Ok(_id) => (),
-			Err(why) => panic!("{:?}", why)
-		}
+#[inline(always)]
+pub fn spawn(func: extern fn()) -> Result<task::TaskId, scheduler::SchedulerError> {
+	unsafe {
+		SCHEDULER.spawn(func)
 	}
+}
 
-	loop {
-		scheduler::reschedule();
-		arch::processor::shutdown();
+#[inline(always)]
+pub fn reschedule() {
+	unsafe {
+		SCHEDULER.reschedule()
+	}
+}
+
+#[inline(always)]
+pub fn do_exit() {
+	unsafe {
+		SCHEDULER.exit();
+	}
+}
+
+#[inline(always)]
+pub fn get_current_taskid() -> task::TaskId {
+	unsafe {
+		SCHEDULER.get_current_taskid()
 	}
 }

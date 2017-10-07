@@ -282,15 +282,15 @@ pub fn shutdown() {
 	halt();
 }
 
-pub fn cpu_init() {
-	let mut _cr0: u64 = unsafe { controlregs::cr0() };
+pub fn init() {
+	let mut cr0: u64 = unsafe { controlregs::cr0() };
 
 	// be sure that AM, NE and MP is enabled
-	_cr0 = _cr0 | CR0_AM;
-	_cr0 = _cr0 | CR0_NE;
-	_cr0 = _cr0 | CR0_MP;
+	cr0 = cr0 | CR0_AM;
+	cr0 = cr0 | CR0_NE;
+	cr0 = cr0 | CR0_MP;
 	// enable cache
-	_cr0 = _cr0 & !(CR0_CD|CR0_NW);
+	cr0 = cr0 & !(CR0_CD|CR0_NW);
 
-	unsafe { controlregs::cr0_write(_cr0) };
+	unsafe { controlregs::cr0_write(cr0) };
 }

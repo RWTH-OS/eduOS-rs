@@ -21,63 +21,18 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#![feature(asm)]
-#![feature(const_fn)]
-#![feature(lang_items)]
-#![feature(repr_align)]
-#![feature(attr_literals)]
-#![feature(collections)]
-#![feature(alloc, global_allocator, allocator_api, heap_api)]
+#![allow(dead_code)]
 
-#![no_std]
+/// define the size of the kernel stack
+pub const KERNEL_STACK_SIZE : usize = 8192;
 
-extern crate cpuio;
-extern crate rlibc;
-extern crate spin;
-extern crate x86;
-extern crate alloc;
-extern crate alloc_kernel as allocator;
+/// define the maximum number of different tasks
+pub const MAX_TASKS : usize = 16;
 
-// These need to be visible to the linker, so we need to export them.
-pub use runtime_glue::*;
-pub use logging::*;
+// size of a cache line on a x86_64 processor
+#[cfg(target_arch="x86_64")]
+pub const CACHE_LINE : usize = 64;
 
-#[macro_use]
-mod macros;
-#[macro_use]
-mod logging;
-mod runtime_glue;
-mod consts;
-mod arch;
-mod console;
-mod scheduler;
-
-#[global_allocator]
-static ALLOCATOR: allocator::Allocator = allocator::Allocator;
-
-extern "C" fn foo() {
-	for _i in 0..5 {
-		println!("hello from task {}", scheduler::get_current_taskid());
-		scheduler::reschedule();
-	}
-}
-
-#[no_mangle]
-pub extern "C" fn rust_main() {
-	arch::init();
-	scheduler::init();
-
-	info!("Hello from eduOS-rs!");
-
-	for _i in 0..4 {
-		match scheduler::spawn(foo) {
-			Ok(_id) => (),
-			Err(why) => panic!("{:?}", why)
-		}
-	}
-
-	loop {
-		scheduler::reschedule();
-		arch::processor::shutdown();
-	}
-}
+// size of a page frame on a x86_64 processor
+#[cfg(target_arch="x86_64")]
+pub const PAGE_SIZE : usize = 4096;
