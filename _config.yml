@@ -1,9 +1,37 @@
-# Site settings
-title: eduOS - A teaching operating system
-tag_text: eduOS
-description: eduOS is a Unix-like computer operating system based on a monolithic architecture for educational purposes with the aim to get a deeper knowledge in the design of system software.
+# Dependencies
+markdown:         kramdown
+highlighter:      rouge
 
-# Build settings
-markdown: kramdown
+# Setup
+title:            eduOS-rs
+tagline:          'A teaching operating system written in Rust'
+description:      '<a href="https://rwth-os.github.io/eduOS-rs/" target="_blank">eduOS-rs</a> is teaching operating system written in <a href="https://www.rust-lang.org" target="_blank">Rust</a>'
+url:              https://rwth-os.github.io/eduOS-rs/
+baseurl:          # the optional subpath of your site, e.g. "/blog"
+                  # NB: This applies to all pages in your Jekyll site.
+                  # If you want to move just the blog index pages but keep
+                  # other pages at root, see the paginate_path and
+                  # sidebar_blog_link below.
 
-exclude: ["README.md"]
+author:
+  name:           'Stefan Lankes'
+  url:            http://www.os.rwth-aachen.de
+
+paginate:         5
+# paginate_path:    '/page:num'
+                    # Or '/blog/page:num' if you want to move your index pages
+
+plugins:
+  - jekyll-feed
+  - jekyll-gist
+  - jekyll-paginate
+
+# Custom vars
+version:            0.1.0
+sidebar_home_link:  true
+# sidebar_blog_link:  '/blog'   # By default, your home page is your blog
+                                # page. If you change your paginate_path,
+                                # set this to the root of the paginate_path
+                                # to enable a separate blog link.
+github:
+  repo:             https://github.com/RWTH-OS/eduOS-rs
