@@ -80,6 +80,10 @@ Currently, following stages of development are available:
 
    Description of loading a minimal 32bit kernel
 
+1. stage1 - Cooperative/non-preemptive multitasking
+
+   Introduction into a simple form of multitasking, where no interrupts are required.
+
 ### Usefull Links
 
 1. [http://www.gnu.org/software/grub/manual/multiboot/](http://www.gnu.org/software/grub/manual/multiboot/)
