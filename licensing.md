@@ -8,7 +8,9 @@ sidebar_link: true
 
 The web-site is derived from [Hydeout](https://fongandrew.github.io/hydeout/) and licensed under  MIT License.
 
-## eduOS-rs is licensed under the under MIT License
+## eduOS-rs
+
+*eduOS-rs* is licensed under MIT License.
 
 Copyright (c) 2017 Stefan Lankes, RWTH Aachen University.
 
