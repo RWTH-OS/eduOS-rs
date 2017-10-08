@@ -2,8 +2,17 @@
 
 arch ?= x86_64
 target ?= $(arch)-unknown-none-gnu
+release ?=
 
-rust_os := target/$(target)/debug/libeduos_rs.a
+opt :=
+rdir := debug
+
+ifeq ($(release), 1)
+opt := --release
+rdir := release
+endif
+
+rust_os := target/$(target)/$(rdir)/libeduos_rs.a
 kernel := build/kernel-$(arch)
 
 crossprefix :=
@@ -59,7 +68,7 @@ docs:
 
 cargo:
 	@echo CARGO
-	@cargo build --target $(target)
+	@cargo build $(opt) --target $(target)
 
 build/arch/$(arch)/%.o: src/arch/$(arch)/%.asm $(assembly_header_files)
 	@echo NASM $<
