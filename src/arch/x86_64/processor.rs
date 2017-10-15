@@ -274,6 +274,7 @@ pub fn halt() {
 	}
 }
 
+#[inline(always)]
 pub fn pause() {
 	unsafe {
 		asm!("pause" :::: "volatile");
