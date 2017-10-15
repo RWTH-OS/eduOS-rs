@@ -4,7 +4,7 @@ title : Links
 sidebar_link: true
 ---
 
-Usefull links for developing a kernel
+Useful links for developing a kernel
 
 1. [http://www.gnu.org/software/grub/manual/multiboot/](http://www.gnu.org/software/grub/manual/multiboot/)
 2. [http://www.osdever.net/tutorials/view/brans-kernel-development-tutorial](http://www.osdever.net/tutorials/view/brans-kernel-development-tutorial)
