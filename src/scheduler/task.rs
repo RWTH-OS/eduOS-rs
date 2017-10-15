@@ -38,7 +38,7 @@ pub enum TaskStatus {
 	TaskIdle
 }
 
-/// Unique identifier for a task (i.e. `pid`).
+/// Unique identifier for a task.
 #[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone, Copy)]
 pub struct TaskId(usize);
 
@@ -57,6 +57,31 @@ impl alloc::fmt::Display for TaskId {
         write!(f, "{}", self.0)
     }
 }
+
+/// Priority of a task
+#[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone, Copy)]
+pub struct Priority(u8);
+
+impl Priority {
+	pub const fn into(self) -> u8 {
+		self.0
+	}
+
+	pub const fn from(x: u8) -> Self {
+		Priority(x)
+    }
+}
+
+impl alloc::fmt::Display for Priority {
+	fn fmt(&self, f: &mut alloc::fmt::Formatter) -> alloc::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+pub const REALTIME_PRIO: Priority = Priority::from(0);
+pub const HIGH_PRIO: Priority = Priority::from(0);
+pub const NORMAL_PRIO: Priority = Priority::from(24);
+pub const LOW_PRIO: Priority = Priority::from(NO_PRIORITIES-1);
 
 #[derive(Copy, Clone)]
 #[repr(align(64))]
@@ -99,6 +124,8 @@ pub struct Task {
     pub id: TaskId,
 	/// Status of a task, e.g. if the task is ready or blocked
 	pub status: TaskStatus,
+	/// Priority of a task
+	pub prio: Priority,
 	/// Last stack pointer before a context switch to another task
 	pub last_stack_pointer: u64,
 	/// Stack of the task
@@ -115,6 +142,7 @@ impl Task {
 		Task {
 			id: TaskId::from(0),
 			status: TaskStatus::TaskInvalid,
+			prio: Priority::from(0),
 			last_stack_pointer: 0,
 			stack: KernelStack::new()
 		}

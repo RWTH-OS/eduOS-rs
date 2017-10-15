@@ -24,7 +24,7 @@
 use scheduler::task::*;
 use consts::*;
 use logging::*;
-use alloc::VecDeque;
+use alloc::{Vec,VecDeque};
 
 extern {
     pub fn switch(old_stack: *mut u64, new_stack: u64);
@@ -38,7 +38,8 @@ pub enum SchedulerError {
 #[derive(Debug)]
 pub struct Scheduler {
 	pub current_task: TaskId,
-	pub ready_queue: Option<VecDeque<TaskId>>,
+	pub idle_task: TaskId,
+	pub ready_queues: Option<Vec<VecDeque<TaskId>>>,
 	pub task_table: [Task; MAX_TASKS]
 }
 
@@ -46,21 +47,27 @@ impl Scheduler {
 	pub const fn new() -> Scheduler {
 		Scheduler {
 			current_task: TaskId::from(0),
-			ready_queue: None,
+			idle_task: TaskId::from(0),
+			ready_queues: None,
 			task_table: [Task::new(); MAX_TASKS]
 		}
 	}
 
-	pub fn spawn(&mut self, func: extern fn()) -> Result<TaskId, SchedulerError> {
+	pub fn spawn(&mut self, func: extern fn(), prio: Priority) -> Result<TaskId, SchedulerError> {
 		for i in 0..MAX_TASKS {
 			if self.task_table[i].status == TaskStatus::TaskInvalid {
 				self.task_table[i].status = TaskStatus::TaskReady;
+				self.task_table[i].prio = prio;
 				// TaskID == Position in our task table
 				self.task_table[i].id = TaskId::from(i);
 				self.task_table[i].create_stack_frame(func);
-				self.ready_queue.as_mut().unwrap().push_back(TaskId::from(i));
+				match self.ready_queues {
+					None => panic!("readay queues aren't initialized"),
+					Some(ref mut ready_queues) => ready_queues[prio.into() as usize].push_back(TaskId::from(i))
+				}
 
-				info!("create task with id {}", self.task_table[i].id);
+				info!("create task with id {} and priority {}",
+					self.task_table[i].id, self.task_table[i].prio);
 
 				return Ok(self.task_table[i].id);
 			}
@@ -83,13 +90,37 @@ impl Scheduler {
 		self.current_task
 	}
 
+	#[inline(always)]
+	fn get_next_task(&mut self) -> Option<TaskId> {
+		let mut prio = NO_PRIORITIES as usize;
+
+		// if the current task is runable, check only if a task with
+		// higher priority is available
+		if self.task_table[self.current_task.into()].status == TaskStatus::TaskRunning {
+			prio = self.task_table[self.current_task.into()].prio.into() as usize + 1;
+		}
+
+		match self.ready_queues {
+			Some(ref mut ready_queues) => {
+				for i in 0..prio {
+					match ready_queues[i].pop_front() {
+						Some(task) => return Some(task),
+						None => {}
+					}
+				}
+			},
+			None => panic!("readay queues aren't initialized")
+		}
+		None
+	}
+
 	pub fn schedule(&mut self) {
 		let old_task: TaskId = self.current_task;
 
-		match self.ready_queue.as_mut().unwrap().pop_front() {
+		match self.get_next_task() {
 			None => if self.task_table[self.current_task.into()].status != TaskStatus::TaskRunning {
 				// current task isn't able to run, no other task available => switch to the idle task
-				self.current_task = TaskId::from(0);
+				self.current_task = self.idle_task;
 			},
 			Some(id) => self.current_task = id
 		}
@@ -101,7 +132,10 @@ impl Scheduler {
 
 				if self.task_table[old_task.into()].status == TaskStatus::TaskRunning {
 					self.task_table[old_task.into()].status = TaskStatus::TaskReady;
-					self.ready_queue.as_mut().unwrap().push_back(old_task);
+					match self.ready_queues {
+						Some(ref mut ready_queues) => ready_queues[self.task_table[old_task.into()].prio.into() as usize].push_back(old_task),
+						None => panic!("readay queues aren't initialized")
+					}
 				} else if self.task_table[old_task.into()].status == TaskStatus::TaskFinished {
 					self.task_table[old_task.into()].status = TaskStatus::TaskInvalid;
 				}

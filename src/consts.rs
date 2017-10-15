@@ -38,3 +38,6 @@ pub const CACHE_LINE : usize = 64;
 /// Size of a page frame on a x86_64 processor
 #[cfg(target_arch="x86_64")]
 pub const PAGE_SIZE : usize = 4096;
+
+/// Maximum number of priorities
+pub const NO_PRIORITIES: u8 = 32;

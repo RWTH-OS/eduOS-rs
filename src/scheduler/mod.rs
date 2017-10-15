@@ -27,7 +27,7 @@
 //! Interface to the scheduler
 
 use consts::*;
-use alloc::VecDeque;
+use alloc::{Vec,VecDeque};
 
 /// task control block
 pub mod task;
@@ -44,11 +44,17 @@ extern {
 
 /// Initialite module, must be called once, and only once
 pub fn init() {
+	// initialize vector of queues
+	let mut veq_queue = Vec::with_capacity(NO_PRIORITIES as usize);
+	for _i in 0..NO_PRIORITIES {
+		veq_queue.push(VecDeque::with_capacity(MAX_TASKS));
+	}
+
 	unsafe {
 		// boot task is implicitly task 0 and and the idle task of core 0
 		SCHEDULER.task_table[0].status = task::TaskStatus::TaskIdle;
 		SCHEDULER.task_table[0].id = task::TaskId::from(0);
-		SCHEDULER.ready_queue = Some(VecDeque::with_capacity(MAX_TASKS));
+		SCHEDULER.ready_queues = Some(veq_queue);
 
 		// replace temporary boot stack by the kernel stack of the boot task
 		replace_boot_stack(SCHEDULER.task_table[0].stack.bottom());
@@ -57,32 +63,24 @@ pub fn init() {
 
 /// Create a new kernel task
 #[inline(always)]
-pub fn spawn(func: extern fn()) -> Result<task::TaskId, scheduler::SchedulerError> {
-	unsafe {
-		SCHEDULER.spawn(func)
-	}
+pub fn spawn(func: extern fn(), prio: task::Priority) -> Result<task::TaskId, scheduler::SchedulerError> {
+	unsafe { SCHEDULER.spawn(func, prio) }
 }
 
 /// Trigger the scheduler to switch to the next available task
 #[inline(always)]
 pub fn reschedule() {
-	unsafe {
-		SCHEDULER.reschedule()
-	}
+	unsafe { SCHEDULER.reschedule() }
 }
 
 /// Terminate the current running task
 #[inline(always)]
 pub fn do_exit() {
-	unsafe {
-		SCHEDULER.exit();
-	}
+	unsafe { SCHEDULER.exit() }
 }
 
 /// Get the TaskID of the current running task
 #[inline(always)]
 pub fn get_current_taskid() -> task::TaskId {
-	unsafe {
-		SCHEDULER.get_current_taskid()
-	}
+	unsafe { SCHEDULER.get_current_taskid() }
 }

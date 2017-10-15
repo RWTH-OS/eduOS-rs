@@ -15,11 +15,7 @@ alloc_kernel = { path = "alloc_kernel" }
 
 [dependencies.x86]
 version = "0.7"
-default-features = false
-
-# [dependencies.lazy_static]
-# version = "0.2.9"
-# features = ["spin_no_std"]
+default-features = false # do not include the default features
 
 # The development profile, used for `cargo build`.
 [profile.dev]
