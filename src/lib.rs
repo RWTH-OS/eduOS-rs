@@ -28,6 +28,8 @@
 #![feature(attr_literals)]
 #![feature(collections)]
 #![feature(alloc, global_allocator, allocator_api, heap_api)]
+#![feature(const_atomic_usize_new)]
+#![feature(const_unsafe_cell_new)]
 
 #![no_std]
 
@@ -41,6 +43,7 @@ extern crate alloc_kernel as allocator;
 // These need to be visible to the linker, so we need to export them.
 pub use runtime_glue::*;
 pub use logging::*;
+pub use synch::spinlock::*;
 
 #[macro_use]
 mod macros;
@@ -51,14 +54,26 @@ pub mod consts;
 pub mod arch;
 pub mod console;
 pub mod scheduler;
+pub mod synch;
 
 #[global_allocator]
 static ALLOCATOR: allocator::Allocator = allocator::Allocator;
 
+static mut COUNTER: Spinlock<u64> = Spinlock::new(0 as u64);
+
 extern "C" fn foo() {
 	for _i in 0..5 {
+		unsafe {
+			let mut data = COUNTER.lock();
+			*data += 1;
+		}
+
 		println!("hello from task {}", scheduler::get_current_taskid());
 		scheduler::reschedule();
+	}
+
+	unsafe {
+		info!("counter: {} {:?}", *COUNTER.lock(), COUNTER);
 	}
 }
 

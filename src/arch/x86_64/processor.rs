@@ -274,6 +274,12 @@ pub fn halt() {
 	}
 }
 
+pub fn pause() {
+	unsafe {
+		asm!("pause" :::: "volatile");
+	}
+}
+
 pub fn shutdown() {
 	// shutdown, works only on Qemu
 	unsafe {
