@@ -123,7 +123,8 @@ impl Semaphore {
 		*count += 1;
 		// try to wakeup next task
 		match self.queue {
-			None => {}
+			// create queue on demand
+			None => self.queue = Some(VecDeque::with_capacity(MAX_TASKS)),
 			Some(ref mut queue) => {
 				match queue.pop_front() {
 					None => {}
