@@ -43,7 +43,7 @@ extern crate alloc_kernel as allocator;
 // These need to be visible to the linker, so we need to export them.
 pub use runtime_glue::*;
 pub use logging::*;
-pub use synch::spinlock::*;
+pub use synch::semaphore::*;
 
 #[macro_use]
 mod macros;
@@ -59,21 +59,21 @@ pub mod synch;
 #[global_allocator]
 static ALLOCATOR: allocator::Allocator = allocator::Allocator;
 
-static mut COUNTER: Spinlock<u64> = Spinlock::new(0 as u64);
+static mut SEM: Semaphore = Semaphore::new(2);
 
 extern "C" fn foo() {
-	for _i in 0..5 {
-		unsafe {
-			let mut data = COUNTER.lock();
-			*data += 1;
-		}
+	// simple demo, only 2 tasks are able to print at the same time
+	unsafe {
+		SEM.acquire();
+	}
 
+	for _i in 0..5 {
 		println!("hello from task {}", scheduler::get_current_taskid());
 		scheduler::reschedule();
 	}
 
 	unsafe {
-		info!("counter: {} {:?}", *COUNTER.lock(), COUNTER);
+		SEM.release();
 	}
 }
 

@@ -85,6 +85,30 @@ impl Scheduler {
 		self.reschedule();
 	}
 
+	pub fn block_current_task(&mut self) {
+		let id = self.current_task;
+
+		if self.task_table[id.into()].status == TaskStatus::TaskRunning {
+			debug!("block task {}", id);
+
+			self.task_table[id.into()].status = TaskStatus::TaskBlocked;
+		}
+	}
+
+	pub fn wakeup_task(&mut self, id: TaskId) {
+		if self.task_table[id.into()].status == TaskStatus::TaskBlocked {
+			let prio = self.task_table[id.into()].prio;
+
+			debug!("wakeup task {}", id);
+
+			self.task_table[id.into()].status = TaskStatus::TaskReady;
+			match self.ready_queues {
+				Some(ref mut ready_queues) => ready_queues[prio.into() as usize].push_back(id),
+				None => panic!("readay queues aren't initialized")
+			}
+		}
+	}
+
 	#[inline(always)]
 	pub fn get_current_taskid(&self) -> TaskId {
 		self.current_task

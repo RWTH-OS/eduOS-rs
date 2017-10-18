@@ -73,6 +73,17 @@ pub fn reschedule() {
 	unsafe { SCHEDULER.reschedule() }
 }
 
+/// Set current task status to TaskBlocked
+#[inline(always)]
+pub fn block_current_task() {
+	unsafe { SCHEDULER.block_current_task() }
+}
+
+#[inline(always)]
+pub fn wakeup_task(id: task::TaskId) {
+	unsafe { SCHEDULER.wakeup_task(id) }
+}
+
 /// Terminate the current running task
 #[inline(always)]
 pub fn do_exit() {
