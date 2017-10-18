@@ -21,6 +21,7 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+use alloc::VecDeque;
 use scheduler::task::TaskId;
 use scheduler::{get_current_taskid,reschedule,block_current_task, wakeup_task};
 use synch::spinlock::*;
@@ -57,12 +58,8 @@ use consts::*;
 pub struct Semaphore {
 	/// Resource available count
 	value: SpinlockIrqSave<isize>,
-	/// Position in queue to add a new task
-	wpos: usize,
-	/// Position in queue to get a new task
-	rpos: usize,
 	/// Queue of waiting tasks
-	queue: [TaskId; MAX_TASKS]
+	queue: Option<VecDeque<TaskId>>,
 }
 
 /// An RAII guard which will release a resource acquired from a semaphore when
@@ -80,9 +77,7 @@ impl Semaphore {
 	pub const fn new(count: isize) -> Semaphore {
         Semaphore {
 			value: SpinlockIrqSave::new(count),
-			wpos: 0,
-			rpos: 0,
-			queue: [TaskId::from(MAX_TASKS); MAX_TASKS]
+			queue: None
         }
 	}
 
@@ -101,8 +96,14 @@ impl Semaphore {
         		*count -= 1;
 				done = true;
     		} else {
-				self.queue[self.wpos] = get_current_taskid();
-				self.wpos = (self.wpos + 1) % MAX_TASKS;
+				match self.queue {
+					// create queue on demand
+					None => { let mut queue = VecDeque::with_capacity(MAX_TASKS);
+						queue.push_back(get_current_taskid());
+						self.queue = Some(queue);
+					}
+					Some(ref mut queue) => queue.push_back(get_current_taskid())
+				}
 				block_current_task();
 				// release lock
 				drop(count);
@@ -121,11 +122,14 @@ impl Semaphore {
 
 		*count += 1;
 		// try to wakeup next task
-		if self.queue[self.rpos].into() < MAX_TASKS {
-			// try to wakeup one task
-			wakeup_task(self.queue[self.rpos]);
-			self.queue[self.rpos] = TaskId::from(MAX_TASKS);
-			self.rpos = (self.rpos + 1) % MAX_TASKS;
+		match self.queue {
+			None => {}
+			Some(ref mut queue) => {
+				match queue.pop_front() {
+					None => {}
+					Some(id) => wakeup_task(id)
+				}
+			}
 		}
     }
 
