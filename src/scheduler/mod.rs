@@ -27,14 +27,13 @@
 //! Interface to the scheduler
 
 use consts::*;
-use synch::spinlock::*;
 use alloc::{Vec,VecDeque};
 
 /// task control block
 pub mod task;
 mod scheduler;
 
-static mut SCHEDULER: SpinlockIrqSave<scheduler::Scheduler> = SpinlockIrqSave::new(scheduler::Scheduler::new());
+static mut SCHEDULER: scheduler::Scheduler = scheduler::Scheduler::new();
 
 extern {
 	/// The boot loader initialize a stack, which is later also required to
@@ -53,13 +52,12 @@ pub fn init() {
 
 	unsafe {
 		// boot task is implicitly task 0 and and the idle task of core 0
-		let mut sched = SCHEDULER.lock();
-		sched.task_table[0].status = task::TaskStatus::TaskIdle;
-		sched.task_table[0].id = task::TaskId::from(0);
-		sched.ready_queues = Some(veq_queue);
+		SCHEDULER.task_table[0].status = task::TaskStatus::TaskIdle;
+		SCHEDULER.task_table[0].id = task::TaskId::from(0);
+		SCHEDULER.ready_queues = Some(veq_queue);
 
 		// replace temporary boot stack by the kernel stack of the boot task
-		replace_boot_stack(sched.task_table[0].stack.bottom());
+		replace_boot_stack(SCHEDULER.task_table[0].stack.bottom());
 	}
 }
 
@@ -67,8 +65,7 @@ pub fn init() {
 #[inline(always)]
 pub fn spawn(func: extern fn(), prio: task::Priority) -> Result<task::TaskId, scheduler::SchedulerError> {
 	unsafe {
-		let mut sched = SCHEDULER.lock();
-		sched.spawn(func, prio)
+		SCHEDULER.spawn(func, prio)
 	}
 }
 
@@ -76,8 +73,7 @@ pub fn spawn(func: extern fn(), prio: task::Priority) -> Result<task::TaskId, sc
 #[inline(always)]
 pub fn reschedule() {
 	unsafe {
-		let mut sched = SCHEDULER.lock();
-		sched.reschedule()
+		SCHEDULER.reschedule()
 	}
 }
 
@@ -85,16 +81,14 @@ pub fn reschedule() {
 #[inline(always)]
 pub fn block_current_task() {
 	unsafe {
-		let mut sched = SCHEDULER.lock();
-		sched.block_current_task()
+		SCHEDULER.block_current_task()
 	}
 }
 
 #[inline(always)]
 pub fn wakeup_task(id: task::TaskId) {
 	unsafe {
-		let mut sched = SCHEDULER.lock();
-		sched.wakeup_task(id)
+		SCHEDULER.wakeup_task(id)
 	}
 }
 
@@ -102,8 +96,7 @@ pub fn wakeup_task(id: task::TaskId) {
 #[inline(always)]
 pub fn do_exit() {
 	unsafe {
-		let mut sched = SCHEDULER.lock();
-		sched.exit()
+		SCHEDULER.exit()
 	}
 }
 
@@ -111,7 +104,6 @@ pub fn do_exit() {
 #[inline(always)]
 pub fn get_current_taskid() -> task::TaskId {
 	unsafe {
-		let sched = SCHEDULER.lock();
-		sched.get_current_taskid()
+		SCHEDULER.get_current_taskid()
 	}
 }
