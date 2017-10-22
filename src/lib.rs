@@ -29,7 +29,9 @@
 #![feature(collections)]
 #![feature(alloc, global_allocator, allocator_api, heap_api)]
 #![feature(const_atomic_usize_new)]
+#![feature(const_atomic_bool_new)]
 #![feature(const_unsafe_cell_new)]
+#![feature(core_intrinsics)]
 
 #![no_std]
 
@@ -39,6 +41,8 @@ extern crate spin;
 extern crate x86;
 extern crate alloc;
 extern crate alloc_kernel as allocator;
+#[macro_use]
+extern crate lazy_static;
 
 // These need to be visible to the linker, so we need to export them.
 pub use runtime_glue::*;
@@ -59,22 +63,20 @@ pub mod synch;
 #[global_allocator]
 static ALLOCATOR: allocator::Allocator = allocator::Allocator;
 
-static mut SEM: Semaphore = Semaphore::new(2);
+lazy_static! {
+	static ref SEM: Semaphore = Semaphore::new(2);
+}
 
 extern "C" fn foo() {
 	// simple demo, only 2 tasks are able to print at the same time
-	unsafe {
-		SEM.acquire();
-	}
+	SEM.acquire();
 
 	for _i in 0..5 {
 		println!("hello from task {}", scheduler::get_current_taskid());
 		scheduler::reschedule();
 	}
 
-	unsafe {
-		SEM.release();
-	}
+	SEM.release();
 }
 
 /// Rust entry point of the kernel

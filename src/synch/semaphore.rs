@@ -59,13 +59,13 @@ pub struct Semaphore {
 	/// Resource available count
 	value: SpinlockIrqSave<isize>,
 	/// Queue of waiting tasks
-	queue: Option<VecDeque<TaskId>>,
+	queue: SpinlockIrqSave<VecDeque<TaskId>>,
 }
 
 /// An RAII guard which will release a resource acquired from a semaphore when
 /// dropped.
 pub struct SemaphoreGuard<'a> {
-    sem: &'a mut Semaphore,
+    sem: &'a Semaphore,
 }
 
 impl Semaphore {
@@ -74,10 +74,10 @@ impl Semaphore {
 	/// The count specified can be thought of as a number of resources, and a
 	/// call to `acquire` or `access` will block until at least one resource is
 	/// available. It is valid to initialize a semaphore with a negative count.
-	pub const fn new(count: isize) -> Semaphore {
+	pub fn new(count: isize) -> Semaphore {
         Semaphore {
 			value: SpinlockIrqSave::new(count),
-			queue: None
+			queue: SpinlockIrqSave::new(VecDeque::with_capacity(MAX_TASKS))
         }
 	}
 
@@ -86,7 +86,7 @@ impl Semaphore {
     ///
     /// This method will block until the internal count of the semaphore is at
     /// least 1.
-    pub fn acquire(&mut self) {
+    pub fn acquire(&self) {
 		let mut done: bool = false;
 
 		while done == false {
@@ -96,14 +96,7 @@ impl Semaphore {
         		*count -= 1;
 				done = true;
     		} else {
-				match self.queue {
-					// create queue on demand
-					None => { let mut queue = VecDeque::with_capacity(MAX_TASKS);
-						queue.push_back(get_current_taskid());
-						self.queue = Some(queue);
-					}
-					Some(ref mut queue) => queue.push_back(get_current_taskid())
-				}
+				self.queue.lock().push_back(get_current_taskid());
 				block_current_task();
 				// release lock
 				drop(count);
@@ -117,20 +110,14 @@ impl Semaphore {
     ///
     /// This will increment the number of resources in this semaphore by 1 and
     /// will notify any pending waiters in `acquire` or `access` if necessary.
-    pub fn release(&mut self) {
+    pub fn release(&self) {
 		let mut count = self.value.lock();
-
 		*count += 1;
+
 		// try to wakeup next task
-		match self.queue {
-			// create queue on demand
-			None => self.queue = Some(VecDeque::with_capacity(MAX_TASKS)),
-			Some(ref mut queue) => {
-				match queue.pop_front() {
-					None => {}
-					Some(id) => wakeup_task(id)
-				}
-			}
+		match self.queue.lock().pop_front() {
+			None => {}
+			Some(id) => wakeup_task(id)
 		}
     }
 

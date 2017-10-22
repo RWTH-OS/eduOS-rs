@@ -13,6 +13,10 @@ cpuio = "0.2.0"
 spin = "0.4.6"
 alloc_kernel = { path = "alloc_kernel" }
 
+[dependencies.lazy_static]
+version = "0.2"
+features = ["spin_no_std"]
+
 [dependencies.x86]
 version = "0.8"
 default-features = false # do not include the default features

@@ -21,15 +21,11 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-use core::sync::atomic::{AtomicUsize, Ordering};
+use core::sync::atomic::{AtomicUsize, AtomicBool, Ordering};
 use core::cell::UnsafeCell;
 use core::marker::Sync;
 use core::fmt;
 use core::ops::{Drop, Deref, DerefMut};
-
-use scheduler::task::TaskId;
-use scheduler::get_current_taskid;
-use consts::*;
 use arch;
 
 /// This type provides a lock based on busy waiting to realize mutual exclusion of tasks.
@@ -39,9 +35,6 @@ use arch;
 /// This structure behaves a lot like a normal Mutex. There are some differences:
 ///
 /// - By using busy waiting, it can be used outside the runtime.
-/// - A task can repeatedly lock the same object, either via multiple calls to Spinlock via nested
-///   lock statements. The object is then unlocked when a corresponding number of Spinlocks unlock
-///   statements have executed.
 /// - It is a so called ticket lock (https://en.wikipedia.org/wiki/Ticket_lock)
 ///   and completly fair.
 ///
@@ -71,8 +64,6 @@ pub struct Spinlock<T: ?Sized>
 {
     queue: AtomicUsize,
 	dequeue: AtomicUsize,
-	owner: TaskId,
-	counter: usize,
     data: UnsafeCell<T>,
 }
 
@@ -82,9 +73,7 @@ pub struct Spinlock<T: ?Sized>
 pub struct SpinlockGuard<'a, T: ?Sized + 'a>
 {
 	//queue: &'a AtomicUsize,
-	dequeue: &'a mut AtomicUsize,
-	owner: &'a mut TaskId,
-	counter: &'a mut usize,
+	dequeue: &'a AtomicUsize,
     data: &'a mut T,
 }
 
@@ -100,8 +89,6 @@ impl<T> Spinlock<T>
         {
 			queue: AtomicUsize::new(0),
 			dequeue: AtomicUsize::new(1),
-			owner: TaskId::from(MAX_TASKS),
-            counter: 0,
             data: UnsafeCell::new(user_data),
         }
     }
@@ -117,32 +104,20 @@ impl<T> Spinlock<T>
 
 impl<T: ?Sized> Spinlock<T>
 {
-	fn obtain_lock(&mut self) {
-		let tid = get_current_taskid();
-
-		if self.owner == tid {
-			self.counter += 1;
-			return;
-		}
-
+	fn obtain_lock(&self) {
 		let ticket = self.queue.fetch_add(1, Ordering::SeqCst) + 1;
 		while self.dequeue.load(Ordering::SeqCst) != ticket {
 			arch::processor::pause();
 		}
-
-		self.owner = tid;
-		self.counter = 1;
 	}
 
-	pub fn lock(&mut self) -> SpinlockGuard<T>
+	pub fn lock(&self) -> SpinlockGuard<T>
     {
         self.obtain_lock();
         SpinlockGuard
         {
 			//queue: &self.queue,
-			dequeue: &mut self.dequeue,
-			owner: &mut self.owner,
-            counter: &mut self.counter,
+			dequeue: &self.dequeue,
             data: unsafe { &mut *self.data.get() },
         }
     }
@@ -152,8 +127,6 @@ impl<T: ?Sized + fmt::Debug> fmt::Debug for Spinlock<T>
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result
     {
-		write!(f, "owner: {} ", self.owner)?;
-		write!(f, "counter: {} ", self.counter)?;
 		write!(f, "queue: {} ", self.queue.load(Ordering::SeqCst))?;
 		write!(f, "dequeue: {}", self.dequeue.load(Ordering::SeqCst))
     }
@@ -181,11 +154,7 @@ impl<'a, T: ?Sized> Drop for SpinlockGuard<'a, T>
     /// The dropping of the SpinlockGuard will release the lock it was created from.
     fn drop(&mut self)
     {
-		*self.counter -= 1;
-		if *self.counter == 0 {
-			*self.owner = TaskId::from(MAX_TASKS);
-			self.dequeue.fetch_add(1, Ordering::SeqCst);
-		}
+		self.dequeue.fetch_add(1, Ordering::SeqCst);
     }
 }
 
@@ -198,9 +167,6 @@ impl<'a, T: ?Sized> Drop for SpinlockGuard<'a, T>
 ///
 /// - Interrupts save lock => Interrupts will be disabled
 /// - By using busy waiting, it can be used outside the runtime.
-/// - A task can repeatedly lock the same object, either via multiple calls to Spinlock via nested
-///   lock statements. The object is then unlocked when a corresponding number of Spinlocks unlock
-///   statements have executed.
 /// - It is a so called ticket lock (https://en.wikipedia.org/wiki/Ticket_lock)
 ///   and completly fair.
 ///
@@ -230,8 +196,7 @@ pub struct SpinlockIrqSave<T: ?Sized>
 {
     queue: AtomicUsize,
 	dequeue: AtomicUsize,
-	counter: usize,
-	irq: bool,
+	irq: AtomicBool,
     data: UnsafeCell<T>,
 }
 
@@ -241,9 +206,8 @@ pub struct SpinlockIrqSave<T: ?Sized>
 pub struct SpinlockIrqSaveGuard<'a, T: ?Sized + 'a>
 {
 	//queue: &'a AtomicUsize,
-	dequeue: &'a mut AtomicUsize,
-	counter: &'a mut usize,
-	irq: &'a mut bool,
+	dequeue: &'a AtomicUsize,
+	irq: &'a AtomicBool,
     data: &'a mut T,
 }
 
@@ -259,8 +223,7 @@ impl<T> SpinlockIrqSave<T>
         {
 			queue: AtomicUsize::new(0),
 			dequeue: AtomicUsize::new(1),
-            counter: 0,
-			irq: false,
+			irq: AtomicBool::new(false),
             data: UnsafeCell::new(user_data),
         }
     }
@@ -276,31 +239,23 @@ impl<T> SpinlockIrqSave<T>
 
 impl<T: ?Sized> SpinlockIrqSave<T>
 {
-	fn obtain_lock(&mut self) {
-		let irq = arch::irq::irq_nested_disable();
-		if self.counter > 0 {
-			self.counter += 1;
-			return;
-		}
-
+	fn obtain_lock(&self) {
 		let ticket = self.queue.fetch_add(1, Ordering::SeqCst) + 1;
 		while self.dequeue.load(Ordering::SeqCst) != ticket {
 			arch::processor::pause();
 		}
 
-		self.irq = irq;
-		self.counter = 1;
+		self.irq.store(arch::irq::irq_nested_disable(), Ordering::SeqCst);
 	}
 
-	pub fn lock(&mut self) -> SpinlockIrqSaveGuard<T>
+	pub fn lock(&self) -> SpinlockIrqSaveGuard<T>
     {
         self.obtain_lock();
         SpinlockIrqSaveGuard
         {
 			//queue: &self.queue,
-			dequeue: &mut self.dequeue,
-            counter: &mut self.counter,
-			irq: &mut self.irq,
+			dequeue: &self.dequeue,
+			irq: &self.irq,
             data: unsafe { &mut *self.data.get() },
         }
     }
@@ -310,8 +265,7 @@ impl<T: ?Sized + fmt::Debug> fmt::Debug for SpinlockIrqSave<T>
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result
     {
-		write!(f, "irq: {} ", self.irq)?;
-		write!(f, "counter: {} ", self.counter)?;
+		write!(f, "irq: {:?} ", self.irq)?;
 		write!(f, "queue: {} ", self.queue.load(Ordering::SeqCst))?;
 		write!(f, "dequeue: {}", self.dequeue.load(Ordering::SeqCst))
     }
@@ -339,12 +293,8 @@ impl<'a, T: ?Sized> Drop for SpinlockIrqSaveGuard<'a, T>
     /// The dropping of the SpinlockGuard will release the lock it was created from.
     fn drop(&mut self)
     {
-		*self.counter -= 1;
-		if *self.counter == 0 {
-			let irq = *self.irq;
-			*self.irq = false;
-			self.dequeue.fetch_add(1, Ordering::SeqCst);
-			arch::irq::irq_nested_enable(irq);
-		}
+		let irq =  self.irq.swap(false, Ordering::SeqCst);
+		self.dequeue.fetch_add(1, Ordering::SeqCst);
+		arch::irq::irq_nested_enable(irq);
     }
 }
