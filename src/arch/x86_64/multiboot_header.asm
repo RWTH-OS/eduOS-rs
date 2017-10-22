@@ -21,7 +21,7 @@
 ; OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 ; WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-;;; Based on https:;github.com/RWTH-OS/eduOS
+;;; Based on https://github.com/RWTH-OS/eduOS
 ;;;
 ;;; This is our Multiboot 1 header, which Grub uses to find our kernel code
 ;;; and load it into memory.
