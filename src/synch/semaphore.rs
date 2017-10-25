@@ -21,11 +21,9 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-use alloc::VecDeque;
-use scheduler::task::TaskId;
 use scheduler::{get_current_taskid,reschedule,block_current_task, wakeup_task};
 use synch::spinlock::*;
-use consts::*;
+use synch::ring::*;
 
 /// A counting, blocking, semaphore.
 ///
@@ -59,7 +57,7 @@ pub struct Semaphore {
 	/// Resource available count
 	value: SpinlockIrqSave<isize>,
 	/// Queue of waiting tasks
-	queue: SpinlockIrqSave<VecDeque<TaskId>>,
+	queue: SpinlockIrqSave<TaskRingBuffer>,
 }
 
 /// An RAII guard which will release a resource acquired from a semaphore when
@@ -74,10 +72,10 @@ impl Semaphore {
 	/// The count specified can be thought of as a number of resources, and a
 	/// call to `acquire` or `access` will block until at least one resource is
 	/// available. It is valid to initialize a semaphore with a negative count.
-	pub fn new(count: isize) -> Semaphore {
+	pub const fn new(count: isize) -> Semaphore {
         Semaphore {
 			value: SpinlockIrqSave::new(count),
-			queue: SpinlockIrqSave::new(VecDeque::with_capacity(MAX_TASKS))
+			queue: SpinlockIrqSave::new(TaskRingBuffer::new())
         }
 	}
 
@@ -96,7 +94,10 @@ impl Semaphore {
         		*count -= 1;
 				done = true;
     		} else {
-				self.queue.lock().push_back(get_current_taskid());
+				match self.queue.lock().push_back(get_current_taskid()) {
+					Ok(()) => {},
+					Err(why) => panic!("{:?}", why)
+				}
 				block_current_task();
 				// release lock
 				drop(count);

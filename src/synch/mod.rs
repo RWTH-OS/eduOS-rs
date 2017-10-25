@@ -24,5 +24,6 @@
 
 //! Synchronization primitives
 
+pub mod ring;
 pub mod spinlock;
 pub mod semaphore;
