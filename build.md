@@ -49,3 +49,5 @@ From here, we should be able to build a kernel and run it within QEMU:
 $ make
 $ make run
 ```
+
+**Note:** Windows users should take a look at [https://youtu.be/5aX5jIAfrk8](https://youtu.be/5aX5jIAfrk8) to build edusOS-rs on their system.
