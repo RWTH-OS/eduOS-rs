@@ -65,6 +65,8 @@ $ make
 $ make run
 ```
 
+**Note:** Windows users should take a look at [https://youtu.be/5aX5jIAfrk8](https://youtu.be/5aX5jIAfrk8) to build edusOS-rs on their system.
+
 ## Overview of all branches
 
 Step by step (here branch by branch) the operating system design will be introduced.
