@@ -43,10 +43,18 @@ $ sudo make install
 At this point, the build process is identical between Linux and macOS.
 It is required to install the Rust toolchain, to check out the sources and to rebuild the Rust runtime using a
 bare-metal target without hardware floating point support.
+You have to use the nightly release channel, so please uninstall the previous Rust compiler, if you have one.
 
 ```sh
-$ # Set up a Rust compiler. Please use the nightly release channel.
+$ # Uninstall previous Rust installation
+$ rustup self uninstall
+$ # Set up a Rust compiler.
+$ # Please choose "2) Customize installation" at the beginning of the
+$ # installation dialog to be able to choose the nightly release channel.
 $ curl https://sh.rustup.rs -sSf | sh
+
+$ # At the end of the installation you should see something like
+$ # nightly installed - rustc 1.22.0-nightly (4c053db23 2017-10-22)
 
 $ # Get our source code.
 $ git clone git@github.com:RWTH-OS/eduOS-rs.git
