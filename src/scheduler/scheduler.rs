@@ -108,10 +108,7 @@ impl Scheduler {
 		task.create_stack_frame(func);
 
 		self.tasks.as_mut().unwrap().insert(id, task);
-		match self.ready_queues {
-			Some(ref mut ready_queues) => ready_queues[prio.into() as usize].push_back(id),
-			None => panic!("ready queues aren't initialized")
-		}
+		(self.ready_queues.as_mut().unwrap())[prio.into() as usize].push_back(id);
 
 		info!("create task with id {}", id);
 
@@ -124,6 +121,8 @@ impl Scheduler {
 				if task.status != TaskStatus::TaskIdle {
 					info!("finish task with id {}", self.current_task);
 					task.status = TaskStatus::TaskFinished;
+				} else {
+					panic!("unable to terminate idle task")
 				}
 			},
 			None => info!("unable to find task with id {}", self.current_task)
@@ -152,17 +151,13 @@ impl Scheduler {
 			None => {}
 		}
 
-		match self.ready_queues {
-			Some(ref mut ready_queues) => {
-				for i in 0..prio {
-					match ready_queues[i].pop_front() {
-						Some(task) => return Some(task),
-						None => {}
-					}
-				}
-			},
-			None => panic!("readay queues aren't initialized")
+		for i in 0..prio {
+			match (self.ready_queues.as_mut().unwrap())[i].pop_front() {
+				Some(task) => return Some(task),
+				None => {}
+			}
 		}
+
 		None
 	}
 
@@ -217,10 +212,7 @@ impl Scheduler {
 					Some(task) => {
 						if task.status == TaskStatus::TaskRunning {
 							task.status = TaskStatus::TaskReady;
-							match self.ready_queues {
-								Some(ref mut ready_queues) => ready_queues[task.prio.into() as usize].push_back(old_task),
-								None => panic!("ready queues aren't initialized")
-							}
+							(self.ready_queues.as_mut().unwrap())[task.prio.into() as usize].push_back(old_task);
 						} else if task.status == TaskStatus::TaskFinished {
 							task.status = TaskStatus::TaskInvalid;
 							// release the task later, because the stack is required
