@@ -26,6 +26,8 @@
 use consts::*;
 use core;
 use alloc;
+use alloc::heap::{Heap, Alloc, Layout};
+use logging::*;
 
 /// The status of the task - used for scheduling
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -92,7 +94,7 @@ impl core::fmt::Debug for KernelStack {
 }
 
 /// A task control block, which identifies either a process or a thread
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug)]
 #[repr(align(64))]
 pub struct Task {
 	/// The ID of this context
@@ -102,7 +104,7 @@ pub struct Task {
 	/// Last stack pointer before a context switch to another task
 	pub last_stack_pointer: u64,
 	/// Stack of the task
-	pub stack: KernelStack,
+	pub stack: *mut KernelStack,
 }
 
 pub trait TaskFrame {
@@ -110,13 +112,28 @@ pub trait TaskFrame {
     fn create_stack_frame(&mut self, func: extern fn());
 }
 
+impl Drop for Task {
+    fn drop(&mut self) {
+		debug!("dealloactae stack of task {} (stack at 0x{:x})", self.id, self.stack as usize);
+
+		// deallocate stack
+        unsafe {
+			Heap.dealloc(self.stack as *mut u8, Layout::new::<KernelStack>());
+		}
+    }
+}
+
 impl Task {
-	pub const fn new() -> Task {
+	pub fn new(tid: TaskId, task_status: TaskStatus) -> Task {
+		let tmp = unsafe { Heap.alloc(Layout::new::<KernelStack>()).unwrap() as *mut KernelStack };
+		debug!("alloactae stack for task {} at 0x{:x}", tid, tmp as usize);
+
 		Task {
-			id: TaskId::from(0),
-			status: TaskStatus::TaskInvalid,
+			id: tid,
+			status: task_status,
 			last_stack_pointer: 0,
-			stack: KernelStack::new()
+			// allocate stack directly from the heap
+			stack: tmp
 		}
 	}
 }

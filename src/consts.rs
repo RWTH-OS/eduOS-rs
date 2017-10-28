@@ -28,9 +28,6 @@
 /// Define the size of the kernel stack
 pub const KERNEL_STACK_SIZE : usize = 8192;
 
-/// Define the maximum number of different tasks
-pub const MAX_TASKS : usize = 16;
-
 /// Size of a cache line on a x86_64 processor
 #[cfg(target_arch="x86_64")]
 pub const CACHE_LINE : usize = 64;

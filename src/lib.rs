@@ -28,6 +28,7 @@
 #![feature(attr_literals)]
 #![feature(collections)]
 #![feature(alloc, global_allocator, allocator_api, heap_api)]
+#![feature(const_atomic_usize_new)]
 
 #![no_std]
 

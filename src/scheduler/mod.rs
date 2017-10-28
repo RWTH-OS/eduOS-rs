@@ -26,32 +26,16 @@
 
 //! Interface to the scheduler
 
-use consts::*;
-use alloc::VecDeque;
-
 /// task control block
 pub mod task;
 mod scheduler;
 
 static mut SCHEDULER: scheduler::Scheduler = scheduler::Scheduler::new();
 
-extern {
-	/// The boot loader initialize a stack, which is later also required to
-	/// to boot other core. Consequently, the kernel has to replace with this
-	/// function the boot stack by a new one.
-	pub fn replace_boot_stack(stack_bottom: usize);
-}
-
 /// Initialite module, must be called once, and only once
 pub fn init() {
 	unsafe {
-		// boot task is implicitly task 0 and and the idle task of core 0
-		SCHEDULER.task_table[0].status = task::TaskStatus::TaskIdle;
-		SCHEDULER.task_table[0].id = task::TaskId::from(0);
-		SCHEDULER.ready_queue = Some(VecDeque::with_capacity(MAX_TASKS));
-
-		// replace temporary boot stack by the kernel stack of the boot task
-		replace_boot_stack(SCHEDULER.task_table[0].stack.bottom());
+		SCHEDULER.add_idle_task();
 	}
 }
 
