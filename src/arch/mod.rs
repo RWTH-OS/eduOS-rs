@@ -57,7 +57,7 @@ pub fn init() {
 		let heap_top_ptr = &mut HEAP_TOP as *mut _;
 		let heap_size = heap_top_ptr as usize - heap_bottom_ptr as usize;
 
-		// Initialize allocator
+		// setup kernel heap
 		allocator::init(heap_bottom_ptr as usize, heap_size);
 	}
 }

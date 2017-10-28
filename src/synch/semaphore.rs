@@ -25,7 +25,6 @@ use alloc::VecDeque;
 use scheduler::task::TaskId;
 use scheduler::{get_current_taskid,reschedule,block_current_task, wakeup_task};
 use synch::spinlock::*;
-use consts::*;
 
 /// A counting, blocking, semaphore.
 ///
@@ -77,7 +76,7 @@ impl Semaphore {
 	pub fn new(count: isize) -> Semaphore {
         Semaphore {
 			value: SpinlockIrqSave::new(count),
-			queue: SpinlockIrqSave::new(VecDeque::with_capacity(MAX_TASKS))
+			queue: SpinlockIrqSave::new(VecDeque::new())
         }
 	}
 

@@ -85,7 +85,7 @@ Currently, following stages of development are available:
 
 3. stage3 - Synchronization primitives
 
-   Introduction of basic synchronization primitives
+   Introduce basic synchronization primitives
 
 ## Useful Links
 
