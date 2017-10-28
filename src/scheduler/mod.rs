@@ -41,7 +41,7 @@ pub fn init() {
 
 /// Create a new kernel task
 #[inline(always)]
-pub fn spawn(func: extern fn()) -> Result<task::TaskId, scheduler::SchedulerError> {
+pub fn spawn(func: extern fn()) -> task::TaskId {
 	unsafe {
 		SCHEDULER.spawn(func)
 	}

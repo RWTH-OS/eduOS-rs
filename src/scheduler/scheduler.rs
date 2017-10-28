@@ -40,15 +40,14 @@ extern {
 }
 
 #[derive(Debug)]
-pub enum SchedulerError {
-    InvalidReference
-}
-
-#[derive(Debug)]
 pub struct Scheduler {
+	/// task id which is currently running
 	current_task: TaskId,
+	/// queue of tasks, which are ready
 	ready_queue: Option<VecDeque<TaskId>>,
+	/// queue of tasks, which are finished and can be released
 	finished_tasks: Option<VecDeque<TaskId>>,
+	/// map between task id and task controll block
 	tasks: Option<BTreeMap<TaskId, Box<Task>>>
 }
 
@@ -73,7 +72,7 @@ impl Scheduler {
 	}
 
 	pub fn add_idle_task(&mut self) {
-		// idle task is the first task for the scheduler => initialize queue and btree
+		// idle task is the first task for the scheduler => initialize queues and btree
 		self.ready_queue = Some(VecDeque::new());
 		self.finished_tasks = Some(VecDeque::new());
 		self.tasks = Some(BTreeMap::new());
@@ -89,7 +88,7 @@ impl Scheduler {
 		self.tasks.as_mut().unwrap().insert(idle_task.id, idle_task);
 	}
 
-	pub fn spawn(&mut self, func: extern fn()) -> Result<TaskId, SchedulerError> {
+	pub fn spawn(&mut self, func: extern fn()) -> TaskId {
 		let id = self.get_tid();
 		let mut task = Box::new(Task::new(id, TaskStatus::TaskReady));
 
@@ -100,7 +99,7 @@ impl Scheduler {
 
 		info!("create task with id {}", id);
 
-		return Ok(id);
+		id
 	}
 
 	pub fn exit(&mut self) {
@@ -139,6 +138,7 @@ impl Scheduler {
 		// do we have a task, which is ready?
 		match self.ready_queue.as_mut().unwrap().pop_front() {
 			None => {
+				// do we have to switch to the idle task?
 				match self.tasks.as_mut().unwrap().get(&self.current_task) {
 					Some(task) => {
 						if task.status != TaskStatus::TaskRunning {
@@ -155,6 +155,7 @@ impl Scheduler {
 		if old_task != self.current_task {
 				let new_stack_pointer: u64;
 
+				// determine the last stack pointer of the new task
 				match self.tasks.as_mut().unwrap().get_mut(&self.current_task) {
 					Some(task) => {
 						if task.status != TaskStatus::TaskIdle {
@@ -165,6 +166,7 @@ impl Scheduler {
 					None => panic!("didn't find task {}", self.current_task)
 				}
 
+				// set the new task state of the old task
 				match self.tasks.as_mut().unwrap().get_mut(&old_task) {
 					Some(task) => {
 						if task.status == TaskStatus::TaskRunning {
@@ -172,6 +174,9 @@ impl Scheduler {
 							self.ready_queue.as_mut().unwrap().push_back(old_task);
 						} else if task.status == TaskStatus::TaskFinished {
 							task.status = TaskStatus::TaskInvalid;
+							// release the task later, because the stack is required
+							// to call the function "switch"
+							// => push id to a queue and release the task later
 							self.finished_tasks.as_mut().unwrap().push_back(old_task);
 						}
 

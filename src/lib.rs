@@ -76,10 +76,7 @@ pub extern "C" fn rust_main() {
 	info!("Hello from eduOS-rs!");
 
 	for _i in 0..4 {
-		match scheduler::spawn(foo) {
-			Ok(_id) => (),
-			Err(why) => panic!("{:?}", why)
-		}
+		scheduler::spawn(foo);
 	}
 
 	loop {
