@@ -130,9 +130,7 @@ impl Scheduler {
 			None => {},
 			Some(id) => {
 				match self.tasks.as_mut().unwrap().remove(&id) {
-					Some(task) => {
-						drop(task)
-					},
+					Some(task) => drop(task),
 					None => info!("unable to drop task {}", id)
 				}
 			}
