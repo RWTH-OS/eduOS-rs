@@ -75,7 +75,7 @@ Currently, following stages of development are available:
 
    Description of loading a minimal 32bit kernel
 
-## Usefull Links
+## Useful Links
 
 1. [http://www.gnu.org/software/grub/manual/multiboot/](http://www.gnu.org/software/grub/manual/multiboot/)
 2. [http://www.osdever.net/tutorials/view/brans-kernel-development-tutorial](http://www.osdever.net/tutorials/view/brans-kernel-development-tutorial)
