@@ -217,7 +217,7 @@ stack_top:
 
 align 4096
 HEAP_BOTTOM:
-        resb 4*1024*1024
+        resb 8*1024*1024
 HEAP_TOP:
 
 

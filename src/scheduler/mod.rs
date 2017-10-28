@@ -26,44 +26,22 @@
 
 //! Interface to the scheduler
 
-use consts::*;
-use alloc::{Vec,VecDeque};
-
 /// task control block
 pub mod task;
 mod scheduler;
 
 static mut SCHEDULER: scheduler::Scheduler = scheduler::Scheduler::new();
 
-extern {
-	/// The boot loader initialize a stack, which is later also required to
-	/// to boot other core. Consequently, the kernel has to replace with this
-	/// function the boot stack by a new one.
-	pub fn replace_boot_stack(stack_bottom: usize);
-}
-
 /// Initialite module, must be called once, and only once
 pub fn init() {
-	// initialize vector of queues
-	let mut veq_queue = Vec::with_capacity(NO_PRIORITIES as usize);
-	for _i in 0..NO_PRIORITIES {
-		veq_queue.push(VecDeque::with_capacity(MAX_TASKS));
-	}
-
 	unsafe {
-		// boot task is implicitly task 0 and and the idle task of core 0
-		SCHEDULER.task_table[0].status = task::TaskStatus::TaskIdle;
-		SCHEDULER.task_table[0].id = task::TaskId::from(0);
-		SCHEDULER.ready_queues = Some(veq_queue);
-
-		// replace temporary boot stack by the kernel stack of the boot task
-		replace_boot_stack(SCHEDULER.task_table[0].stack.bottom());
+		SCHEDULER.add_idle_task();
 	}
 }
 
 /// Create a new kernel task
 #[inline(always)]
-pub fn spawn(func: extern fn(), prio: task::Priority) -> Result<task::TaskId, scheduler::SchedulerError> {
+pub fn spawn(func: extern fn(), prio: task::Priority) -> task::TaskId {
 	unsafe { SCHEDULER.spawn(func, prio) }
 }
 

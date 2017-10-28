@@ -28,6 +28,7 @@
 #![feature(attr_literals)]
 #![feature(collections)]
 #![feature(alloc, global_allocator, allocator_api, heap_api)]
+#![feature(const_atomic_usize_new)]
 
 #![no_std]
 
@@ -75,16 +76,10 @@ pub extern "C" fn rust_main() {
 	info!("Hello from eduOS-rs!");
 
 	for _i in 0..4 {
-		match scheduler::spawn(foo, scheduler::task::NORMAL_PRIO) {
-			Ok(_id) => (),
-			Err(why) => panic!("{:?}", why)
-		}
+		scheduler::spawn(foo, scheduler::task::NORMAL_PRIO);
 	}
 
-	match scheduler::spawn(foo, scheduler::task::REALTIME_PRIO) {
-		Ok(_id) => (),
-		Err(why) => panic!("{:?}", why)
-	}
+	scheduler::spawn(foo, scheduler::task::REALTIME_PRIO);
 
 	loop {
 		scheduler::reschedule();
