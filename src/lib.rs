@@ -36,7 +36,6 @@
 
 extern crate cpuio;
 extern crate rlibc;
-extern crate spin;
 extern crate x86;
 extern crate alloc;
 extern crate alloc_kernel as allocator;
@@ -69,7 +68,9 @@ extern "C" fn foo() {
 
 	for _i in 0..5 {
 		println!("hello from task {}", scheduler::get_current_taskid());
-		scheduler::reschedule();
+		for _j in 0..100 {
+			unsafe { arch::timer::wait_some_time(); }
+		}
 	}
 
 	SEM.release();
@@ -92,6 +93,9 @@ pub extern "C" fn rust_main() {
 	}
 
 	scheduler::spawn(foo, scheduler::task::REALTIME_PRIO);
+
+	// enable interrupts => enable preemptive multitasking
+	arch::irq::irq_enable();
 
 	loop {
 		scheduler::reschedule();

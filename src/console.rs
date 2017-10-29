@@ -24,7 +24,7 @@
 //! A wrapper around a serial console.
 
 use core::fmt;
-use spin::Mutex;
+use synch::spinlock::*;
 use arch::serial;
 
 pub struct Console;
@@ -36,4 +36,4 @@ impl fmt::Write for Console {
     }
 }
 
-pub static CONSOLE: Mutex<Console> = Mutex::new(Console);
+pub static CONSOLE: SpinlockIrqSave<Console> = SpinlockIrqSave::new(Console);

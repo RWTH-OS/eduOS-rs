@@ -21,20 +21,96 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+use logging::*;
+use scheduler::{get_current_taskid,schedule};
+use arch::x86_64::task::State;
+use x86::bits64::irq::IdtEntry;
+use x86::shared::dtables::{DescriptorTablePointer,lidt};
+use x86::shared::PrivilegeLevel;
+use x86::shared::paging::VAddr;
+use cpuio::outb;
+
+/// Maximum possible number of interrupts
+const IDT_ENTRY_COUNT: usize = 256;
+const KERNEL_CODE_SELECTOR: u16 = 0x08;
+
+#[allow(dead_code)]
+extern {
+	/// Interrupt handlers => see irq_handler.asm
+	static interrupt_handlers: [*const u8; IDT_ENTRY_COUNT];
+}
+
+/// An Interrupt Descriptor Table which specifies how to respond to each
+/// interrupt.
+#[repr(C, packed)]
+struct Idt {
+	pub table: [IdtEntry; IDT_ENTRY_COUNT]
+}
+
+impl Idt {
+	pub const fn new() -> Idt {
+		Idt {
+			table: [IdtEntry::MISSING; IDT_ENTRY_COUNT]
+		}
+	}
+}
+
+/// our global Interrupt Descriptor Table .
+static mut IDT: Idt = Idt::new();
+
+/// Normally, IRQs 0 to 7 are mapped to entries 8 to 15. This
+/// is a problem in protected mode, because IDT entry 8 is a
+/// Double Fault! Without remapping, every time IRQ0 fires,
+/// you get a Double Fault Exception, which is NOT what's
+/// actually happening. We send commands to the Programmable
+/// Interrupt Controller (PICs - also called the 8259's) in
+/// order to make IRQ0 to 15 be remapped to IDT entries 32 to
+/// 47
+unsafe fn irq_remap()
+{
+	outb(0x11, 0x20);
+	outb(0x11, 0xA0);
+	outb(0x20, 0x21);
+	outb(0x28, 0xA1);
+	outb(0x04, 0x21);
+	outb(0x02, 0xA1);
+	outb(0x01, 0x21);
+	outb(0x01, 0xA1);
+	outb(0x0, 0x21);
+	outb(0x0, 0xA1);
+}
+
+pub fn init() {
+	info!("initialize interrupt descriptor table");
+
+	unsafe {
+		irq_remap();
+
+		for i in 0..IDT_ENTRY_COUNT {
+			IDT.table[i] = IdtEntry::new(VAddr::from_usize(interrupt_handlers[i] as usize),
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, false);
+		}
+
+		// load address of the IDT
+		let idtr: DescriptorTablePointer<IdtEntry> = DescriptorTablePointer::new_idtp(&IDT.table);
+		lidt(&idtr)
+	}
+}
+
 /// Enable Interrupts
 #[inline(always)]
 pub fn irq_enable() {
-    unsafe { asm!("sti" ::: "memory" : "volatile") };
+	unsafe { asm!("sti" ::: "memory" : "volatile") };
 }
 
 /// Disable Interrupts
 #[inline(always)]
 pub fn irq_disable() {
-    unsafe { asm!("cli" ::: "memory" : "volatile") };
+	unsafe { asm!("cli" ::: "memory" : "volatile") };
 }
 
 /// Determines, if the interrupt flags (IF) is set
- #[inline(always)]
+#[inline(always)]
 pub fn is_irq_enabled() -> bool
 {
 	let rflags: u64;
@@ -68,5 +144,32 @@ pub fn irq_nested_disable() -> bool {
 pub fn irq_nested_enable(was_enabled: bool) {
 	if was_enabled == true {
 		irq_enable();
+	}
+}
+
+#[no_mangle]
+pub extern "C" fn irq_handler(state: *const State) {
+	let int_no = unsafe { (*state).int_no };
+
+	debug!("Task {} receive interrupt {}!", get_current_taskid(), int_no);
+
+	/*
+	* If the IDT entry that was invoked was greater-than-or-equal to 40
+	* and lower than 48 (meaning IRQ8 - 15), then we need to
+	* send an EOI to the slave controller of the PIC
+	*/
+	if int_no >= 40 {
+		unsafe { outb(0x20, 0xA0); }
+	}
+
+	/*
+	* In either case, we need to send an EOI to the master
+	* interrupt controller of the PIC, too
+	*/
+	unsafe { outb(0x20, 0x20); }
+
+	// if we handle a timer interrupt, we have to trigger the scheduler
+	if int_no == 32 {
+		schedule();
 	}
 }

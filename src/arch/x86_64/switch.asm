@@ -24,19 +24,33 @@
 section .text
 bits 64
 
+align 64
+rollback:
+	ret
+
 global switch
 ALIGN 8
 switch:
 	; rdi => the address to store the old rsp
 	; rsi => stack pointer of the new task
 
+	; create on the stack a pseudo interrupt
+	; afterwards, we switch to the task with iret
+	push QWORD 0x10				; SS
+	push rsp					; RSP
+	add QWORD [rsp], 0x08		; => value of rsp before the creation of a pseudo interrupt
+	pushfq						; RFLAGS
+	push QWORD 0x08				; CS
+	push QWORD rollback			; RIP
+	push QWORD 0x00edbabe		; Error code
+	push QWORD 0x00				; Interrupt number
+
 	; save context
-    pushf                       ; push controll register
 	push rax
 	push rcx
 	push rdx
 	push rbx
-	sub rsp, 8					; ignore rsp
+	push QWORD [rsp+9*8]
 	push rbp
 	push rsi
 	push rdi
@@ -49,7 +63,7 @@ switch:
 	push r14
 	push r15
 
-	mov [rdi], rsp				; store old rsp
+	mov QWORD [rdi], rsp				; store old rsp
 	mov rsp, rsi
 
 	; restore context
@@ -69,6 +83,6 @@ switch:
 	pop rdx
 	pop rcx
 	pop rax
-	popf
 
-	ret
+	add rsp, 16
+	iretq

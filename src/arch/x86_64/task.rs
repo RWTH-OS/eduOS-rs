@@ -32,43 +32,56 @@ use logging::*;
 
 #[derive(Debug)]
 #[repr(C, packed)]
-struct State {
+pub struct State {
 	/// R15 register
-	r15: u64,
+	pub r15: u64,
 	/// R14 register
-	r14: u64,
+	pub r14: u64,
 	/// R13 register
-	r13: u64,
+	pub r13: u64,
 	/// R12 register
-	r12: u64,
+	pub r12: u64,
 	/// R11 register
-	r11: u64,
+	pub r11: u64,
 	/// R10 register
-	r10: u64,
+	pub r10: u64,
 	/// R9 register
-	r9: u64,
+	pub r9: u64,
 	/// R8 register
-	r8: u64,
+	pub r8: u64,
 	/// RDI register
-	rdi: u64,
+	pub rdi: u64,
 	/// RSI register
-	rsi: u64,
+	pub rsi: u64,
 	/// RBP register
-	rbp: u64,
+	pub rbp: u64,
 	/// (pseudo) RSP register
-	rsp: u64,
+	pub rsp: u64,
 	/// RBX register
-	rbx: u64,
+	pub rbx: u64,
 	/// RDX register
-	rdx: u64,
+	pub rdx: u64,
 	/// RCX register
-	rcx: u64,
+	pub rcx: u64,
 	/// RAX register
-	rax: u64,
-	/// status flags
-	rflags: u64,
+	pub rax: u64,
+	/// interrupt number
+	pub int_no: u64,
+
+	// pushed by the processor automatically
+
+	/// error code of the exception
+	pub error: u64,
 	/// instruction pointer
-	rip: u64
+	pub rip: u64,
+	/// code selector
+	pub cs: u64,
+	/// status flags
+	pub rflags: u64,
+	/// user-space stack pointer
+	pub userrsp: u64,
+	/// stack selector
+	pub ss: u64
 }
 
 extern "C" fn leave_task() {
@@ -105,11 +118,17 @@ impl TaskFrame for Task {
 			(*state).rsp = (stack as usize + size_of::<State>()) as u64;
 			(*state).rbp = (*state).rsp + size_of::<u64>() as u64;
 
+			(*state).int_no = 0xB16B00B5u64;
+			(*state).error =  0xC03DB4B3u64;
+
 			(*state).rip = (func as *const()) as u64;;
-			(*state).rflags = 0x1002u64;
+			(*state).cs = 0x08;
+			(*state).ss = 0x10;
+			(*state).rflags = 0x1202u64;
+			(*state).userrsp = (*state).rsp;
 
 			/* Set the task's stack pointer entry to the stack we have crafted right now. */
-			self.last_stack_pointer =  stack as u64;
+			self.last_stack_pointer = stack as u64;
 		}
 	}
 }

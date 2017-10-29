@@ -26,7 +26,7 @@
 //! As usual, inspired by http://wiki.osdev.org/Serial_Ports
 
 use core::fmt;
-use spin::Mutex;
+use synch::spinlock::*;
 use cpuio;
 use self::Register::*;
 
@@ -152,6 +152,6 @@ impl fmt::Write for ComPort {
 }
 
 /// Our primary serial port.
-pub static COM1: Mutex<ComPort> = Mutex::new(unsafe {
+pub static COM1: SpinlockIrqSave<ComPort> = SpinlockIrqSave::new(unsafe {
     ComPort::new(0x03F8)
 });

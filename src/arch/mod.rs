@@ -27,7 +27,7 @@
 
 // Export our platform-specific modules.
 #[cfg(target_arch="x86_64")]
-pub use self::x86_64::{serial,processor,irq};
+pub use self::x86_64::{serial,processor,irq,timer};
 
 // Implementations for x86_64.
 #[cfg(target_arch="x86_64")]
@@ -60,4 +60,7 @@ pub fn init() {
 		// setup kernel heap
 		allocator::init(heap_bottom_ptr as usize, heap_size);
 	}
+
+	irq::init();
+	timer::init();
 }

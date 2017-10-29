@@ -29,6 +29,32 @@ use cpuio;
 use x86::shared::*;
 use logging::*;
 
+/// Force strict CPU ordering, serializes load and store operations.
+#[inline(always)]
+pub fn mb()
+{
+	unsafe {
+		asm!("mfence" ::: "memory" : "volatile");
+	}
+}
+
+/// Force strict CPU ordering, serializes load operations.
+#[inline(always)]
+pub fn rmb()
+{
+	unsafe {
+		asm!("lfence" ::: "memory" : "volatile");
+	}
+}
+
+/// Force strict CPU ordering, serializes store operations.
+#[inline(always)]
+pub fn wmb() {
+	unsafe {
+		asm!("sfence" ::: "memory" : "volatile");
+	}
+}
+
 pub fn halt() {
 	loop {
 		unsafe {

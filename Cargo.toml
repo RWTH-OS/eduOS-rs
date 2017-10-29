@@ -10,7 +10,6 @@ crate-type = ["staticlib"]
 rlibc = "1.0.0"	# Low-level functions like memcpy.
 raw-cpuid = "3.0.0"
 cpuio = "0.2.0"
-spin = "0.4.6"
 alloc_kernel = { path = "alloc_kernel" }
 
 #[dependencies.lazy_static]

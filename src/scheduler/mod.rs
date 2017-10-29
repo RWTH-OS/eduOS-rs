@@ -53,6 +53,14 @@ pub fn reschedule() {
 	}
 }
 
+/// Trigger the scheduler from an interrupt to switch to the next available task
+#[inline(always)]
+pub fn schedule() {
+	unsafe {
+		SCHEDULER.schedule()
+	}
+}
+
 /// Set current task status to TaskBlocked
 #[inline(always)]
 pub fn block_current_task() {

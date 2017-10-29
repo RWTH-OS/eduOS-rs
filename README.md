@@ -89,6 +89,10 @@ Currently, following stages of development are available:
 
    Introduce basic synchronization primitives
 
+4. stage 4 - Preemptive multitasking
+
+   Introduction into preemptive multitasking and interrupt handling
+
 ## Useful Links
 
 1. [http://www.gnu.org/software/grub/manual/multiboot/](http://www.gnu.org/software/grub/manual/multiboot/)
