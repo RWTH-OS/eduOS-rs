@@ -31,7 +31,6 @@
 #![feature(const_atomic_usize_new)]
 #![feature(const_atomic_bool_new)]
 #![feature(const_unsafe_cell_new)]
-#![feature(core_intrinsics)]
 
 #![no_std]
 
@@ -46,6 +45,7 @@ extern crate alloc_kernel as allocator;
 pub use runtime_glue::*;
 pub use logging::*;
 pub use synch::semaphore::*;
+pub use synch::mutex::*;
 
 #[macro_use]
 mod macros;
@@ -88,16 +88,10 @@ pub extern "C" fn rust_main() {
 	info!("Hello from eduOS-rs!");
 
 	for _i in 0..4 {
-		match scheduler::spawn(foo, scheduler::task::NORMAL_PRIO) {
-			Ok(_id) => (),
-			Err(why) => panic!("{:?}", why)
-		}
+		scheduler::spawn(foo, scheduler::task::NORMAL_PRIO);
 	}
 
-	match scheduler::spawn(foo, scheduler::task::REALTIME_PRIO) {
-		Ok(_id) => (),
-		Err(why) => panic!("{:?}", why)
-	}
+	scheduler::spawn(foo, scheduler::task::REALTIME_PRIO);
 
 	loop {
 		scheduler::reschedule();

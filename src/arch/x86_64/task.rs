@@ -83,9 +83,9 @@ impl TaskFrame for Task {
     fn create_stack_frame(&mut self, func: extern fn())
 	{
 		unsafe {
-			let mut stack: *mut u64 = (self.stack.top() - 16) as *mut u64;
+			let mut stack: *mut u64 = ((*self.stack).top() - 16) as *mut u64;
 
-			memset(self.stack.bottom() as *mut u8, 0xCD, KERNEL_STACK_SIZE);
+			memset((*self.stack).bottom() as *mut u8, 0xCD, KERNEL_STACK_SIZE);
 
 			/* Only marker for debugging purposes, ... */
 			*stack = 0xDEADBEEFu64;
