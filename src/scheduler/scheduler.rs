@@ -23,6 +23,7 @@
 
 use core::sync::atomic::{AtomicUsize, Ordering};
 use scheduler::task::*;
+use arch::irq::{irq_nested_enable,irq_nested_disable};
 use logging::*;
 use consts::*;
 use synch::spinlock::*;
@@ -275,6 +276,8 @@ impl Scheduler {
 
 	#[inline(always)]
 	pub fn reschedule(&mut self) {
+		let flags = irq_nested_disable();
 		self.schedule();
+		irq_nested_enable(flags);
 	}
 }
