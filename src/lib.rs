@@ -40,13 +40,12 @@ extern crate spin;
 extern crate x86;
 extern crate alloc;
 extern crate alloc_kernel as allocator;
-#[macro_use]
-extern crate lazy_static;
 
 // These need to be visible to the linker, so we need to export them.
 pub use runtime_glue::*;
 pub use logging::*;
 pub use synch::semaphore::*;
+pub use synch::mutex::*;
 
 #[macro_use]
 mod macros;
@@ -62,9 +61,7 @@ pub mod synch;
 #[global_allocator]
 static ALLOCATOR: allocator::Allocator = allocator::Allocator;
 
-lazy_static! {
-	static ref SEM: Semaphore = Semaphore::new(2);
-}
+static SEM: Semaphore = Semaphore::new(2);
 
 extern "C" fn foo() {
 	// simple demo, only 2 tasks are able to print at the same time

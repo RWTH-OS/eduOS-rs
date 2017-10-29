@@ -22,6 +22,7 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 use alloc::VecDeque;
+use core::sync::atomic::{AtomicBool, Ordering};
 use scheduler::task::TaskId;
 use scheduler::{get_current_taskid,reschedule,block_current_task, wakeup_task};
 use synch::spinlock::*;
@@ -58,13 +59,15 @@ pub struct Semaphore {
 	/// Resource available count
 	value: SpinlockIrqSave<isize>,
 	/// Queue of waiting tasks
-	queue: SpinlockIrqSave<VecDeque<TaskId>>,
+	queue: SpinlockIrqSave<Option<VecDeque<TaskId>>>,
+	/// boolean to check if the Mutex is completly initialited
+	init: AtomicBool
 }
 
 /// An RAII guard which will release a resource acquired from a semaphore when
 /// dropped.
 pub struct SemaphoreGuard<'a> {
-    sem: &'a Semaphore,
+	sem: &'a Semaphore,
 }
 
 impl Semaphore {
@@ -73,29 +76,39 @@ impl Semaphore {
 	/// The count specified can be thought of as a number of resources, and a
 	/// call to `acquire` or `access` will block until at least one resource is
 	/// available. It is valid to initialize a semaphore with a negative count.
-	pub fn new(count: isize) -> Semaphore {
-        Semaphore {
+	pub const fn new(count: isize) -> Semaphore {
+		Semaphore {
 			value: SpinlockIrqSave::new(count),
-			queue: SpinlockIrqSave::new(VecDeque::new())
-        }
+			queue: SpinlockIrqSave::new(None),
+			init: AtomicBool::new(false)
+		}
+	}
+
+	#[inline(always)]
+	fn check_sem(&self)
+	{
+		// do we have to initilize the queue?
+		if self.init.swap(true, Ordering::SeqCst) == false {
+			*self.queue.lock() = Some(VecDeque::new());
+		}
 	}
 
 	/// Acquires a resource of this semaphore, blocking the current thread until
-    /// it can do so.
-    ///
-    /// This method will block until the internal count of the semaphore is at
-    /// least 1.
-    pub fn acquire(&self) {
-		let mut done: bool = false;
+	/// it can do so.
+	///
+	/// This method will block until the internal count of the semaphore is at
+	/// least 1.
+	pub fn acquire(&self) {
+		self.check_sem();
 
-		while done == false {
+		loop {
 			let mut count = self.value.lock();
 
-    		if *count > 0 {
-        		*count -= 1;
-				done = true;
-    		} else {
-				self.queue.lock().push_back(get_current_taskid());
+			if *count > 0 {
+				*count -= 1;
+				return;
+			} else {
+				self.queue.lock().as_mut().unwrap().push_back(get_current_taskid());
 				block_current_task();
 				// release lock
 				drop(count);
@@ -103,39 +116,39 @@ impl Semaphore {
 				reschedule();
 			}
 		}
-    }
+	}
 
 	/// Release a resource from this semaphore.
-    ///
-    /// This will increment the number of resources in this semaphore by 1 and
-    /// will notify any pending waiters in `acquire` or `access` if necessary.
-    pub fn release(&self) {
+	///
+	/// This will increment the number of resources in this semaphore by 1 and
+	/// will notify any pending waiters in `acquire` or `access` if necessary.
+	pub fn release(&self) {
 		let mut count = self.value.lock();
 		*count += 1;
 
 		// try to wakeup next task
-		match self.queue.lock().pop_front() {
+		match self.queue.lock().as_mut().unwrap().pop_front() {
+			Some(id) => wakeup_task(id),
 			None => {}
-			Some(id) => wakeup_task(id)
 		}
-    }
+	}
 
-    /// Acquires a resource of this semaphore, returning an RAII guard to
-    /// release the semaphore when dropped.
-    ///
-    /// This function is semantically equivalent to an `acquire` followed by a
-    /// `release` when the guard returned is dropped.
-    pub fn access(&mut self) -> SemaphoreGuard {
-        self.acquire();
-        SemaphoreGuard { sem: self }
-    }
+	/// Acquires a resource of this semaphore, returning an RAII guard to
+	/// release the semaphore when dropped.
+	///
+	/// This function is semantically equivalent to an `acquire` followed by a
+	/// `release` when the guard returned is dropped.
+	pub fn access(&mut self) -> SemaphoreGuard {
+		self.acquire();
+		SemaphoreGuard { sem: self }
+	}
 }
 
 impl<'a> Drop for SemaphoreGuard<'a>
 {
-    /// The dropping of the SemaphoreGuard will release the lock it was created from.
-    fn drop(&mut self)
-    {
+	/// The dropping of the SemaphoreGuard will release the lock it was created from.
+	fn drop(&mut self)
+	{
 		self.sem.release();
-    }
+	}
 }
