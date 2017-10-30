@@ -3,5 +3,5 @@
 	url = https://github.com/RWTH-OS/rust.git
 	branch = master
 [submodule "crate/rlibc"]
-	path = crate/rlibc
+	path = crates/rlibc
 	url = https://github.com/RWTH-OS/rlibc.git
