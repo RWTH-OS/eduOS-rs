@@ -46,7 +46,7 @@ bare-metal target without hardware floating point support.
 You have to use the nightly release channel, so please uninstall the previous Rust compiler, if you have one.
 
 ```sh
-$ # Uninstall previous Rust installation
+$ # Uninstall previous Rust installation (if you already use rust)
 $ rustup self uninstall
 $ # Set up a Rust compiler.
 $ # Please choose "2) Customize installation" at the beginning of the
