@@ -1,3 +1,7 @@
 build
 target
 Cargo.lock
+
+# Jetbrains IDE
+.idea/
+*.iml
