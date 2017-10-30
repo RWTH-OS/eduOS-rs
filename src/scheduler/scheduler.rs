@@ -224,17 +224,6 @@ impl Scheduler {
 	pub fn schedule(&mut self) {
 		let old_task: TaskId = self.current_task;
 
-		// do we have finished tasks? => drop tasks => deallocate implicitly the stack
-		/*match self.finished_tasks.lock().as_mut().unwrap().pop_front() {
-			None => {},
-			Some(id) => {
-				match self.tasks.lock().as_mut().unwrap().remove(&id) {
-					Some(task) => drop(task),
-					None => info!("unable to drop task {}", id)
-				}
-			}
-		}*/
-
 		// do we have a task, which is ready?
 		match self.get_next_task() {
 			Some(id) => self.current_task = id,
@@ -297,8 +286,26 @@ impl Scheduler {
 		}
 	}
 
+	fn cleanup_tasks(&mut self)
+	{
+		// do we have finished tasks? => drop first tasks => deallocate implicitly the stack
+		match self.finished_tasks.lock().as_mut().unwrap().pop_front() {
+			Some(id) => {
+				match self.tasks.lock().as_mut().unwrap().remove(&id) {
+					Some(task) => drop(task),
+					None => info!("unable to drop task {}", id)
+				}
+			},
+			None => {}
+		}
+	}
+
 	#[inline(always)]
 	pub fn reschedule(&mut self) {
+		// some one want to give up the CPU
+		// => we have time to cleanup the system
+		self.cleanup_tasks();
+
 		let flags = irq_nested_disable();
 		self.schedule();
 		irq_nested_enable(flags);
