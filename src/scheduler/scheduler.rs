@@ -302,7 +302,7 @@ impl Scheduler {
 
 	#[inline(always)]
 	pub fn reschedule(&mut self) {
-		// some one want to give up the CPU
+		// someone want to give up the CPU
 		// => we have time to cleanup the system
 		self.cleanup_tasks();
 
