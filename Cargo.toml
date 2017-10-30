@@ -7,10 +7,10 @@ authors = ["Stefan Lankes <slankes@eonerc.rwth-aachen.de>"]
 crate-type = ["staticlib"]
 
 [dependencies]
-rlibc = "1.0.0"	# Low-level functions like memcpy.
+rlibc = { path = "crate/rlibc" }	# Low-level functions like memcpy.
 raw-cpuid = "3.0.0"
 cpuio = "0.2.0"
-alloc_kernel = { path = "alloc_kernel" }
+alloc_kernel = { path = "crate/alloc_kernel" }
 
 #[dependencies.lazy_static]
 #version = "0.2"
