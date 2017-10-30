@@ -34,7 +34,7 @@ use alloc::btree_map::*;
 static TID_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 extern {
-    pub fn switch(old_stack: *const u64, new_stack: u64);
+	pub fn switch(old_stack: *const u64, new_stack: u64);
 
 	/// The boot loader initialize a stack, which is later also required to
 	/// to boot other core. Consequently, the kernel has to replace with this
@@ -51,7 +51,7 @@ pub struct Scheduler {
 	/// queues of tasks, which are ready
 	ready_queues: SpinlockIrqSave<Option<Vec<VecDeque<TaskId>>>>,
 	/// queue of tasks, which are finished and can be released
-	finished_tasks: Option<VecDeque<TaskId>>,
+	finished_tasks: SpinlockIrqSave<Option<VecDeque<TaskId>>>,
 	/// map between task id and task controll block
 	tasks: SpinlockIrqSave<Option<BTreeMap<TaskId, Box<Task>>>>
 }
@@ -62,7 +62,7 @@ impl Scheduler {
 			current_task: TaskId::from(0),
 			idle_task: TaskId::from(0),
 			ready_queues: SpinlockIrqSave::new(None),
-			finished_tasks: None,
+			finished_tasks: SpinlockIrqSave::new(None),
 			tasks: SpinlockIrqSave::new(None)
 		}
 	}
@@ -87,7 +87,7 @@ impl Scheduler {
 		}
 
 		*self.ready_queues.lock() = Some(veq_queue);
-		self.finished_tasks = Some(VecDeque::new());
+		*self.finished_tasks.lock() = Some(VecDeque::new());
 		*self.tasks.lock() = Some(BTreeMap::new());
 		self.idle_task = self.get_tid();
 		self.current_task = self.idle_task;
@@ -104,17 +104,40 @@ impl Scheduler {
 	}
 
 	pub fn spawn(&mut self, func: extern fn(), prio: Priority) -> TaskId {
-		let id = self.get_tid();
-		let mut task = Box::new(Task::new(id, TaskStatus::TaskReady, prio));
+		let tid: TaskId;
 
-		task.create_stack_frame(func);
+		// do we have finished a task? => reuse it
+		match self.finished_tasks.lock().as_mut().unwrap().pop_front() {
+			None => {
+				debug!("create new task control block");
+				tid = self.get_tid();
+				let mut task = Box::new(Task::new(tid, TaskStatus::TaskReady, prio));
 
-		self.tasks.lock().as_mut().unwrap().insert(id, task);
-		(self.ready_queues.lock().as_mut().unwrap())[prio.into() as usize].push_back(id);
+				task.create_stack_frame(func);
+				self.tasks.lock().as_mut().unwrap().insert(tid, task);
+			},
+			Some(id) => {
+				debug!("resuse existing task control block");
 
-		info!("create task with id {}", id);
+				tid = id;
+				match self.tasks.lock().as_mut().unwrap().get_mut(&tid) {
+					Some(task) => {
+						// reset old task and setup stack frame
+						task.status = TaskStatus::TaskReady;
+						task.prio = prio;
+						task.last_stack_pointer = 0;
+						task.create_stack_frame(func);
+					},
+					None => panic!("didn't find task")
+				}
+			}
+		}
 
-		id
+		(self.ready_queues.lock().as_mut().unwrap())[prio.into() as usize].push_back(tid);
+
+		info!("create task with id {}", tid);
+
+		tid
 	}
 
 	pub fn exit(&mut self) {
@@ -202,7 +225,7 @@ impl Scheduler {
 		let old_task: TaskId = self.current_task;
 
 		// do we have finished tasks? => drop tasks => deallocate implicitly the stack
-		match self.finished_tasks.as_mut().unwrap().pop_front() {
+		/*match self.finished_tasks.lock().as_mut().unwrap().pop_front() {
 			None => {},
 			Some(id) => {
 				match self.tasks.lock().as_mut().unwrap().remove(&id) {
@@ -210,7 +233,7 @@ impl Scheduler {
 					None => info!("unable to drop task {}", id)
 				}
 			}
-		}
+		}*/
 
 		// do we have a task, which is ready?
 		match self.get_next_task() {
@@ -260,7 +283,7 @@ impl Scheduler {
 							// release the task later, because the stack is required
 							// to call the function "switch"
 							// => push id to a queue and release the task later
-							self.finished_tasks.as_mut().unwrap().push_back(old_task);
+							self.finished_tasks.lock().as_mut().unwrap().push_back(old_task);
 						}
 						old_stack_pointer = &task.last_stack_pointer;
 					},
