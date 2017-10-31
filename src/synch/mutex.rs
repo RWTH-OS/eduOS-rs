@@ -24,11 +24,10 @@
 use core::cell::UnsafeCell;
 use core::ops::{Drop, Deref, DerefMut};
 use core::marker::Sync;
-use core::sync::atomic::{AtomicBool, Ordering};
-use alloc::VecDeque;
-use scheduler::task::TaskId;
-use scheduler::{get_current_taskid,reschedule,block_current_task, wakeup_task};
+use scheduler::task::*;
+use scheduler::{get_current_taskid,reschedule,block_current_task,get_priority,wakeup_task};
 use synch::spinlock::*;
+use consts::*;
 
 /// A mutual exclusion primitive useful for protecting shared data
 ///
@@ -62,10 +61,8 @@ use synch::spinlock::*;
 pub struct Mutex<T: ?Sized> {
 	/// in principle a binary semaphore
 	value: SpinlockIrqSave<bool>,
-	/// Queue of waiting tasks
-	queue: SpinlockIrqSave<Option<VecDeque<TaskId>>>,
-	/// boolean to check if the Mutex is completly initialited
-	init: AtomicBool,
+	/// Priority queue of waiting tasks
+	queues: SpinlockIrqSave<[TaskQueue; NO_PRIORITIES]>,
 	/// protected data
 	data: UnsafeCell<T>
 }
@@ -75,7 +72,7 @@ pub struct Mutex<T: ?Sized> {
 /// When the guard falls out of scope it will release the lock.
 pub struct MutexGuard<'a, T: ?Sized + 'a> {
 	value: &'a SpinlockIrqSave<bool>,
-	queue: &'a SpinlockIrqSave<Option<VecDeque<TaskId>>>,
+	queues: &'a SpinlockIrqSave<[TaskQueue; NO_PRIORITIES]>,
 	data: &'a mut T,
 }
 
@@ -92,8 +89,7 @@ impl<T> Mutex<T> {
 	pub const fn new(user_data: T) -> Mutex<T> {
 		Mutex {
 			value: SpinlockIrqSave::new(true),
-			queue: SpinlockIrqSave::new(None),
-			init: AtomicBool::new(false),
+			queues: SpinlockIrqSave::new([TaskQueue::new(); NO_PRIORITIES]),
 			data: UnsafeCell::new(user_data)
 		}
 	}
@@ -109,18 +105,7 @@ impl<T> Mutex<T> {
 
 impl<T: ?Sized> Mutex<T>
 {
-	#[inline(always)]
-	fn check_mutex(&self)
-	{
-		// do we have to initilize the queue?
-		if self.init.swap(true, Ordering::SeqCst) == false {
-			*self.queue.lock() = Some(VecDeque::new());
-		}
-	}
-
 	fn obtain_lock(&self) {
-		self.check_mutex();
-
 		loop {
 			let mut count = self.value.lock();
 
@@ -128,8 +113,9 @@ impl<T: ?Sized> Mutex<T>
 				*count = false;
 				return;
 			} else {
-				self.queue.lock().as_mut().unwrap().push_back(get_current_taskid());
-				block_current_task();
+				let tid = get_current_taskid();
+				let prio = get_priority(tid);
+				self.queues.lock()[prio.into() as usize].push_back(&mut block_current_task());
 				// release lock
 				drop(count);
 				// switch to the next task
@@ -144,7 +130,7 @@ impl<T: ?Sized> Mutex<T>
 		MutexGuard
 		{
 			value: &self.value,
-			queue: &self.queue,
+			queues: &self.queues,
 			data: unsafe { &mut *self.data.get() },
 		}
 	}
@@ -175,10 +161,17 @@ impl<'a, T: ?Sized> Drop for MutexGuard<'a, T>
 		let mut count = self.value.lock();
 		*count = true;
 
+		let mut guard = self.queues.lock();
+
 		// try to wakeup next task
-		match self.queue.lock().as_mut().unwrap().pop_front() {
-			Some(id) => wakeup_task(id),
-			None => {}
+		for i in 0..NO_PRIORITIES {
+			match guard[i].pop_front() {
+				Some(task) => {
+					wakeup_task(task);
+					return;
+				},
+				None => {}
+			}
 		}
 	}
 }

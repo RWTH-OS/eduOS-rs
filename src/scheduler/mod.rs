@@ -26,6 +26,8 @@
 
 //! Interface to the scheduler
 
+use core::ptr::Shared;
+
 /// task control block
 pub mod task;
 mod scheduler;
@@ -55,16 +57,16 @@ pub fn reschedule() {
 
 /// Set current task status to TaskBlocked
 #[inline(always)]
-pub fn block_current_task() {
+pub fn block_current_task() -> Shared<task::Task> {
 	unsafe {
 		SCHEDULER.block_current_task()
 	}
 }
 
 #[inline(always)]
-pub fn wakeup_task(id: task::TaskId) {
+pub fn wakeup_task(task: Shared<task::Task>) {
 	unsafe {
-		SCHEDULER.wakeup_task(id)
+		SCHEDULER.wakeup_task(task)
 	}
 }
 
@@ -81,5 +83,13 @@ pub fn do_exit() {
 pub fn get_current_taskid() -> task::TaskId {
 	unsafe {
 		SCHEDULER.get_current_taskid()
+	}
+}
+
+/// Get prioritiy of task with Identifier tid
+#[inline(always)]
+pub fn get_priority(id: task::TaskId) -> task::Priority {
+	unsafe {
+		SCHEDULER.get_priority(id)
 	}
 }
