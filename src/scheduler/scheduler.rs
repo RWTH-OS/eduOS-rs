@@ -43,9 +43,9 @@ extern {
 
 pub struct Scheduler {
 	/// task id which is currently running
-	current_id: TaskId,
+	current_tid: TaskId,
 	/// id of the idle task
-	idle_id: TaskId,
+	idle_tid: TaskId,
 	/// queues of tasks, which are ready
 	ready_queues: [TaskQueue; NO_PRIORITIES],
 	/// queue of tasks, which are finished and can be released
@@ -57,8 +57,8 @@ pub struct Scheduler {
 impl Scheduler {
 	pub const fn new() -> Scheduler {
 		Scheduler {
-			current_id: TaskId::from(0),
-			idle_id: TaskId::from(0),
+			current_tid: TaskId::from(0),
+			idle_tid: TaskId::from(0),
 			ready_queues: [TaskQueue::new(); NO_PRIORITIES],
 			finished_tasks: None,
 			tasks: None
@@ -81,16 +81,16 @@ impl Scheduler {
 		// initialize vector of queues
 		self.finished_tasks = Some(VecDeque::new());
 		self.tasks = Some(BTreeMap::new());
-		self.idle_id = self.get_tid();
-		self.current_id = self.idle_id;
+		self.idle_tid = self.get_tid();
+		self.current_tid = self.idle_tid;
 
 		// boot task is implicitly task 0 and and the idle task of core 0
-		let idle_task = Box::new(Task::new(self.idle_id, TaskStatus::TaskIdle, LOW_PRIO));
+		let idle_task = Box::new(Task::new(self.idle_tid, TaskStatus::TaskIdle, LOW_PRIO));
 
 		// replace temporary boot stack by the kernel stack of the boot task
 		replace_boot_stack((*idle_task.stack).bottom());
 
-		self.tasks.as_mut().unwrap().insert(self.idle_id,
+		self.tasks.as_mut().unwrap().insert(self.idle_tid,
 			Shared::new_unchecked(Box::into_raw(idle_task)));
 	}
 
@@ -110,16 +110,16 @@ impl Scheduler {
 	}
 
 	pub unsafe fn exit(&mut self) {
-		match self.tasks.as_mut().unwrap().get_mut(&self.current_id) {
+		match self.tasks.as_mut().unwrap().get_mut(&self.current_tid) {
 			Some(task) => {
 				if task.as_ref().status != TaskStatus::TaskIdle {
-					info!("finish task with id {}", self.current_id);
+					info!("finish task with id {}", self.current_tid);
 					task.as_mut().status = TaskStatus::TaskFinished;
 				} else {
 					panic!("unable to terminate idle task")
 				}
 			},
-			None => info!("unable to find task with id {}", self.current_id)
+			None => info!("unable to find task with id {}", self.current_tid)
 		}
 
 		self.reschedule();
@@ -127,7 +127,7 @@ impl Scheduler {
 
 	#[inline(always)]
 	pub fn get_current_taskid(&self) -> TaskId {
-		self.current_id
+		self.current_tid
 	}
 
 	#[inline(always)]
@@ -136,7 +136,7 @@ impl Scheduler {
 
 		// if the current task is runable, check only if a task with
 		// higher priority is available
-		match self.tasks.as_ref().unwrap().get(&self.current_id) {
+		match self.tasks.as_ref().unwrap().get(&self.current_tid) {
 			Some(task) => {
 				if task.as_ref().status == TaskStatus::TaskRunning {
 					prio = task.as_ref().prio.into() as usize + 1;
@@ -156,7 +156,7 @@ impl Scheduler {
 	}
 
 	pub unsafe fn schedule(&mut self) {
-		let old_id: TaskId = self.current_id;
+		let old_id: TaskId = self.current_tid;
 		let mut new_stack_pointer: u64 = 0;
 
 		// do we have finished tasks? => drop tasks => deallocate implicitly the stack
@@ -173,12 +173,12 @@ impl Scheduler {
 		// do we have a task, which is ready?
 		match self.get_next_task() {
 			None => {
-				match self.tasks.as_mut().unwrap().get(&self.current_id) {
+				match self.tasks.as_mut().unwrap().get(&self.current_tid) {
 					Some(task) => {
 						if task.as_ref().status != TaskStatus::TaskRunning {
 							// current task isn't able to run, no other task available
 							// => switch to the idle task
-							self.current_id = self.idle_id;
+							self.current_tid = self.idle_tid;
 						}
 					},
 					None => {}
@@ -187,16 +187,16 @@ impl Scheduler {
 			Some(mut task_shared) => {
 				let mut task = task_shared.as_mut();
 
-				self.current_id = task.id;
+				self.current_tid = task.id;
 				task.status = TaskStatus::TaskRunning;
 				new_stack_pointer = task.last_stack_pointer
 			}
 		}
 
 		// do we have to switch to a new task?
-		if old_id != self.current_id {
-			if self.current_id == self.idle_id {
-				match self.tasks.as_mut().unwrap().get_mut(&self.idle_id) {
+		if old_id != self.current_tid {
+			if self.current_tid == self.idle_tid {
+				match self.tasks.as_mut().unwrap().get_mut(&self.idle_tid) {
 					Some(idle) => {
 						new_stack_pointer = idle.as_mut().last_stack_pointer;
 					},
@@ -217,7 +217,7 @@ impl Scheduler {
 						self.finished_tasks.as_mut().unwrap().push_back(old_id);
 					}
 
-					debug!("switch task from {} to {}", old_id, self.current_id);
+					debug!("switch task from {} to {}", old_id, self.current_tid);
 
 					switch(&mut task.as_mut().last_stack_pointer, new_stack_pointer);
 				},
