@@ -41,4 +41,3 @@ debug = false
 rpath = false
 lto = true
 debug-assertions = false
-codegen-units = 1
