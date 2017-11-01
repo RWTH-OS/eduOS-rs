@@ -45,9 +45,9 @@ extern {
 
 pub struct Scheduler {
 	/// task id which is currently running
-	current_task: Option<Shared<Task>>,
+	current_task: Shared<Task>,
 	/// id of the idle task
-	idle_task: Option<Shared<Task>>,
+	idle_task: Shared<Task>,
 	/// queues of tasks, which are ready
 	ready_queues: SpinlockIrqSave<[TaskQueue; NO_PRIORITIES]>,
 	/// queue of tasks, which are finished and can be released
@@ -59,8 +59,10 @@ pub struct Scheduler {
 impl Scheduler {
 	pub const fn new() -> Scheduler {
 		Scheduler {
-			current_task: None,
-			idle_task: None,
+			// I know that this is unsafe. But I know also that I initialize
+			// the Scheduler (with add_idle_task correctly) before the system schedules task.
+			current_task: unsafe { Shared::new_unchecked(0 as *mut Task) },
+			idle_task: unsafe { Shared::new_unchecked(0 as *mut Task) },
 			ready_queues: SpinlockIrqSave::new([TaskQueue::new(); NO_PRIORITIES]),
 			finished_tasks: SpinlockIrqSave::new(None),
 			tasks: SpinlockIrqSave::new(None)
@@ -90,7 +92,7 @@ impl Scheduler {
 		let bottom = (*idle_box.stack).bottom();
 		let idle_shared = Shared::new_unchecked(Box::into_raw(idle_box));
 
-		self.idle_task = Some(idle_shared);
+		self.idle_task = idle_shared;
 		self.current_task = self.idle_task;
 
 		// replace temporary boot stack by the kernel stack of the boot task
@@ -141,11 +143,9 @@ impl Scheduler {
 	}
 
 	pub unsafe fn exit(&mut self) {
-		let mut task = self.current_task.unwrap();
-
-		if task.as_ref().status != TaskStatus::TaskIdle {
-			info!("finish task with id {}", task.as_ref().id);
-			task.as_mut().status = TaskStatus::TaskFinished;
+		if self.current_task.as_ref().status != TaskStatus::TaskIdle {
+			info!("finish task with id {}", self.current_task.as_ref().id);
+			self.current_task.as_mut().status = TaskStatus::TaskFinished;
 		} else {
 			panic!("unable to terminate idle task");
 		}
@@ -154,15 +154,13 @@ impl Scheduler {
 	}
 
 	pub unsafe fn block_current_task(&mut self) -> Shared<Task> {
-		let mut task = self.current_task.unwrap();
+		if self.current_task.as_ref().status == TaskStatus::TaskRunning {
+			debug!("block task {}", self.current_task.as_ref().id);
 
-		if task.as_ref().status == TaskStatus::TaskRunning {
-			debug!("block task {}", task.as_mut().id);
-
-			task.as_mut().status = TaskStatus::TaskBlocked;
-			return task;
+			self.current_task.as_mut().status = TaskStatus::TaskBlocked;
+			return self.current_task;
 		} else {
-			panic!("unable to block task {}", task.as_ref().id);
+			panic!("unable to block task {}", self.current_task.as_ref().id);
 		}
 	}
 
@@ -173,13 +171,14 @@ impl Scheduler {
 			debug!("wakeup task {}", task.as_ref().id);
 
 			task.as_mut().status = TaskStatus::TaskReady;
-			self.ready_queues.lock()[prio.into() as usize].push_back(&mut Shared::new_unchecked(task.as_mut()));
+			self.ready_queues.lock()[prio.into() as usize]
+				.push_back(&mut Shared::new_unchecked(task.as_mut()));
 		}
 	}
 
 	#[inline(always)]
 	pub unsafe fn get_current_taskid(&self) -> TaskId {
-		self.current_task.unwrap().as_ref().id
+		self.current_task.as_ref().id
 	}
 
 	pub fn get_priority(&self, tid: TaskId) -> Priority {
@@ -199,10 +198,10 @@ impl Scheduler {
 
 		// if the current task is runable, check only if a task with
 		// higher priority is available
-		if self.current_task.unwrap().as_ref().status == TaskStatus::TaskRunning {
-			prio = self.current_task.unwrap().as_ref().prio.into() as usize + 1;
+		if self.current_task.as_ref().status == TaskStatus::TaskRunning {
+			prio = self.current_task.as_ref().prio.into() as usize + 1;
 		}
-		status = self.current_task.unwrap().as_ref().status;
+		status = self.current_task.as_ref().status;
 
 		let mut guard = self.ready_queues.lock();
 
@@ -219,14 +218,14 @@ impl Scheduler {
 		if status != TaskStatus::TaskRunning {
 			// current task isn't able to run and no other task available
 			// => switch to the idle task
-			return self.idle_task;
+			return Some(self.idle_task);
 		}
 
 		None
 	}
 
 	pub unsafe fn schedule(&mut self) {
-		let old_id: TaskId = self.current_task.unwrap().as_ref().id;
+		let old_id: TaskId = self.current_task.as_ref().id;
 		let mut next_id: TaskId = old_id;
 		let mut next_stack_pointer: u64 = 0;
 
@@ -242,19 +241,20 @@ impl Scheduler {
 
 		// do we have to switch to a new task?
 		if old_id != next_id {
-			if self.current_task.unwrap().as_ref().status == TaskStatus::TaskRunning {
-				self.current_task.unwrap().as_mut().status = TaskStatus::TaskReady;
-				self.ready_queues.lock()[self.current_task.unwrap().as_ref().prio.into() as usize].push_back(&mut Shared::new_unchecked(self.current_task.unwrap().as_mut()));
-			} else if self.current_task.unwrap().as_ref().status == TaskStatus::TaskFinished {
-				self.current_task.unwrap().as_mut().status = TaskStatus::TaskInvalid;
+			if self.current_task.as_ref().status == TaskStatus::TaskRunning {
+				self.current_task.as_mut().status = TaskStatus::TaskReady;
+				self.ready_queues.lock()[self.current_task.as_ref().prio.into() as usize]
+					.push_back(&mut Shared::new_unchecked(self.current_task.as_mut()));
+			} else if self.current_task.as_ref().status == TaskStatus::TaskFinished {
+				self.current_task.as_mut().status = TaskStatus::TaskInvalid;
 				// release the task later, because the stack is required
 				// to call the function "switch"
 				// => push id to a queue and release the task later
 				self.finished_tasks.lock().as_mut().unwrap().push_back(old_id);
 			}
-			let old_stack_pointer = &self.current_task.unwrap().as_ref().last_stack_pointer as *const u64;
+			let old_stack_pointer = &self.current_task.as_ref().last_stack_pointer as *const u64;
 
-			self.current_task = next_task;
+			self.current_task = next_task.unwrap();
 
 			debug!("switch task from {} to {}", old_id, next_id);
 
