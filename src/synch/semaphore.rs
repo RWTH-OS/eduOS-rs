@@ -21,11 +21,11 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-use alloc::VecDeque;
-use core::sync::atomic::{AtomicBool, Ordering};
-use scheduler::task::TaskId;
-use scheduler::{get_current_taskid,reschedule,block_current_task, wakeup_task};
+use core::marker::Sync;
+use scheduler::task::*;
+use scheduler::{get_current_taskid,get_priority,reschedule,block_current_task,wakeup_task};
 use synch::spinlock::*;
+use consts::*;
 
 /// A counting, blocking, semaphore.
 ///
@@ -58,10 +58,8 @@ use synch::spinlock::*;
 pub struct Semaphore {
 	/// Resource available count
 	value: SpinlockIrqSave<isize>,
-	/// Queue of waiting tasks
-	queue: SpinlockIrqSave<Option<VecDeque<TaskId>>>,
-	/// boolean to check if the Mutex is completly initialited
-	init: AtomicBool
+	/// Priority queue of waiting tasks
+	queues: SpinlockIrqSave<[TaskQueue; NO_PRIORITIES]>,
 }
 
 /// An RAII guard which will release a resource acquired from a semaphore when
@@ -79,17 +77,7 @@ impl Semaphore {
 	pub const fn new(count: isize) -> Semaphore {
 		Semaphore {
 			value: SpinlockIrqSave::new(count),
-			queue: SpinlockIrqSave::new(None),
-			init: AtomicBool::new(false)
-		}
-	}
-
-	#[inline(always)]
-	fn check_sem(&self)
-	{
-		// do we have to initilize the queue?
-		if self.init.swap(true, Ordering::SeqCst) == false {
-			*self.queue.lock() = Some(VecDeque::new());
+			queues: SpinlockIrqSave::new([TaskQueue::new(); NO_PRIORITIES])
 		}
 	}
 
@@ -99,8 +87,6 @@ impl Semaphore {
 	/// This method will block until the internal count of the semaphore is at
 	/// least 1.
 	pub fn acquire(&self) {
-		self.check_sem();
-
 		loop {
 			let mut count = self.value.lock();
 
@@ -108,8 +94,9 @@ impl Semaphore {
 				*count -= 1;
 				return;
 			} else {
-				self.queue.lock().as_mut().unwrap().push_back(get_current_taskid());
-				block_current_task();
+				let tid = get_current_taskid();
+				let prio = get_priority(tid);
+				self.queues.lock()[prio.into() as usize].push_back(&mut block_current_task());
 				// release lock
 				drop(count);
 				// switch to the next task
@@ -127,9 +114,16 @@ impl Semaphore {
 		*count += 1;
 
 		// try to wakeup next task
-		match self.queue.lock().as_mut().unwrap().pop_front() {
-			Some(id) => wakeup_task(id),
-			None => {}
+		let mut guard = self.queues.lock();
+
+		for i in 0..NO_PRIORITIES {
+			match guard[i].pop_front() {
+				Some(task) => {
+					wakeup_task(task);
+					return;
+				},
+				None => {}
+			}
 		}
 	}
 
@@ -152,3 +146,7 @@ impl<'a> Drop for SemaphoreGuard<'a>
 		self.sem.release();
 	}
 }
+
+// Same unsafe impls as `std::sync::Mutex`
+unsafe impl Sync for Semaphore {}
+unsafe impl Send for Semaphore {}

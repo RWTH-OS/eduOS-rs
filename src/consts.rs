@@ -37,7 +37,7 @@ pub const CACHE_LINE : usize = 64;
 pub const PAGE_SIZE : usize = 4096;
 
 /// Maximum number of priorities
-pub const NO_PRIORITIES: u8 = 32;
+pub const NO_PRIORITIES: usize = 32;
 
 /// frequency of the timer interrupt
 pub const TIMER_FREQ: u32 = 100; /* in HZ */

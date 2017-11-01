@@ -22,12 +22,13 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 use core::sync::atomic::{AtomicUsize, Ordering};
+use core::ptr::Shared;
 use scheduler::task::*;
 use arch::irq::{irq_nested_enable,irq_nested_disable};
 use logging::*;
 use consts::*;
 use synch::spinlock::*;
-use alloc::{Vec,VecDeque};
+use alloc::VecDeque;
 use alloc::boxed::Box;
 use alloc::btree_map::*;
 
@@ -42,26 +43,25 @@ extern {
 	pub fn replace_boot_stack(stack_bottom: usize);
 }
 
-#[derive(Debug)]
 pub struct Scheduler {
 	/// task id which is currently running
-	current_task: TaskId,
+	current_tid: TaskId,
 	/// id of the idle task
-	idle_task: TaskId,
+	idle_tid: TaskId,
 	/// queues of tasks, which are ready
-	ready_queues: SpinlockIrqSave<Option<Vec<VecDeque<TaskId>>>>,
+	ready_queues: SpinlockIrqSave<[TaskQueue; NO_PRIORITIES]>,
 	/// queue of tasks, which are finished and can be released
 	finished_tasks: SpinlockIrqSave<Option<VecDeque<TaskId>>>,
 	/// map between task id and task controll block
-	tasks: SpinlockIrqSave<Option<BTreeMap<TaskId, Box<Task>>>>
+	tasks: SpinlockIrqSave<Option<BTreeMap<TaskId, Shared<Task>>>>
 }
 
 impl Scheduler {
 	pub const fn new() -> Scheduler {
 		Scheduler {
-			current_task: TaskId::from(0),
-			idle_task: TaskId::from(0),
-			ready_queues: SpinlockIrqSave::new(None),
+			current_tid: TaskId::from(0),
+			idle_tid: TaskId::from(0),
+			ready_queues: SpinlockIrqSave::new([TaskQueue::new(); NO_PRIORITIES]),
 			finished_tasks: SpinlockIrqSave::new(None),
 			tasks: SpinlockIrqSave::new(None)
 		}
@@ -77,33 +77,26 @@ impl Scheduler {
 		}
 	}
 
-	pub fn add_idle_task(&mut self) {
+	pub unsafe fn add_idle_task(&mut self) {
 		// idle task is the first task for the scheduler => initialize queues and btree
 
 		// initialize vector of queues
-		let mut veq_queue = Vec::with_capacity(NO_PRIORITIES as usize);
-		for _i in 0..NO_PRIORITIES {
-			veq_queue.push(VecDeque::new());
-		}
-
-		*self.ready_queues.lock() = Some(veq_queue);
 		*self.finished_tasks.lock() = Some(VecDeque::new());
 		*self.tasks.lock() = Some(BTreeMap::new());
-		self.idle_task = self.get_tid();
-		self.current_task = self.idle_task;
+		self.idle_tid = self.get_tid();
+		self.current_tid = self.idle_tid;
 
 		// boot task is implicitly task 0 and and the idle task of core 0
-		let idle_task = Box::new(Task::new(self.idle_task, TaskStatus::TaskIdle, LOW_PRIO));
+		let idle_task = Box::new(Task::new(self.idle_tid, TaskStatus::TaskIdle, LOW_PRIO));
 
-		unsafe {
-			// replace temporary boot stack by the kernel stack of the boot task
-			replace_boot_stack((*idle_task.stack).bottom());
-		}
+		// replace temporary boot stack by the kernel stack of the boot task
+		replace_boot_stack((*idle_task.stack).bottom());
 
-		self.tasks.lock().as_mut().unwrap().insert(idle_task.id, idle_task);
+		self.tasks.lock().as_mut().unwrap().insert(self.idle_tid,
+			Shared::new_unchecked(Box::into_raw(idle_task)));
 	}
 
-	pub fn spawn(&mut self, func: extern fn(), prio: Priority) -> TaskId {
+	pub unsafe fn spawn(&mut self, func: extern fn(), prio: Priority) -> TaskId {
 		let tid: TaskId;
 
 		// do we have finished a task? => reuse it
@@ -114,7 +107,10 @@ impl Scheduler {
 				let mut task = Box::new(Task::new(tid, TaskStatus::TaskReady, prio));
 
 				task.create_stack_frame(func);
-				self.tasks.lock().as_mut().unwrap().insert(tid, task);
+
+				let shared_task = &mut Shared::new_unchecked(Box::into_raw(task));
+				self.ready_queues.lock()[prio.into() as usize].push_back(shared_task);
+				self.tasks.lock().as_mut().unwrap().insert(tid, *shared_task);
 			},
 			Some(id) => {
 				debug!("resuse existing task control block");
@@ -123,96 +119,103 @@ impl Scheduler {
 				match self.tasks.lock().as_mut().unwrap().get_mut(&tid) {
 					Some(task) => {
 						// reset old task and setup stack frame
-						task.status = TaskStatus::TaskReady;
-						task.prio = prio;
-						task.last_stack_pointer = 0;
-						task.create_stack_frame(func);
+						task.as_mut().status = TaskStatus::TaskReady;
+						task.as_mut().prio = prio;
+						task.as_mut().last_stack_pointer = 0;
+
+						task.as_mut().create_stack_frame(func);
+
+						self.ready_queues.lock()[prio.into() as usize].push_back(task);
 					},
 					None => panic!("didn't find task")
 				}
 			}
 		}
 
-		(self.ready_queues.lock().as_mut().unwrap())[prio.into() as usize].push_back(tid);
-
 		info!("create task with id {}", tid);
 
 		tid
 	}
 
-	pub fn exit(&mut self) {
-		match self.tasks.lock().as_mut().unwrap().get_mut(&self.current_task) {
+	pub unsafe fn exit(&mut self) {
+		match self.tasks.lock().as_mut().unwrap().get_mut(&self.current_tid) {
 			Some(task) => {
-				if task.status != TaskStatus::TaskIdle {
-					info!("finish task with id {}", self.current_task);
-					task.status = TaskStatus::TaskFinished;
+				if task.as_ref().status != TaskStatus::TaskIdle {
+					info!("finish task with id {}", self.current_tid);
+					task.as_mut().status = TaskStatus::TaskFinished;
 				} else {
 					panic!("unable to terminate idle task")
 				}
 			},
-			None => info!("unable to find task with id {}", self.current_task)
+			None => info!("unable to find task with id {}", self.current_tid)
 		}
 
 		self.reschedule();
 	}
 
-	pub fn block_current_task(&mut self) {
-		let id = self.current_task;
+	pub unsafe fn block_current_task(&mut self) -> Shared<Task> {
+		let id = self.current_tid;
 
 		match self.tasks.lock().as_mut().unwrap().get_mut(&id) {
 			Some(task) => {
-				if task.status == TaskStatus::TaskRunning {
+				if task.as_ref().status == TaskStatus::TaskRunning {
 					debug!("block task {}", id);
 
-					task.status = TaskStatus::TaskBlocked;
+					task.as_mut().status = TaskStatus::TaskBlocked;
+					return *task;
 				} else {
-					info!("unable to block task {}", id);
+					panic!("unable to block task {}", id);
 				}
 			},
-			None => { info!("unable to block task {}", id); }
+			None => { panic!("unable to block task {}", id); }
 		}
 	}
 
-	pub fn wakeup_task(&mut self, id: TaskId) {
-		match self.tasks.lock().as_mut().unwrap().get_mut(&id) {
-			Some(task) => {
-				if task.status == TaskStatus::TaskBlocked {
-					let prio = task.prio;
+	pub unsafe fn wakeup_task(&mut self, mut task: Shared<Task>) {
+		if task.as_ref().status == TaskStatus::TaskBlocked {
+			let prio = task.as_ref().prio;
 
-					debug!("wakeup task {}", id);
+			debug!("wakeup task {}", task.as_ref().id);
 
-					task.status = TaskStatus::TaskReady;
-					(self.ready_queues.lock().as_mut().unwrap())[prio.into() as usize].push_back(id);
-				} else {
-					info!("unable to wakeup task {}", id);
-				}
-			},
-			None => { info!("unable to wakeup task {}", id); }
+			task.as_mut().status = TaskStatus::TaskReady;
+			self.ready_queues.lock()[prio.into() as usize].push_back(&mut Shared::new_unchecked(task.as_mut()));
 		}
 	}
 
 	#[inline(always)]
 	pub fn get_current_taskid(&self) -> TaskId {
-		self.current_task
+		self.current_tid
 	}
 
-	#[inline(always)]
-	fn get_next_task(&mut self) -> Option<TaskId> {
+	pub fn get_priority(&self, tid: TaskId) -> Priority {
+		let mut prio: Priority = NORMAL_PRIO;
+
+		match self.tasks.lock().as_ref().unwrap().get(&tid) {
+			Some(task) => prio = unsafe { task.as_ref().prio },
+			None => { info!("didn't find current task"); }
+		}
+
+		prio
+	}
+
+	unsafe fn get_next_task(&mut self) -> Option<Shared<Task>> {
 		let mut prio = NO_PRIORITIES as usize;
 
 		// if the current task is runable, check only if a task with
 		// higher priority is available
-		match self.tasks.lock().as_mut().unwrap().get(&self.current_task) {
+		match self.tasks.lock().as_ref().unwrap().get(&self.current_tid) {
 			Some(task) => {
-				if task.status == TaskStatus::TaskRunning {
-					prio = task.prio.into() as usize + 1;
+				if task.as_ref().status == TaskStatus::TaskRunning {
+					prio = task.as_ref().prio.into() as usize + 1;
 				}
 			},
 			None => {}
 		}
 
+		let mut guard = self.ready_queues.lock();
+
 		for i in 0..prio {
-			match (self.ready_queues.lock().as_mut().unwrap())[i].pop_front() {
+			match guard[i].pop_front() {
 				Some(task) => return Some(task),
 				None => {}
 			}
@@ -221,87 +224,90 @@ impl Scheduler {
 		None
 	}
 
-	pub fn schedule(&mut self) {
-		let old_task: TaskId = self.current_task;
+	pub unsafe fn schedule(&mut self) {
+		let old_id: TaskId = self.current_tid;
+		let mut new_stack_pointer: u64 = 0;
 
 		// do we have a task, which is ready?
 		match self.get_next_task() {
-			Some(id) => self.current_task = id,
 			None => {
-				match self.tasks.lock().as_mut().unwrap().get(&self.current_task) {
+				match self.tasks.lock().as_mut().unwrap().get(&self.current_tid) {
 					Some(task) => {
-						if task.status != TaskStatus::TaskRunning {
+						if task.as_ref().status != TaskStatus::TaskRunning {
 							// current task isn't able to run, no other task available
 							// => switch to the idle task
-							self.current_task = self.idle_task;
+							self.current_tid = self.idle_tid;
 						}
 					},
 					None => {}
 				}
+			},
+			Some(mut task_shared) => {
+				let mut task = task_shared.as_mut();
+
+				self.current_tid = task.id;
+				task.status = TaskStatus::TaskRunning;
+				new_stack_pointer = task.last_stack_pointer
 			}
 		}
 
 		// do we have to switch to a new task?
-		if old_task != self.current_task {
-			let new_stack_pointer: u64;
+		if old_id != self.current_tid {
 			let old_stack_pointer: *const u64;
 
 			{
 				// destroy guard before context switch
 				let mut guard = self.tasks.lock();
 
-				// determine the last stack pointer of the new task
-				match guard.as_mut().unwrap().get_mut(&self.current_task) {
-					Some(task) => {
-						if task.status != TaskStatus::TaskIdle {
-							task.status = TaskStatus::TaskRunning;
-						};
-						new_stack_pointer = task.last_stack_pointer
-					},
-					None => panic!("didn't find current task {}", self.current_task)
+				if self.current_tid == self.idle_tid {
+					match guard.as_mut().unwrap().get_mut(&self.idle_tid) {
+						Some(idle) => {
+							new_stack_pointer = idle.as_mut().last_stack_pointer;
+						},
+						None => panic!("unable to find idle task")
+					}
 				}
 
-				// set the new task state of the old task
-				match guard.as_mut().unwrap().get_mut(&old_task) {
+				match guard.as_mut().unwrap().get_mut(&old_id) {
 					Some(task) => {
-						if task.status == TaskStatus::TaskRunning {
-							task.status = TaskStatus::TaskReady;
-							(self.ready_queues.lock().as_mut().unwrap())[task.prio.into() as usize].push_back(old_task);
-						} else if task.status == TaskStatus::TaskFinished {
-							task.status = TaskStatus::TaskInvalid;
+						if task.as_ref().status == TaskStatus::TaskRunning {
+							task.as_mut().status = TaskStatus::TaskReady;
+							self.ready_queues.lock()[task.as_ref().prio.into() as usize].push_back(&mut Shared::new_unchecked(task.as_mut()));
+						} else if task.as_ref().status == TaskStatus::TaskFinished {
+							task.as_mut().status = TaskStatus::TaskInvalid;
 							// release the task later, because the stack is required
 							// to call the function "switch"
 							// => push id to a queue and release the task later
-							self.finished_tasks.lock().as_mut().unwrap().push_back(old_task);
+							self.finished_tasks.lock().as_mut().unwrap().push_back(old_id);
 						}
-						old_stack_pointer = &task.last_stack_pointer;
+						old_stack_pointer = &task.as_ref().last_stack_pointer;
 					},
 					None => panic!("didn't find old task")
 				}
 			}
 
-			debug!("switch task from {} to {}", old_task, self.current_task);
+			debug!("switch task from {} to {}", old_id, self.current_tid);
 
-			unsafe { switch(old_stack_pointer, new_stack_pointer); }
+			switch(old_stack_pointer, new_stack_pointer);
 		}
 	}
 
-	fn cleanup_tasks(&mut self)
+	unsafe fn cleanup_tasks(&mut self)
 	{
 		// do we have finished tasks? => drop first tasks => deallocate implicitly the stack
 		match self.finished_tasks.lock().as_mut().unwrap().pop_front() {
 			Some(id) => {
 				match self.tasks.lock().as_mut().unwrap().remove(&id) {
-					Some(task) => drop(task),
+					Some(task) => drop(Box::from_raw(task.as_ptr())),
 					None => info!("unable to drop task {}", id)
 				}
 			},
 			None => {}
-		}
+	 	}
 	}
 
 	#[inline(always)]
-	pub fn reschedule(&mut self) {
+	pub unsafe fn reschedule(&mut self) {
 		// someone want to give up the CPU
 		// => we have time to cleanup the system
 		self.cleanup_tasks();

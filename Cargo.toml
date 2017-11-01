@@ -13,7 +13,7 @@ alloc_kernel = { path = "crates/alloc_kernel" }
 
 [dependencies.rlibc]
 path = "crates/rlibc"	# Low-level functions like memcpy.
-features = ["nightly"]
+#features = ["nightly"]
 
 #[dependencies.lazy_static]
 #version = "0.2"

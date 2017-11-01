@@ -22,7 +22,7 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 use logging::*;
-use scheduler::{get_current_taskid,schedule};
+use scheduler::*;
 use arch::x86_64::task::State;
 use x86::bits64::irq::IdtEntry;
 use x86::shared::dtables::{DescriptorTablePointer,lidt};
@@ -87,8 +87,8 @@ pub fn init() {
 		irq_remap();
 
 		for i in 0..IDT_ENTRY_COUNT {
-			IDT.table[i] = IdtEntry::new(VAddr::from_usize(interrupt_handlers[i] as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, false);
+				IDT.table[i] = IdtEntry::new(VAddr::from_usize(interrupt_handlers[i] as usize),
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, true);
 		}
 
 		// load address of the IDT
@@ -111,11 +111,20 @@ pub fn irq_disable() {
 
 /// Determines, if the interrupt flags (IF) is set
 #[inline(always)]
-pub fn is_irq_enabled() -> bool
-{
+pub fn get_rflags() -> u64{
 	let rflags: u64;
 
 	unsafe { asm!("pushf; pop $0": "=r"(rflags) :: "memory" : "volatile") };
+
+	rflags
+}
+
+/// Determines, if the interrupt flags (IF) is set
+#[inline(always)]
+pub fn is_irq_enabled() -> bool
+{
+	let rflags: u64 = get_rflags();
+
 	if (rflags & (1u64 << 9)) !=  0 {
 		return true;
 	}
@@ -151,7 +160,8 @@ pub fn irq_nested_enable(was_enabled: bool) {
 pub extern "C" fn irq_handler(state: *const State) {
 	let int_no = unsafe { (*state).int_no };
 
-	debug!("Task {} receive interrupt {}!", get_current_taskid(), int_no);
+	//debug!("Task {} receive interrupt {} (rflags 0x{:x})!", get_current_taskid(), int_no,
+	//	get_rflags());
 
 	/*
 	* If the IDT entry that was invoked was greater-than-or-equal to 40
