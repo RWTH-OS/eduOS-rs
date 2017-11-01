@@ -109,7 +109,7 @@ pub fn irq_disable() {
 	unsafe { asm!("cli" ::: "memory" : "volatile") };
 }
 
-/// Determines, if the interrupt flags (IF) is set
+/// Determines the value of the status register
 #[inline(always)]
 pub fn get_rflags() -> u64{
 	let rflags: u64;
@@ -119,7 +119,7 @@ pub fn get_rflags() -> u64{
 	rflags
 }
 
-/// Determines, if the interrupt flags (IF) is set
+/// Determines, if the interrupt flag (IF) is set
 #[inline(always)]
 pub fn is_irq_enabled() -> bool
 {
@@ -156,6 +156,21 @@ pub fn irq_nested_enable(was_enabled: bool) {
 	}
 }
 
+/// Default IRQ handler
+///
+/// Each of the IRQ ISRs point to this function, rather than
+/// the 'fault_handler' in 'isrs.c'. The IRQ Controllers need
+/// to be told when you are done servicing them, so you need
+/// to send them an "End of Interrupt" command. If we use the PIC
+/// instead of the APIC, we have two 8259 chips: The first one
+/// exists at 0x20, the second one exists at 0xA0. If the second
+/// controller (an IRQ from 8 to 15) gets an interrupt, you need to
+/// acknowledge the interrupt at BOTH controllers, otherwise, you
+/// only send an EOI command to the first controller. If you don't send
+/// an EOI, it won't raise any more IRQs.
+///
+/// Note: If we enabled the APIC, we also disabled the PIC. Afterwards,
+/// we get no interrupts between 0 and 15.
 #[no_mangle]
 pub extern "C" fn irq_handler(state: *const State) {
 	let int_no = unsafe { (*state).int_no };

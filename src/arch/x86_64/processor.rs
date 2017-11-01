@@ -55,6 +55,7 @@ pub fn wmb() {
 	}
 }
 
+/// Search the first most significant bit
 #[inline(always)]
 pub fn msb(i: u64) -> u64 {
 	let ret: u64;
@@ -68,6 +69,7 @@ pub fn msb(i: u64) -> u64 {
 	ret
 }
 
+/// Search the least significant bit
 #[inline(always)]
 pub fn lsb(i: u64) -> u64 {
 	let ret: u64;
@@ -81,6 +83,7 @@ pub fn lsb(i: u64) -> u64 {
 	ret
 }
 
+/// The halt function stops the processor until the next interrupt arrives
 pub fn halt() {
 	loop {
 		unsafe {
@@ -89,6 +92,7 @@ pub fn halt() {
 	}
 }
 
+/// The pause function provides a hint to the processor that the code sequence is a spin-wait loop.
 #[inline(always)]
 pub fn pause() {
 	unsafe {
@@ -96,6 +100,7 @@ pub fn pause() {
 	}
 }
 
+/// Shutdown the system, if the kernel is booted within Qemu
 pub fn shutdown() {
 	// shutdown, works only on Qemu
 	unsafe {
@@ -106,6 +111,7 @@ pub fn shutdown() {
 	halt();
 }
 
+/// Initialize processor dependent features
 pub fn init() {
 	info!("enable supported processor features");
 

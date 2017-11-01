@@ -56,6 +56,7 @@ pub struct Scheduler {
 }
 
 impl Scheduler {
+	/// Create a new scheduler
 	pub const fn new() -> Scheduler {
 		Scheduler {
 			// I know that this is unsafe. But I know also that I initialize
@@ -78,6 +79,7 @@ impl Scheduler {
 		}
 	}
 
+	/// add the current task as idle task the scheduler
 	pub unsafe fn add_idle_task(&mut self) {
 		// idle task is the first task for the scheduler => initialize queues and btree
 
@@ -100,6 +102,7 @@ impl Scheduler {
 		self.tasks.lock().as_mut().unwrap().insert(tid, idle_shared);
 	}
 
+	/// Spawn a new task
 	pub unsafe fn spawn(&mut self, func: extern fn(), prio: Priority) -> TaskId {
 		let tid: TaskId;
 
@@ -141,6 +144,7 @@ impl Scheduler {
 		tid
 	}
 
+	/// Terminate the current task
 	pub unsafe fn exit(&mut self) {
 		if self.current_task.as_ref().status != TaskStatus::TaskIdle {
 			info!("finish task with id {}", self.current_task.as_ref().id);
@@ -152,6 +156,7 @@ impl Scheduler {
 		self.reschedule();
 	}
 
+	/// Block the current task
 	pub unsafe fn block_current_task(&mut self) -> Shared<Task> {
 		if self.current_task.as_ref().status == TaskStatus::TaskRunning {
 			debug!("block task {}", self.current_task.as_ref().id);
@@ -163,6 +168,7 @@ impl Scheduler {
 		}
 	}
 
+	/// Wakeup a blocked task
 	pub unsafe fn wakeup_task(&mut self, mut task: Shared<Task>) {
 		if task.as_ref().status == TaskStatus::TaskBlocked {
 			let prio = task.as_ref().prio;
@@ -174,16 +180,19 @@ impl Scheduler {
 		}
 	}
 
+	/// Determines the id of the current task
 	#[inline(always)]
 	pub fn get_current_taskid(&self) -> TaskId {
 		unsafe { self.current_task.as_ref().id }
 	}
 
+	/// Determines the priority of the current task
 	#[inline(always)]
 	pub fn get_current_priority(&self) -> Priority {
 		unsafe { self.current_task.as_ref().prio }
 	}
 
+	/// Determines the priority of the task with the 'tid'
 	pub fn get_priority(&self, tid: TaskId) -> Priority {
 		let mut prio: Priority = NORMAL_PRIO;
 
@@ -254,6 +263,7 @@ impl Scheduler {
 		}
 	}
 
+	/// Check if a finisched task could be deleted.
 	unsafe fn cleanup_tasks(&mut self)
 	{
 		// do we have finished tasks? => drop first tasks => deallocate implicitly the stack
@@ -268,6 +278,7 @@ impl Scheduler {
 	 	}
 	}
 
+	/// Triggers the scheduler to reschedule the tasks
 	#[inline(always)]
 	pub unsafe fn reschedule(&mut self) {
 		// someone want to give up the CPU
