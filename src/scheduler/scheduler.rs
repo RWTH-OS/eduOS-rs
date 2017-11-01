@@ -215,7 +215,7 @@ impl Scheduler {
 			}
 		}
 
-		if status != TaskStatus::TaskRunning {
+		if status != TaskStatus::TaskRunning && status != TaskStatus::TaskIdle {
 			// current task isn't able to run and no other task available
 			// => switch to the idle task
 			return Some(self.idle_task);
@@ -225,40 +225,33 @@ impl Scheduler {
 	}
 
 	pub unsafe fn schedule(&mut self) {
-		let old_id: TaskId = self.current_task.as_ref().id;
-		let mut next_id: TaskId = old_id;
-		let mut next_stack_pointer: u64 = 0;
-
 		// do we have a task, which is ready?
-		let next_task = self.get_next_task();
-		match next_task {
-			Some(mut task) => {
-				next_id = task.as_mut().id;
-				next_stack_pointer = task.as_ref().last_stack_pointer
+		match self.get_next_task() {
+			Some(next_task) => {
+				let old_id: TaskId = self.current_task.as_ref().id;
+
+				if self.current_task.as_ref().status == TaskStatus::TaskRunning {
+					self.current_task.as_mut().status = TaskStatus::TaskReady;
+					self.ready_queues.lock()[self.current_task.as_ref().prio.into() as usize]
+						.push_back(&mut self.current_task);
+				} else if self.current_task.as_ref().status == TaskStatus::TaskFinished {
+					self.current_task.as_mut().status = TaskStatus::TaskInvalid;
+					// release the task later, because the stack is required
+					// to call the function "switch"
+					// => push id to a queue and release the task later
+					self.finished_tasks.lock().as_mut().unwrap().push_back(old_id);
+				}
+
+				let next_stack_pointer = next_task.as_ref().last_stack_pointer;
+				let old_stack_pointer = &self.current_task.as_ref().last_stack_pointer as *const u64;
+
+				self.current_task = next_task;
+
+				debug!("switch task from {} to {}", old_id, next_task.as_ref().id);
+
+				switch(old_stack_pointer, next_stack_pointer);
 			},
 			None => {}
-		}
-
-		// do we have to switch to a new task?
-		if old_id != next_id {
-			if self.current_task.as_ref().status == TaskStatus::TaskRunning {
-				self.current_task.as_mut().status = TaskStatus::TaskReady;
-				self.ready_queues.lock()[self.current_task.as_ref().prio.into() as usize]
-					.push_back(&mut Shared::new_unchecked(self.current_task.as_mut()));
-			} else if self.current_task.as_ref().status == TaskStatus::TaskFinished {
-				self.current_task.as_mut().status = TaskStatus::TaskInvalid;
-				// release the task later, because the stack is required
-				// to call the function "switch"
-				// => push id to a queue and release the task later
-				self.finished_tasks.lock().as_mut().unwrap().push_back(old_id);
-			}
-			let old_stack_pointer = &self.current_task.as_ref().last_stack_pointer as *const u64;
-
-			self.current_task = next_task.unwrap();
-
-			debug!("switch task from {} to {}", old_id, next_id);
-
-			switch(old_stack_pointer, next_stack_pointer);
 		}
 	}
 
