@@ -177,8 +177,13 @@ impl Scheduler {
 	}
 
 	#[inline(always)]
-	pub unsafe fn get_current_taskid(&self) -> TaskId {
-		self.current_task.as_ref().id
+	pub fn get_current_taskid(&self) -> TaskId {
+		unsafe { self.current_task.as_ref().id }
+	}
+
+	#[inline(always)]
+	pub fn get_current_priority(&self) -> Priority {
+		unsafe { self.current_task.as_ref().prio }
 	}
 
 	pub fn get_priority(&self, tid: TaskId) -> Priority {
@@ -218,10 +223,10 @@ impl Scheduler {
 		if status != TaskStatus::TaskRunning && status != TaskStatus::TaskIdle {
 			// current task isn't able to run and no other task available
 			// => switch to the idle task
-			return Some(self.idle_task);
+			Some(self.idle_task)
+		} else {
+			None
 		}
-
-		None
 	}
 
 	pub unsafe fn schedule(&mut self) {

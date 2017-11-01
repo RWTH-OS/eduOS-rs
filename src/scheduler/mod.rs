@@ -94,6 +94,13 @@ pub fn get_current_taskid() -> task::TaskId {
 	}
 }
 
+#[inline(always)]
+pub fn get_current_priority() -> task::Priority {
+	unsafe {
+		SCHEDULER.get_current_priority()
+	}
+}
+
 /// Get prioritiy of task with Identifier tid
 #[inline(always)]
 pub fn get_priority(id: task::TaskId) -> task::Priority {

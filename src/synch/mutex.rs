@@ -25,7 +25,7 @@ use core::cell::UnsafeCell;
 use core::ops::{Drop, Deref, DerefMut};
 use core::marker::Sync;
 use scheduler::task::*;
-use scheduler::{get_current_taskid,reschedule,block_current_task,get_priority,wakeup_task};
+use scheduler::{reschedule,block_current_task,get_current_priority,wakeup_task};
 use synch::spinlock::*;
 use consts::*;
 
@@ -113,8 +113,7 @@ impl<T: ?Sized> Mutex<T>
 				*count = false;
 				return;
 			} else {
-				let tid = get_current_taskid();
-				let prio = get_priority(tid);
+				let prio = get_current_priority();
 				self.queues.lock()[prio.into() as usize].push_back(&mut block_current_task());
 				// release lock
 				drop(count);
