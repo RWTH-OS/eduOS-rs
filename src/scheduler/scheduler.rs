@@ -200,25 +200,36 @@ impl Scheduler {
 
 	unsafe fn get_next_task(&mut self) -> Option<Shared<Task>> {
 		let mut prio = NO_PRIORITIES as usize;
+		let mut tasks_guard = self.tasks.lock();
+		let status: TaskStatus;
 
-		// if the current task is runable, check only if a task with
-		// higher priority is available
-		match self.tasks.lock().as_ref().unwrap().get(&self.current_tid) {
-			Some(task) => {
-				if task.as_ref().status == TaskStatus::TaskRunning {
-					prio = task.as_ref().prio.into() as usize + 1;
-				}
-			},
-			None => {}
+		{
+			let current_task = tasks_guard.as_ref().unwrap().get(&self.current_tid).unwrap();
+
+			// if the current task is runable, check only if a task with
+			// higher priority is available
+			if current_task.as_ref().status == TaskStatus::TaskRunning {
+				prio = current_task.as_ref().prio.into() as usize + 1;
+			}
+			status = current_task.as_ref().status;
 		}
 
 		let mut guard = self.ready_queues.lock();
 
 		for i in 0..prio {
 			match guard[i].pop_front() {
-				Some(task) => return Some(task),
+				Some(mut task) => {
+					task.as_mut().status = TaskStatus::TaskRunning;
+					return Some(task)
+				},
 				None => {}
 			}
+		}
+
+		if status != TaskStatus::TaskRunning {
+			// current task isn't able to run and no other task available
+			// => switch to the idle task
+			return Some(*tasks_guard.as_mut().unwrap().get(&self.idle_tid).unwrap());
 		}
 
 		None
@@ -230,25 +241,13 @@ impl Scheduler {
 
 		// do we have a task, which is ready?
 		match self.get_next_task() {
-			None => {
-				match self.tasks.lock().as_mut().unwrap().get(&self.current_tid) {
-					Some(task) => {
-						if task.as_ref().status != TaskStatus::TaskRunning {
-							// current task isn't able to run, no other task available
-							// => switch to the idle task
-							self.current_tid = self.idle_tid;
-						}
-					},
-					None => {}
-				}
-			},
 			Some(mut task_shared) => {
 				let mut task = task_shared.as_mut();
 
 				self.current_tid = task.id;
-				task.status = TaskStatus::TaskRunning;
 				new_stack_pointer = task.last_stack_pointer
-			}
+			},
+			None => {}
 		}
 
 		// do we have to switch to a new task?
@@ -258,32 +257,19 @@ impl Scheduler {
 			{
 				// destroy guard before context switch
 				let mut guard = self.tasks.lock();
+				let task = guard.as_mut().unwrap().get_mut(&old_id).unwrap();
 
-				if self.current_tid == self.idle_tid {
-					match guard.as_mut().unwrap().get_mut(&self.idle_tid) {
-						Some(idle) => {
-							new_stack_pointer = idle.as_mut().last_stack_pointer;
-						},
-						None => panic!("unable to find idle task")
-					}
+				if task.as_ref().status == TaskStatus::TaskRunning {
+					task.as_mut().status = TaskStatus::TaskReady;
+					self.ready_queues.lock()[task.as_ref().prio.into() as usize].push_back(&mut Shared::new_unchecked(task.as_mut()));
+				} else if task.as_ref().status == TaskStatus::TaskFinished {
+					task.as_mut().status = TaskStatus::TaskInvalid;
+					// release the task later, because the stack is required
+					// to call the function "switch"
+					// => push id to a queue and release the task later
+					self.finished_tasks.lock().as_mut().unwrap().push_back(old_id);
 				}
-
-				match guard.as_mut().unwrap().get_mut(&old_id) {
-					Some(task) => {
-						if task.as_ref().status == TaskStatus::TaskRunning {
-							task.as_mut().status = TaskStatus::TaskReady;
-							self.ready_queues.lock()[task.as_ref().prio.into() as usize].push_back(&mut Shared::new_unchecked(task.as_mut()));
-						} else if task.as_ref().status == TaskStatus::TaskFinished {
-							task.as_mut().status = TaskStatus::TaskInvalid;
-							// release the task later, because the stack is required
-							// to call the function "switch"
-							// => push id to a queue and release the task later
-							self.finished_tasks.lock().as_mut().unwrap().push_back(old_id);
-						}
-						old_stack_pointer = &task.as_ref().last_stack_pointer;
-					},
-					None => panic!("didn't find old task")
-				}
+				old_stack_pointer = &task.as_ref().last_stack_pointer;
 			}
 
 			debug!("switch task from {} to {}", old_id, self.current_tid);
