@@ -20,8 +20,8 @@ It is derived from following tutorials and software distributions.
 ## Building
 
 Compiling eduOS-rs is tested under Linux and macOS.
-For macOS, it is required that Apple's *Command Line Tools* and the package manager [Homebrew](https://brew.sh) are installed.
-After installing *Homebrew*, install the required tools *wget*, *nasm* and *qemu* with following command.
+For macOS, it is required that Apple's *Command Line Tools* and the package manager like [Homebrew](https://brew.sh) or [MacPorts](https://www.macports.org) are installed.
+*Homebrew* users have to install the required tools *wget*, *nasm* and *qemu* with following command.
 
 ```sh
 $ brew install wget qemu nasm
@@ -38,6 +38,12 @@ $ cd build/
 $  ../binutils-2.29/configure --prefix=/opt/local/ --target=x86_64-elf --disable-multilib --disable-nls --disable-werror
 $ make
 $ sudo make install
+```
+
+*MacPorts* users havt to install the required tools with following command:
+
+```sh
+$ sudo port install qemu nasm x86_64-elf-binutils
 ```
 
 At this point, the build process is identical between Linux and macOS.
