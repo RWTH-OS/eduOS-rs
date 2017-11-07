@@ -43,6 +43,12 @@ use core::mem;
 use logging::*;
 
 extern {
+	/// Begin of the kernel.  Declared in `boot.asm` so that we can
+	/// easily specify alignment constraints.  We declare this as a single
+	/// variable of type `u8`, because that's how we get it to link, but we
+	/// only want to take the address of it.
+	static mut kernel_start: u8;
+
 	/// End of the kernel.  Declared in `boot.asm` so that we can
 	/// easily specify alignment constraints.  We declare this as a single
 	/// variable of type `u8`, because that's how we get it to link, but we
@@ -62,9 +68,13 @@ fn paddr_to_slice<'a>(p: PAddr, sz: usize) -> Option<&'a [u8]> {
 
 fn initialize_memory() {
 	unsafe {
+		let kernel_end_ptr = &mut kernel_end as *mut _;
+		let kernel_start_ptr = &mut kernel_start as *mut _;
+		let kernel_end_u64 = (kernel_end_ptr as u64 + (PAGE_SIZE - 1)) & !(PAGE_SIZE - 1);
+		let kernel_start_u64 = (kernel_start_ptr as u64 + (PAGE_SIZE - 1)) & !(PAGE_SIZE - 1);
+		let mut init_heap: bool = false;
+		let mut total: u64 = 0;
 		let mb = Multiboot::new(MBINFO as PAddr, paddr_to_slice);
-		let kernel_ptr = &mut kernel_end as *mut _;
-		let kernel_u64 = (kernel_ptr as u64 + (PAGE_SIZE - 1)) & !(PAGE_SIZE - 1);
 
 		mb.as_ref().unwrap().memory_regions().map(|regions| {
 			for region in regions {
@@ -72,21 +82,26 @@ fn initialize_memory() {
 					let mut base = region.base_address();
 					let mut len = region.length();
 
-					if base < kernel_u64 && base + len > kernel_u64 {
-						len = len - (kernel_u64 - base);
-						base = kernel_u64;
+					total += len;
+
+					if base < kernel_end_u64 && base + len > kernel_end_u64 {
+						len = len - (kernel_end_u64 - base);
+						base = kernel_end_u64;
 					}
 
 					// use only memory, which is located above the kernel
-					if base >= kernel_u64 {
-						info!("Initialize heap starting at 0x{:x} with a size of {} MBytes",
+					if init_heap == false && base >= kernel_end_u64 {
+						info!("Heap starts at 0x{:x} with a size of {} MBytes",
 							base, len / (1024*1024));
+						init_heap = true;
 						allocator::init(base as usize, len as usize);
-						break;
 					}
 				}
 			}
 		});
+
+		info!("Current allocated memory: {} KiB", (kernel_end_u64 - kernel_start_u64) / 1024);
+		info!("Current available memory: {} MiB", total / (1024*1024));
 	}
 }
 
