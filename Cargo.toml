@@ -9,6 +9,7 @@ crate-type = ["staticlib"]
 [dependencies]
 raw-cpuid = "3.0.0"
 cpuio = "0.2.0"
+multiboot = { path = "crates/multiboot" }
 alloc_kernel = { path = "crates/alloc_kernel" }
 
 [dependencies.rlibc]

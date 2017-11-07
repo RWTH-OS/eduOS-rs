@@ -41,6 +41,7 @@ extern crate rlibc;
 extern crate x86;
 extern crate alloc;
 extern crate alloc_kernel as allocator;
+extern crate multiboot;
 
 // These need to be visible to the linker, so we need to export them.
 pub use runtime_glue::*;

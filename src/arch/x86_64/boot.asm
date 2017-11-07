@@ -32,6 +32,7 @@ global start
 global gdt64_code_offset
 global HEAP_BOTTOM
 global HEAP_TOP
+global MBINFO
 
 extern long_mode_start
 
@@ -43,6 +44,7 @@ section .text
 bits 32
 start:
         mov esp, stack_top-16              ; Use our temporary stack.
+        mov DWORD [MBINFO], ebx            ; store the pointer to the multiboot info
 
         ;; Sanity-check our system.
         call test_multiboot
@@ -215,11 +217,6 @@ stack_bottom:
         resb KERNEL_STACK_SIZE
 stack_top:
 
-align 4096
-HEAP_BOTTOM:
-        resb 8*1024*1024
-HEAP_TOP:
-
 
 ;;; Global Description Table.  Used to set segmentation to the restricted
 ;;; values needed for 64-bit mode.
@@ -237,3 +234,5 @@ gdt64:
 ;;; Export selectors so Rust can access them.
 gdt64_code_offset:
     dw gdt64.code
+
+MBINFO DD 0

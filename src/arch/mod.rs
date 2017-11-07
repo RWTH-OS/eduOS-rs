@@ -33,34 +33,67 @@ pub use self::x86_64::{serial,processor,irq,timer};
 #[cfg(target_arch="x86_64")]
 pub mod x86_64;
 
+#[cfg(target_arch="x86_64")]
+const PAGE_SIZE: u64 = 4096;
+
 use allocator;
+use multiboot::{Multiboot, MemoryType, PAddr};
+use core::slice;
+use core::mem;
+use logging::*;
 
 extern {
-    /// The bottom of our heap.  Declared in `boot.asm` so that we can
-    /// easily specify alignment constraints.  We declare this as a single
-    /// variable of type `u8`, because that's how we get it to link, but we
-    /// only want to take the address of it.
-    static mut HEAP_BOTTOM: u8;
+	/// End of the kernel.  Declared in `boot.asm` so that we can
+	/// easily specify alignment constraints.  We declare this as a single
+	/// variable of type `u8`, because that's how we get it to link, but we
+	/// only want to take the address of it.
+	static mut kernel_end: u8;
 
-    /// The top of our heap.  This is actually "one beyond" the heap space,
-    /// so storing things here would be Very Bad.  Even just declaring this
-    /// probably invokes undefined behavior, but our fingers are crossed.
-    static mut HEAP_TOP: u8;
+	/// Pointer to the multiboot info, declared in `boot.asm`.
+	static MBINFO: u32;
+}
+
+fn paddr_to_slice<'a>(p: PAddr, sz: usize) -> Option<&'a [u8]> {
+	unsafe {
+		let ptr = mem::transmute(p);
+		Some(slice::from_raw_parts(ptr, sz))
+	}
+}
+
+fn initialize_memory() {
+	unsafe {
+		let mb = Multiboot::new(MBINFO as PAddr, paddr_to_slice);
+		let kernel_ptr = &mut kernel_end as *mut _;
+		let kernel_u64 = (kernel_ptr as u64 + (PAGE_SIZE - 1)) & !(PAGE_SIZE - 1);
+
+		mb.as_ref().unwrap().memory_regions().map(|regions| {
+			for region in regions {
+				if region.memory_type() == MemoryType::Available {
+					let mut base = region.base_address();
+					let mut len = region.length();
+
+					if base < kernel_u64 && base + len > kernel_u64 {
+						len = len - (kernel_u64 - base);
+						base = kernel_u64;
+					}
+
+					// use only memory, which is located above the kernel
+					if base >= kernel_u64 {
+						info!("Initialize heap starting at 0x{:x} with a size of {} MBytes",
+							base, len / (1024*1024));
+						allocator::init(base as usize, len as usize);
+						break;
+					}
+				}
+			}
+		});
+	}
 }
 
 /// Initialize module, must be called once, and only once
 pub fn init() {
 	processor::init();
-
-	unsafe {
-		let heap_bottom_ptr = &mut HEAP_BOTTOM as *mut _;
-		let heap_top_ptr = &mut HEAP_TOP as *mut _;
-		let heap_size = heap_top_ptr as usize - heap_bottom_ptr as usize;
-
-		// setup kernel heap
-		allocator::init(heap_bottom_ptr as usize, heap_size);
-	}
-
+	initialize_memory();
 	irq::init();
 	timer::init();
 }
