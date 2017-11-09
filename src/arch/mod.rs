@@ -26,14 +26,14 @@
 //! Architecture dependent interface
 
 // Export our platform-specific modules.
-#[cfg(target_arch="x86_64")]
-pub use self::x86_64::{serial,processor,irq,timer};
+#[cfg(any(target_arch="x86", target_arch="x86_64"))]
+pub use self::x86::{serial,processor,irq,timer};
 
 // Implementations for x86_64.
-#[cfg(target_arch="x86_64")]
-pub mod x86_64;
+#[cfg(any(target_arch="x86", target_arch="x86_64"))]
+pub mod x86;
 
-#[cfg(target_arch="x86_64")]
+#[cfg(any(target_arch="x86", target_arch="x86_64"))]
 const PAGE_SIZE: u64 = 4096;
 
 use allocator;
@@ -59,9 +59,18 @@ extern {
 	static MBINFO: u32;
 }
 
+#[cfg(target_arch="x86")]
 fn paddr_to_slice<'a>(p: PAddr, sz: usize) -> Option<&'a [u8]> {
 	unsafe {
-		let ptr = mem::transmute(p);
+		let ptr = mem::transmute(p as u32);
+		Some(slice::from_raw_parts(ptr, sz))
+	}
+}
+
+#[cfg(target_arch="x86_64")]
+fn paddr_to_slice<'a>(p: PAddr, sz: usize) -> Option<&'a [u8]> {
+	unsafe {
+		let ptr = mem::transmute(p as u64);
 		Some(slice::from_raw_parts(ptr, sz))
 	}
 }

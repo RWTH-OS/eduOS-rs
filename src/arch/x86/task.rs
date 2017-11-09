@@ -30,6 +30,7 @@ use consts::*;
 use rlibc::*;
 use logging::*;
 
+#[cfg(target_arch="x86_64")]
 #[derive(Debug)]
 #[repr(C, packed)]
 pub struct State {
@@ -73,7 +74,7 @@ pub struct State {
 	/// error code of the exception
 	pub error: u64,
 	/// instruction pointer
-	pub rip: u64,
+	pub ip: u64,
 	/// code selector
 	pub cs: u64,
 	/// status flags
@@ -82,6 +83,43 @@ pub struct State {
 	pub userrsp: u64,
 	/// stack selector
 	pub ss: u64
+}
+
+#[cfg(target_arch="x86")]
+#[derive(Debug)]
+#[repr(C, packed)]
+pub struct State {
+	/// ds register
+	pub ds: u32,
+	/// es register
+	pub es: u32,
+	/// EDI register
+	pub edi: u32,
+	/// ESI register
+	pub esi: u32,
+	/// EBP register
+	pub ebp: u32,
+	/// ESP register
+	pub esp: u32,
+	/// EBX register
+	pub ebx: u32,
+	/// EDX register
+	pub edx: u32,
+	/// ECX register
+	pub ecx: u32,
+	/// EAX register
+	pub eax: u32,		/* pushed by 'pusha' */
+
+	/// Interrupt number
+	pub int_no: u32,
+
+	// pushed by the processor automatically
+	pub error: u32,
+	pub ip: u32,
+	pub cs: u32,
+	pub eflags: u32,
+	pub useresp: u32,
+	pub ss: u32,
 }
 
 extern "C" fn leave_task() {
@@ -93,6 +131,7 @@ extern "C" fn leave_task() {
 }
 
 impl TaskFrame for Task {
+	#[cfg(target_arch="x86_64")]
     fn create_stack_frame(&mut self, func: extern fn())
 	{
 		unsafe {
@@ -121,14 +160,55 @@ impl TaskFrame for Task {
 			(*state).int_no = 0xB16B00B5u64;
 			(*state).error =  0xC03DB4B3u64;
 
-			(*state).rip = (func as *const()) as u64;;
+			(*state).ip = (func as *const()) as u64;;
 			(*state).cs = 0x08;
 			(*state).ss = 0x10;
 			(*state).rflags = 0x1202u64;
 			(*state).userrsp = (*state).rsp;
 
 			/* Set the task's stack pointer entry to the stack we have crafted right now. */
-			self.last_stack_pointer = stack as u64;
+			self.last_stack_pointer = stack as usize;
+		}
+	}
+
+	#[cfg(target_arch="x86")]
+    fn create_stack_frame(&mut self, func: extern fn())
+	{
+		unsafe {
+			let mut stack: *mut u32 = ((*self.stack).top() - 16) as *mut u32;
+
+			memset((*self.stack).bottom() as *mut u8, 0xCD, KERNEL_STACK_SIZE);
+
+			/* Only marker for debugging purposes, ... */
+			*stack = 0xDEADBEEFu32;
+			stack = (stack as usize - size_of::<u32>()) as *mut u32;
+
+			/* the first-function-to-be-called's arguments, ... */
+			//TODO: add arguments
+
+			/* and the "caller" we shall return to.
+	 		 * This procedure cleans the task after exit. */
+			*stack = (leave_task as *const()) as u32;
+			let state_size = size_of::<State>() - 2*size_of::<u32>();
+			stack = (stack as usize - state_size) as *mut u32;
+
+			let state: *mut State = stack as *mut State;
+			memset(state as *mut u8, 0x00, state_size);
+
+			(*state).esp = (stack as usize + state_size) as u32;
+			(*state).ebp = (*state).esp + size_of::<u32>() as u32;
+
+			(*state).int_no = 0xB16B00B5u32;
+			(*state).error =  0xC03DB4B3u32;
+
+			(*state).ip = (func as *const()) as u32;
+			(*state).cs = 0x08;
+			(*state).ds = 0x10;
+			(*state).es = 0x10;
+			(*state).eflags = 0x1202u32;
+
+			/* Set the task's stack pointer entry to the stack we have crafted right now. */
+			self.last_stack_pointer = stack as usize;
 		}
 	}
 }

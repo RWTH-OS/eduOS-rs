@@ -21,68 +21,32 @@
 ; OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 ; WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+;;; Based on http://blog.phil-opp.com/rust-os/entering-longmode.html
+;;; and http://blog.phil-opp.com/rust-os/setup-rust.html
+;;;
+;;; Once we've run all our 32-bit setup code, we jump here and enter 64-bit
+;;; mode.
+
+%include 'common.inc'
+
+%ifidn __OUTPUT_FORMAT__, elf64
+
+global long_mode_start
+
+extern rust_main
+
 section .text
 bits 64
+long_mode_start:
+        ; clear DF flag => default value by entering a function
+        ; => see ABI
+        cld
 
-align 64
-rollback:
-	ret
+        call rust_main
 
-global switch
-ALIGN 8
-switch:
-	; rdi => the address to store the old rsp
-	; rsi => stack pointer of the new task
+        ; halt system
+l1:
+        hlt
+        jmp l1
 
-	; create on the stack a pseudo interrupt
-	; afterwards, we switch to the task with iret
-	push QWORD 0x10				; SS
-	push rsp					; RSP
-	add QWORD [rsp], 0x08		; => value of rsp before the creation of a pseudo interrupt
-	pushfq						; RFLAGS
-	push QWORD 0x08				; CS
-	push QWORD rollback			; RIP
-	push QWORD 0x00edbabe		; Error code
-	push QWORD 0x00				; Interrupt number
-
-	; save context
-	push rax
-	push rcx
-	push rdx
-	push rbx
-	push QWORD [rsp+9*8]
-	push rbp
-	push rsi
-	push rdi
-	push r8
-	push r9
-	push r10
-	push r11
-	push r12
-	push r13
-	push r14
-	push r15
-
-	mov QWORD [rdi], rsp				; store old rsp
-	mov rsp, rsi
-
-	; restore context
-	pop r15
-	pop r14
-	pop r13
-	pop r12
-	pop r11
-	pop r10
-	pop r9
-	pop r8
-	pop rdi
-	pop rsi
-	pop rbp
-	add rsp, 8
-	pop rbx
-	pop rdx
-	pop rcx
-	pop rax
-
-	add rsp, 16
-	iretq
+%endif

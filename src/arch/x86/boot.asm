@@ -49,6 +49,8 @@ start:
         ;; Sanity-check our system.
         call test_multiboot
         call test_cpuid
+%ifidn __OUTPUT_FORMAT__, elf64
+		; in 64bit mode, we have to enble paging before jumping in 64bit mode
         call test_long_mode
 
         ;; Turn on paging.
@@ -67,6 +69,20 @@ start:
         ;; To set up our code segment, we need to make a jump, and
         ;; when the jump finishes, we'll be in 64-bit mode.
         jmp gdt64.code:long_mode_start
+%elifidn __OUTPUT_FORMAT__, elf32
+		; in 32bit mode, we are able to jump directly to rust
+
+		; clear DF flag => default value by entering a function
+		; => see ABI
+		cld
+
+		mov ax, 0x10
+	    mov es, ax
+	    mov ds, ax
+		
+		extern rust_main
+		call rust_main
+%endif
 
 ;;; Boot-time error handler.  Prints `ERR: ` and a code.
 ;;;
@@ -177,6 +193,7 @@ enable_paging:
         mov cr0, eax
         ret
 
+%ifidn __OUTPUT_FORMAT__, elf64
 bits 64
 global replace_boot_stack
 replace_boot_stack:
@@ -195,6 +212,27 @@ replace_boot_stack:
 		rep movsb
 
 		ret
+%elifidn __OUTPUT_FORMAT__, elf32
+bits 32
+global replace_boot_stack
+replace_boot_stack:
+	; copy 1st argument to edi
+	mov edi, DWORD [esp+4]
+	; set esp to the new stack
+	sub esp, stack_bottom
+	add esp, edi
+	; recalculate rbp
+	sub ebp, stack_bottom
+	add ebp, edi
+
+	; copy boot stack to the new one
+	cld
+	mov ecx, KERNEL_STACK_SIZE
+	mov esi, stack_bottom
+	rep movsb
+
+	ret
+%endif
 
 section .bss
 
@@ -217,10 +255,10 @@ stack_bottom:
         resb KERNEL_STACK_SIZE
 stack_top:
 
-
+section .rodata
+%ifidn __OUTPUT_FORMAT__, elf64
 ;;; Global Description Table.  Used to set segmentation to the restricted
 ;;; values needed for 64-bit mode.
-section .rodata
 gdt64:
     dq 0                                                ; Mandatory 0.
 .code: equ $ - gdt64
@@ -234,5 +272,6 @@ gdt64:
 ;;; Export selectors so Rust can access them.
 gdt64_code_offset:
     dw gdt64.code
+%endif
 
 MBINFO DD 0

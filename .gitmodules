@@ -8,3 +8,6 @@
 [submodule "crates/multiboot"]
 	path = crates/multiboot
 	url = https://github.com/gz/rust-multiboot.git
+[submodule "crates/x86"]
+	path = crates/x86
+	url = git@github.com:RWTH-OS/rust-x86.git

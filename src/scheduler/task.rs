@@ -187,7 +187,7 @@ impl TaskQueue {
 /// Realize a priority queue for tasks
 pub struct PriorityTaskQueue {
 	queues: [TaskQueue; NO_PRIORITIES],
-	prio_bitmap: u64
+	prio_bitmap: u32
 }
 
 impl PriorityTaskQueue {
@@ -216,7 +216,7 @@ impl PriorityTaskQueue {
 	pub fn pop(&mut self) -> Option<Shared<Task>> {
 		let i = lsb(self.prio_bitmap);
 
-		if i < NO_PRIORITIES as u64 {
+		if i < NO_PRIORITIES as u32 {
 			let ret = self.queues[i as usize].pop_front();
 
 			if self.queues[i as usize].is_empty() == true {
@@ -233,7 +233,7 @@ impl PriorityTaskQueue {
 	pub fn pop_with_prio(&mut self, prio: Priority) -> Option<Shared<Task>> {
 		let i = lsb(self.prio_bitmap);
 
-		if i <= prio.into() as u64 {
+		if i <= prio.into() as u32 {
 			let ret = self.queues[i as usize].pop_front();
 
 			if self.queues[i as usize].is_empty() == true {
@@ -257,7 +257,7 @@ pub struct Task {
 	/// Task priority,
 	pub prio: Priority,
 	/// Last stack pointer before a context switch to another task
-	pub last_stack_pointer: u64,
+	pub last_stack_pointer: usize,
 	/// points to the next task within a task queue
 	next: Option<Shared<Task>>,
 	/// points to the previous task within a task queue

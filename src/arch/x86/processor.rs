@@ -57,8 +57,8 @@ pub fn wmb() {
 
 /// Search the first most significant bit
 #[inline(always)]
-pub fn msb(i: u64) -> u64 {
-	let ret: u64;
+pub fn msb(i: u32) -> u32 {
+	let ret: u32;
 
 	if i == 0 {
 		ret = !0;
@@ -71,8 +71,8 @@ pub fn msb(i: u64) -> u64 {
 
 /// Search the least significant bit
 #[inline(always)]
-pub fn lsb(i: u64) -> u64 {
-	let ret: u64;
+pub fn lsb(i: u32) -> u32 {
+	let ret: u32;
 
 	if i == 0 {
 		ret = !0;

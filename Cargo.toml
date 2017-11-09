@@ -21,7 +21,7 @@ features = ["nightly"]
 #features = ["spin_no_std"]
 
 [dependencies.x86]
-version = "0.8"
+path = "crates/x86"
 default-features = false # do not include the default features
 
 # The development profile, used for `cargo build`.

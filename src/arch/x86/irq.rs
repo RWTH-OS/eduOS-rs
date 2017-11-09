@@ -23,12 +23,15 @@
 
 use logging::*;
 use scheduler::*;
-use arch::x86_64::task::State;
-use x86::bits64::irq::IdtEntry;
+use cpuio::outb;
+use arch::x86::task::State;
 use x86::shared::dtables::{DescriptorTablePointer,lidt};
 use x86::shared::PrivilegeLevel;
 use x86::shared::paging::VAddr;
-use cpuio::outb;
+#[cfg(target_arch="x86_64")]
+use x86::bits64::irq::IdtEntry;
+#[cfg(target_arch="x86")]
+use x86::bits32::irq::IdtEntry;
 
 /// Maximum possible number of interrupts
 const IDT_ENTRY_COUNT: usize = 256;
@@ -111,21 +114,21 @@ pub fn irq_disable() {
 
 /// Determines the value of the status register
 #[inline(always)]
-pub fn get_rflags() -> u64{
-	let rflags: u64;
+pub fn get_eflags() -> usize{
+	let eflags: usize;
 
-	unsafe { asm!("pushf; pop $0": "=r"(rflags) :: "memory" : "volatile") };
+	unsafe { asm!("pushf; pop $0": "=r"(eflags) :: "memory" : "volatile") };
 
-	rflags
+	eflags
 }
 
 /// Determines, if the interrupt flag (IF) is set
 #[inline(always)]
 pub fn is_irq_enabled() -> bool
 {
-	let rflags: u64 = get_rflags();
+	let eflags: usize = get_eflags();
 
-	if (rflags & (1u64 << 9)) !=  0 {
+	if (eflags & (1usize << 9)) !=  0 {
 		return true;
 	}
 
@@ -175,8 +178,8 @@ pub fn irq_nested_enable(was_enabled: bool) {
 pub extern "C" fn irq_handler(state: *const State) {
 	let int_no = unsafe { (*state).int_no };
 
-	//debug!("Task {} receive interrupt {} (rflags 0x{:x})!", get_current_taskid(), int_no,
-	//	get_rflags());
+	debug!("Task {} receive interrupt {} (eflags 0x{:x})!", get_current_taskid(), int_no,
+		get_eflags());
 
 	/*
 	* If the IDT entry that was invoked was greater-than-or-equal to 40

@@ -34,7 +34,7 @@ use alloc::btree_map::*;
 static TID_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 extern {
-	pub fn switch(old_stack: *const u64, new_stack: u64);
+	pub fn switch(old_stack: *const usize, new_stack: usize);
 
 	/// The boot loader initialize a stack, which is later also required to
 	/// to boot other core. Consequently, the kernel has to replace with this
@@ -251,7 +251,7 @@ impl Scheduler {
 				}
 
 				let next_stack_pointer = next_task.as_ref().last_stack_pointer;
-				let old_stack_pointer = &self.current_task.as_ref().last_stack_pointer as *const u64;
+				let old_stack_pointer = &self.current_task.as_ref().last_stack_pointer as *const usize;
 
 				self.current_task = next_task;
 
