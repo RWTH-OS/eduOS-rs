@@ -6,7 +6,7 @@
     "target-c-int-width": "32",
     "os": "none",
     "arch": "x86",
-    "data-layout": "e-m:e-i32:32-f80:128-n8:16:32-S128-p:32:32:32",
+    "data-layout": "e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128",
     "pre-link-args": [ "-m32" ],
     "cpu": "i686",
     "features": "-mmx,-sse,-sse2,-sse3,-ssse3,-sse4.1,-sse4.2,-3dnow,-3dnowa,-avx,-avx2,+soft-float",
