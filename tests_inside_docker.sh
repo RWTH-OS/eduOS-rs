@@ -8,7 +8,7 @@ cd /rwth-os/eduOS-rs/
 if [ "$OS_NAME" = "centos" ]; then
 
 # Clean the yum cache
-echo "multilib_policy=all" >> /ety/yum.conf
+echo "multilib_policy=all" >> /etc/yum.conf
 yum -y clean all
 yum -y clean expire-cache
 
