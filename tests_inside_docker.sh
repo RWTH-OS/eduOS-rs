@@ -13,7 +13,7 @@ yum -y clean all
 yum -y clean expire-cache
 
 # First, install all the needed packages.
-yum install -y curl wget qemu-system-x86 nasm make autotools gcc gcc-c++
+yum install -y curl wget qemu-system-x86 nasm make autotools gcc gcc-c++ glibc-devel.i686
 
 elif [ "$OS_NAME" = "ubuntu" ]; then
 
