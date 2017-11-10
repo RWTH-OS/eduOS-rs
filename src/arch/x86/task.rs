@@ -155,7 +155,8 @@ impl TaskFrame for Task {
 			memset(state as *mut u8, 0x00, size_of::<State>());
 
 			(*state).rsp = (stack as usize + size_of::<State>()) as u64;
-			(*state).rbp = (*state).rsp + size_of::<u64>() as u64;
+			// we elimante frame pointers => no setting rbp required
+			//(*state).rbp = (*state).rsp + size_of::<u64>() as u64;
 
 			(*state).int_no = 0xB16B00B5u64;
 			(*state).error =  0xC03DB4B3u64;
@@ -196,7 +197,8 @@ impl TaskFrame for Task {
 			memset(state as *mut u8, 0x00, state_size);
 
 			(*state).esp = (stack as usize + state_size) as u32;
-			(*state).ebp = (*state).esp + size_of::<u32>() as u32;
+			// we elimante frame pointers => no setting ebp required
+			//(*state).ebp = (*state).esp + size_of::<u32>() as u32;
 
 			(*state).int_no = 0xB16B00B5u32;
 			(*state).error =  0xC03DB4B3u32;

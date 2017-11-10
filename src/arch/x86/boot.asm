@@ -79,7 +79,7 @@ start:
 		mov ax, 0x10
 	    mov es, ax
 	    mov ds, ax
-		
+
 		extern rust_main
 		call rust_main
 %endif
@@ -201,9 +201,10 @@ replace_boot_stack:
 		; set rsp to the new stack
 		sub rsp, stack_bottom
 		add rsp, rdi
-		; recalculate rbp
-		sub rbp, stack_bottom
-		add rbp, rdi
+
+		; we elimante frame pointers => no recalculation of rbp required
+		;sub rbp, stack_bottom
+		;add rbp, rdi
 
 		; copy boot stack to the new one
 		cld
@@ -221,9 +222,10 @@ replace_boot_stack:
 	; set esp to the new stack
 	sub esp, stack_bottom
 	add esp, edi
-	; recalculate rbp
-	sub ebp, stack_bottom
-	add ebp, edi
+
+	; we elimante frame pointers => no recalculation of ebp required
+	;sub ebp, stack_bottom
+	;add ebp, edi
 
 	; copy boot stack to the new one
 	cld
