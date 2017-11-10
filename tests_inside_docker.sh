@@ -8,11 +8,12 @@ cd /rwth-os/eduOS-rs/
 if [ "$OS_NAME" = "centos" ]; then
 
 # Clean the yum cache
+echo "multilib_policy=all" >> /ety/yum.conf
 yum -y clean all
 yum -y clean expire-cache
 
 # First, install all the needed packages.
-yum install -y curl wget qemu-system-x86 nasm make autotools gcc gcc-c++ glibc-devel.i686
+yum install -y curl wget qemu-system-x86 nasm make autotools gcc gcc-c++
 
 elif [ "$OS_NAME" = "ubuntu" ]; then
 
