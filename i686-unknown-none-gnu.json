@@ -1,5 +1,5 @@
 {
-    "llvm-target": "i386-unknown-none-gnu",
+    "llvm-target": "i686-unknown-none-gnu",
     "linker-flavor": "gcc",
     "target-endian": "little",
     "target-pointer-width": "32",
