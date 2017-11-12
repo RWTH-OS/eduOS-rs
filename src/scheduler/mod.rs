@@ -72,6 +72,13 @@ pub fn block_current_task() -> Shared<task::Task> {
 }
 
 #[inline(always)]
+pub fn get_current_stack() -> usize {
+	unsafe {
+		SCHEDULER.get_current_stack()
+	}
+}
+
+#[inline(always)]
 pub fn wakeup_task(task: Shared<task::Task>) {
 	unsafe {
 		SCHEDULER.wakeup_task(task)

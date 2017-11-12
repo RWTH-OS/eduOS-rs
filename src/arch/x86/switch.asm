@@ -67,6 +67,15 @@ switch:
 	mov QWORD [rdi], rsp				; store old rsp
 	mov rsp, rsi
 
+	; Set task switched flag
+	mov rax, cr0
+	or rax, 8
+	mov cr0, rax
+
+	; set stack pointer in TSS
+	extern set_current_kernel_stack
+	call set_current_kernel_stack;
+
 	; restore context
 	pop r15
 	pop r14
@@ -117,6 +126,15 @@ switch:
 
 	mov DWORD [edi], esp        ; store old esp
 	mov esp, esi
+
+	; Set task switched flag
+	mov eax, cr0
+	or eax, 8
+	mov cr0, eax
+
+	; set stack pointer in TSS
+	extern set_current_kernel_stack
+	call set_current_kernel_stack;
 
     pop ds
     pop es

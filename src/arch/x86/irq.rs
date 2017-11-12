@@ -29,37 +29,24 @@ use x86::shared::dtables::{DescriptorTablePointer,lidt};
 use x86::shared::PrivilegeLevel;
 use x86::shared::paging::VAddr;
 #[cfg(target_arch="x86_64")]
-use x86::bits64::irq::IdtEntry;
+use x86::bits64::irq::{IdtEntry, Type};
 #[cfg(target_arch="x86")]
 use x86::bits32::irq::IdtEntry;
+use x86::shared::segmentation::SegmentSelector;
 
 /// Maximum possible number of interrupts
-const IDT_ENTRY_COUNT: usize = 256;
-const KERNEL_CODE_SELECTOR: u16 = 0x08;
+const IDT_ENTRIES: usize = 256;
+const KERNEL_CODE_SELECTOR: SegmentSelector = SegmentSelector::new(0, PrivilegeLevel::Ring0);
+
+/// An Interrupt Descriptor Table which specifies how to respond to each
+/// interrupt.
+static mut IDT: [IdtEntry; IDT_ENTRIES] = [IdtEntry::MISSING; IDT_ENTRIES];
 
 #[allow(dead_code)]
 extern {
 	/// Interrupt handlers => see irq_handler.asm
-	static interrupt_handlers: [*const u8; IDT_ENTRY_COUNT];
+	static interrupt_handlers: [*const u8; IDT_ENTRIES];
 }
-
-/// An Interrupt Descriptor Table which specifies how to respond to each
-/// interrupt.
-#[repr(C, packed)]
-struct Idt {
-	pub table: [IdtEntry; IDT_ENTRY_COUNT]
-}
-
-impl Idt {
-	pub const fn new() -> Idt {
-		Idt {
-			table: [IdtEntry::MISSING; IDT_ENTRY_COUNT]
-		}
-	}
-}
-
-/// our global Interrupt Descriptor Table .
-static mut IDT: Idt = Idt::new();
 
 /// Normally, IRQs 0 to 7 are mapped to entries 8 to 15. This
 /// is a problem in protected mode, because IDT entry 8 is a
@@ -89,13 +76,13 @@ pub fn init() {
 	unsafe {
 		irq_remap();
 
-		for i in 0..IDT_ENTRY_COUNT {
-				IDT.table[i] = IdtEntry::new(VAddr::from_usize(interrupt_handlers[i] as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, true);
+		for i in 0..IDT_ENTRIES {
+			IDT[i] = IdtEntry::new(VAddr::from_usize(interrupt_handlers[i] as usize),
+				KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
 		}
 
 		// load address of the IDT
-		let idtr: DescriptorTablePointer<IdtEntry> = DescriptorTablePointer::new_idtp(&IDT.table);
+		let idtr: DescriptorTablePointer<IdtEntry> = DescriptorTablePointer::new(&IDT);
 		lidt(&idtr)
 	}
 }
@@ -178,7 +165,7 @@ pub fn irq_nested_enable(was_enabled: bool) {
 pub extern "C" fn irq_handler(state: *const State) {
 	let int_no = unsafe { (*state).int_no };
 
-	debug!("Task {} receive interrupt {} (eflags 0x{:x})!", get_current_taskid(), int_no,
+	info!("Task {} receive interrupt {} (eflags 0x{:x})!", get_current_taskid(), int_no,
 		get_eflags());
 
 	/*

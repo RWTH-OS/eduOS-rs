@@ -195,8 +195,8 @@ enable_paging:
 
 %ifidn __OUTPUT_FORMAT__, elf64
 bits 64
-global replace_boot_stack
-replace_boot_stack:
+global __replace_boot_stack
+__replace_boot_stack:
 		; rdi = 1st argument = desination address
 		; set rsp to the new stack
 		sub rsp, stack_bottom
@@ -213,27 +213,29 @@ replace_boot_stack:
 		rep movsb
 
 		ret
+
 %elifidn __OUTPUT_FORMAT__, elf32
 bits 32
-global replace_boot_stack
-replace_boot_stack:
-	; copy 1st argument to edi
-	mov edi, DWORD [esp+4]
-	; set esp to the new stack
-	sub esp, stack_bottom
-	add esp, edi
+global __replace_boot_stack
+__replace_boot_stack:
+		; copy 1st argument to edi
+		mov edi, DWORD [esp+4]
+		; set esp to the new stack
+		sub esp, stack_bottom
+		add esp, edi
 
-	; we elimante frame pointers => no recalculation of ebp required
-	;sub ebp, stack_bottom
-	;add ebp, edi
+		; we elimante frame pointers => no recalculation of ebp required
+		;sub ebp, stack_bottom
+		;add ebp, edi
 
-	; copy boot stack to the new one
-	cld
-	mov ecx, KERNEL_STACK_SIZE
-	mov esi, stack_bottom
-	rep movsb
+		; copy boot stack to the new one
+		cld
+		mov ecx, KERNEL_STACK_SIZE
+		mov esi, stack_bottom
+		rep movsb
 
-	ret
+		ret
+
 %endif
 
 section .bss
