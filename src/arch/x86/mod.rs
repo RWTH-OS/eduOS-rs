@@ -26,3 +26,4 @@ pub mod processor;
 pub mod task;
 pub mod irq;
 pub mod timer;
+pub mod gdt;

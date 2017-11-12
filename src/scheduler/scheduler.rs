@@ -25,6 +25,7 @@ use core::sync::atomic::{AtomicUsize, Ordering};
 use core::ptr::Shared;
 use scheduler::task::*;
 use arch::irq::{irq_nested_enable,irq_nested_disable};
+use arch::replace_boot_stack;
 use logging::*;
 use synch::spinlock::*;
 use alloc::VecDeque;
@@ -35,11 +36,6 @@ static TID_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 extern {
 	pub fn switch(old_stack: *const usize, new_stack: usize);
-
-	/// The boot loader initialize a stack, which is later also required to
-	/// to boot other core. Consequently, the kernel has to replace with this
-	/// function the boot stack by a new one.
-	pub fn replace_boot_stack(stack_bottom: usize);
 }
 
 pub struct Scheduler {
@@ -189,6 +185,12 @@ impl Scheduler {
 	#[inline(always)]
 	pub fn get_current_taskid(&self) -> TaskId {
 		unsafe { self.current_task.as_ref().id }
+	}
+
+	/// Determines the start address of the stack
+	#[inline(always)]
+	pub fn get_current_stack(&self) -> usize {
+		unsafe { (*self.current_task.as_ref().stack).bottom() }
 	}
 
 	/// Determines the priority of the current task

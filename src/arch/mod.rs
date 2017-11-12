@@ -27,7 +27,7 @@
 
 // Export our platform-specific modules.
 #[cfg(any(target_arch="x86", target_arch="x86_64"))]
-pub use self::x86::{serial,processor,irq,timer};
+pub use self::x86::{serial,processor,irq,timer,gdt};
 
 // Implementations for x86_64.
 #[cfg(any(target_arch="x86", target_arch="x86_64"))]
@@ -41,6 +41,9 @@ use multiboot::{Multiboot, MemoryType, PAddr};
 use core::slice;
 use core::mem;
 use logging::*;
+use consts::*;
+use x86::shared::task::load_tr;
+use x86::shared::segmentation::SegmentSelector;
 
 extern {
 	/// Begin of the kernel.  Declared in `boot.asm` so that we can
@@ -114,10 +117,31 @@ fn initialize_memory() {
 	}
 }
 
+extern {
+	pub fn __replace_boot_stack(stack_bottom: usize);
+}
+
+/// The boot loader initialize a stack, which is later also required to
+/// to boot other core. Consequently, the kernel has to replace with this
+/// function the boot stack by a new one.
+pub fn replace_boot_stack(stack_bottom: usize)
+{
+	unsafe {
+		__replace_boot_stack(stack_bottom);
+
+		gdt::set_kernel_stack(stack_bottom + KERNEL_STACK_SIZE - 0x10);
+
+		// register task
+		let sel: u16 = 3 << 3;
+		load_tr(SegmentSelector::from_raw(sel));
+	}
+}
+
 /// Initialize module, must be called once, and only once
 pub fn init() {
 	processor::init();
 	initialize_memory();
+	gdt::init();
 	irq::init();
 	timer::init();
 }
