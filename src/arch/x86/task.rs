@@ -78,7 +78,7 @@ pub struct State {
 	/// code selector
 	pub cs: u64,
 	/// status flags
-	pub rflags: u64,
+	pub eflags: u64,
 	/// user-space stack pointer
 	pub userrsp: u64,
 	/// stack selector
@@ -164,7 +164,7 @@ impl TaskFrame for Task {
 			(*state).ip = (func as *const()) as u64;;
 			(*state).cs = 0x08;
 			(*state).ss = 0x10;
-			(*state).rflags = 0x1202u64;
+			(*state).eflags = 0x1202u64;
 			(*state).userrsp = (*state).rsp;
 
 			/* Set the task's stack pointer entry to the stack we have crafted right now. */

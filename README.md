@@ -79,16 +79,6 @@ $ make
 $ make run
 ```
 
-edusOS-rs supports also 32bit systems.
-In this case, you have to install binutils for i686 (e.g. i686-elf-binutils).
-Afterwards, the kernel can be compiled and tested with following commands:
-
-```sh
-$ make arch=i686 runtime
-$ make arch=i686
-$ make arch=i686 run
-```
-
 **Note:** Windows users should take a look at [https://youtu.be/5aX5jIAfrk8](https://youtu.be/5aX5jIAfrk8) to build edusOS-rs on their system.
 
 ## Overview of all branches

@@ -77,7 +77,7 @@ unsafe fn fault_handler(state: *const State)
 	if int_no < 32 {
 		info!("{} Exception ({}) at 0x{:x}:0x{:x}, error code 0x{:x}, eflags 0x{:x}",
 			EXCEPTION_MESSAGES[int_no as usize], int_no, (*state).cs, (*state).ip,
-			(*state).error, (*state).rflags);
+			(*state).error, (*state).eflags);
 
 		outb(0x20, 0x20);
 

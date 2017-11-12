@@ -113,10 +113,18 @@ pub fn init()
 	}
 }
 
+#[cfg(target_arch="x86_64")]
 #[inline(always)]
-pub unsafe fn set_kernel_stack(rsp: usize)
+pub unsafe fn set_kernel_stack(stack: usize)
 {
-	TSS.0.rsp[0] = rsp as u64;
+	TSS.0.rsp[0] = stack as u64;
+}
+
+#[cfg(target_arch="x86")]
+#[inline(always)]
+pub unsafe fn set_kernel_stack(stack: usize)
+{
+	TSS.0.esp0 = stack as u32;
 }
 
 #[no_mangle]
