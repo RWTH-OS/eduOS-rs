@@ -23,6 +23,7 @@
 
 use logging::*;
 use scheduler::*;
+use synch::spinlock::*;
 use cpuio::outb;
 use arch::x86::task::State;
 use x86::shared::dtables::{DescriptorTablePointer,lidt};
@@ -55,39 +56,12 @@ const EXCEPTION_MESSAGES: [&'static str; 32] = [
 #[allow(dead_code)]
 extern {
 	/// Interrupt handlers => see irq_handler.asm
-	static interrupt_handlers: [*const u8; IDT_ENTRIES];
+	static basic_interrupt_handlers: [*const u8; IDT_ENTRIES];
 }
 
 unsafe fn unhandled_irq(state: *const State)
 {
 	info!("receqive unhandled interrupt {}", (*state).int_no);
-}
-
-/// An Interrupt Descriptor Table which specifies how to respond to each
-/// interrupt.
-static mut IDT: [IdtEntry; IDT_ENTRIES] = [IdtEntry::MISSING; IDT_ENTRIES];
-static mut IRQ_HANDLER: [unsafe fn(state: *const State); IDT_ENTRIES] = [unhandled_irq; IDT_ENTRIES];
-
-/// Normally, IRQs 0 to 7 are mapped to entries 8 to 15. This
-/// is a problem in protected mode, because IDT entry 8 is a
-/// Double Fault! Without remapping, every time IRQ0 fires,
-/// you get a Double Fault Exception, which is NOT what's
-/// actually happening. We send commands to the Programmable
-/// Interrupt Controller (PICs - also called the 8259's) in
-/// order to make IRQ0 to 15 be remapped to IDT entries 32 to
-/// 47
-unsafe fn irq_remap()
-{
-	outb(0x11, 0x20);
-	outb(0x11, 0xA0);
-	outb(0x20, 0x21);
-	outb(0x28, 0xA1);
-	outb(0x04, 0x21);
-	outb(0x02, 0xA1);
-	outb(0x01, 0x21);
-	outb(0x01, 0xA1);
-	outb(0x0, 0x21);
-	outb(0x0, 0xA1);
 }
 
 /// All of our Exception handling Interrupt Service Routines will
@@ -117,28 +91,96 @@ unsafe fn timer_handler(_state: *const State)
 	// nothing to do
 }
 
-pub fn init() {
-	info!("initialize interrupt descriptor table");
+static INTERRUPT_HANDLER: SpinlockIrqSave<InteruptHandler> = SpinlockIrqSave::new(InteruptHandler::new());
 
-	unsafe {
-		irq_remap();
+struct InteruptHandler {
+	/// An Interrupt Descriptor Table which specifies how to respond to each
+	/// interrupt.
+	idt: [IdtEntry; IDT_ENTRIES],
+	irq_handler: [unsafe fn(state: *const State); IDT_ENTRIES]
+}
 
-		// all exceptions will be handled by fault_handler
-		for i in 0..32 {
-			IRQ_HANDLER[i] = fault_handler;
+impl InteruptHandler {
+	pub const fn new() -> InteruptHandler {
+		InteruptHandler {
+			idt: [IdtEntry::MISSING; IDT_ENTRIES],
+			irq_handler: [unhandled_irq; IDT_ENTRIES]
 		}
-		// dummy handler for timer interrsupts
-		IRQ_HANDLER[32] = timer_handler;
+	}
 
+	pub fn get_handler(&mut self, int_no: usize) -> unsafe fn(state: *const State)
+	{
+		self.irq_handler[int_no]
+	}
+
+	pub fn add_handler(&mut self, int_no: usize, func: unsafe fn(state: *const State))
+	{
+		if int_no < IDT_ENTRIES {
+			self.irq_handler[int_no] = func;
+		} else {
+			info!("unable to add handler for interrupt {}", int_no);
+		}
+	}
+
+	pub fn remove_handler(&mut self, int_no: usize)
+	{
+		if int_no < IDT_ENTRIES {
+			self.irq_handler[int_no] = unhandled_irq;
+		} else {
+			info!("unable to remove handler for interrupt {}", int_no);
+		}
+	}
+
+	pub unsafe fn load_idt(&mut self) {
 		for i in 0..IDT_ENTRIES {
-			IDT[i] = IdtEntry::new(VAddr::from_usize(interrupt_handlers[i] as usize),
+			self.idt[i] = IdtEntry::new(VAddr::from_usize(basic_interrupt_handlers[i] as usize),
 				KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
 		}
 
-		// load address of the IDT
-		let idtr: DescriptorTablePointer<IdtEntry> = DescriptorTablePointer::new(&IDT);
-		lidt(&idtr)
+		let idtr = DescriptorTablePointer::new(&self.idt);
+		lidt(&idtr);
 	}
+}
+
+/// Normally, IRQs 0 to 7 are mapped to entries 8 to 15. This
+/// is a problem in protected mode, because IDT entry 8 is a
+/// Double Fault! Without remapping, every time IRQ0 fires,
+/// you get a Double Fault Exception, which is NOT what's
+/// actually happening. We send commands to the Programmable
+/// Interrupt Controller (PICs - also called the 8259's) in
+/// order to make IRQ0 to 15 be remapped to IDT entries 32 to
+/// 47
+unsafe fn irq_remap()
+{
+	outb(0x11, 0x20);
+	outb(0x11, 0xA0);
+	outb(0x20, 0x21);
+	outb(0x28, 0xA1);
+	outb(0x04, 0x21);
+	outb(0x02, 0xA1);
+	outb(0x01, 0x21);
+	outb(0x01, 0xA1);
+	outb(0x0, 0x21);
+	outb(0x0, 0xA1);
+}
+
+pub fn init() {
+	info!("initialize interrupt descriptor table");
+
+	unsafe { irq_remap(); }
+
+	let mut guard = INTERRUPT_HANDLER.lock();
+
+	// all exceptions will be handled by fault_handler
+	for i in 0..32 {
+		guard.add_handler(i, fault_handler);
+	}
+
+	// dummy handler for timer interrsupts
+	guard.add_handler(32, timer_handler);
+
+	// load address of the IDT
+	unsafe { guard.load_idt(); }
 }
 
 /// Enable Interrupts
@@ -220,7 +262,8 @@ pub extern "C" fn irq_handler(state: *const State) {
 	debug!("Task {} receive interrupt {} (eflags 0x{:x})!", get_current_taskid(), int_no,
 		get_eflags());
 
-	unsafe { IRQ_HANDLER[int_no as usize](state); }
+	let handler = INTERRUPT_HANDLER.lock().get_handler(int_no as usize);
+	unsafe { handler(state); }
 
 	/*
 	 * If the IDT entry that was invoked was greater-than-or-equal to 40

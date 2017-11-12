@@ -27,7 +27,7 @@ section .text
 bits 64
 
 extern irq_handler
-global interrupt_handlers
+global basic_interrupt_handlers
 
 ; The first 32 interrupt service routines (ISR) entries correspond to exceptions.
 ; Some exceptions will push an error code onto the stack which is specific to
@@ -162,7 +162,7 @@ common_stub:
     iretq
 
 section .rodata
-interrupt_handlers:
+basic_interrupt_handlers:
 ; add isr handlers
 %assign i 0
 %rep    32
@@ -183,7 +183,7 @@ section .text
 bits 32
 
 extern irq_handler
-global interrupt_handlers
+global basic_interrupt_handlers
 
 ; The first 32 interrupt service routines (ISR) entries correspond to exceptions.
 ; Some exceptions will push an error code onto the stack which is specific to
@@ -296,7 +296,7 @@ common_stub:
     iret
 
 section .rodata
-interrupt_handlers:
+basic_interrupt_handlers:
 ; add isr handlers
 %assign i 0
 %rep    32
