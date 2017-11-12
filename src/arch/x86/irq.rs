@@ -217,7 +217,7 @@ pub fn irq_nested_enable(was_enabled: bool) {
 pub extern "C" fn irq_handler(state: *const State) {
 	let int_no = unsafe { (*state).int_no };
 
-	info!("Task {} receive interrupt {} (eflags 0x{:x})!", get_current_taskid(), int_no,
+	debug!("Task {} receive interrupt {} (eflags 0x{:x})!", get_current_taskid(), int_no,
 		get_eflags());
 
 	unsafe { IRQ_HANDLER[int_no as usize](state); }
