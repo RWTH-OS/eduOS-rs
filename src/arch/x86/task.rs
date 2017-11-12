@@ -25,7 +25,7 @@
 
 use core::mem::size_of;
 use scheduler::task::*;
-use scheduler::{do_exit,get_current_taskid};
+use scheduler::{exit,get_current_taskid};
 use consts::*;
 use rlibc::*;
 use logging::*;
@@ -125,7 +125,7 @@ pub struct State {
 extern "C" fn leave_task() {
 	debug!("finish task {}", get_current_taskid());
 
-	do_exit();
+	exit();
 
 	loop {}
 }

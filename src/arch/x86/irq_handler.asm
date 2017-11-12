@@ -40,7 +40,7 @@ global interrupt_handlers
 
 ; NASM macro which pushs also an pseudo error code
 %macro isrstub_pseudo_error 1
-    align 64
+    align 8
     isr%1:
     push QWORD 0 ; pseudo error code
     push QWORD %1
@@ -51,7 +51,7 @@ global interrupt_handlers
 ; a pseudo error code => The error code is already
 ; on the stack.
 %macro isrstub 1
-    align 64
+    align 8
     isr%1:
     push QWORD %1
     jmp common_stub
@@ -103,7 +103,7 @@ isrstub_pseudo_error 9
 
 ; NASM macro for asynchronous interrupts (no exceptions)
 %macro irqstub 1
-    align 64
+    align 8
     irq%1:
     push QWORD 0 ; pseudo error code
     push QWORD 32+%1
@@ -196,7 +196,7 @@ global interrupt_handlers
 
 ; NASM macro which pushs also an pseudo error code
 %macro isrstub_pseudo_error 1
-    align 64
+    align 4
     isr%1:
     push DWORD 0 ; pseudo error code
     push DWORD %1
@@ -207,7 +207,7 @@ global interrupt_handlers
 ; a pseudo error code => The error code is already
 ; on the stack.
 %macro isrstub 1
-    align 64
+    align 4
     isr%1:
     push DWORD %1
     jmp common_stub
@@ -259,7 +259,7 @@ isrstub_pseudo_error 9
 
 ; NASM macro for asynchronous interrupts (no exceptions)
 %macro irqstub 1
-    align 32
+    align 4
     irq%1:
     push DWORD 0 ; pseudo error code
     push DWORD 32+%1
@@ -286,7 +286,7 @@ common_stub:
 	push esp
 	call irq_handler
 	add esp, 4
-	
+
 	; restore context
 	pop ds
     pop es

@@ -43,6 +43,20 @@ extern {
 	static interrupt_handlers: [*const u8; IDT_ENTRY_COUNT];
 }
 
+/// This is a simple string array. It contains the message that
+/// corresponds to each and every exception. We get the correct
+/// message by accessing it like this:
+/// exception_message[interrupt_number]
+const EXCEPTION_MESSAGES: [&'static str; 32] = [
+	"Division By Zero", "Debug", "Non Maskable Interrupt",
+	"Breakpoint", "Into Detected Overflow", "Out of Bounds", "Invalid Opcode",
+	"No Coprocessor", "Double Fault", "Coprocessor Segment Overrun", "Bad TSS",
+	"Segment Not Present", "Stack Fault", "General Protection Fault", "Page Fault",
+	"Unknown Interrupt", "Coprocessor Fault", "Alignment Check", "Machine Check",
+	"SIMD Floating-Point", "Virtualization", "Reserved", "Reserved", "Reserved",
+	"Reserved", "Reserved", "Reserved", "Reserved", "Reserved", "Reserved",
+	"Reserved", "Reserved"];
+
 /// An Interrupt Descriptor Table which specifies how to respond to each
 /// interrupt.
 #[repr(C, packed)]
@@ -58,8 +72,15 @@ impl Idt {
 	}
 }
 
+unsafe fn unhandled_irq(state: *const State)
+{
+	info!("receive unhandled interrupt {}", (*state).int_no);
+}
+
 /// our global Interrupt Descriptor Table .
 static mut IDT: Idt = Idt::new();
+static mut IRQ_HANDLER: [unsafe fn(state: *const State); IDT_ENTRY_COUNT] = [unhandled_irq; IDT_ENTRY_COUNT];
+
 
 /// Normally, IRQs 0 to 7 are mapped to entries 8 to 15. This
 /// is a problem in protected mode, because IDT entry 8 is a
@@ -83,11 +104,45 @@ unsafe fn irq_remap()
 	outb(0x0, 0xA1);
 }
 
+/// All of our Exception handling Interrupt Service Routines will
+/// point to this function. This will tell us what exception has
+/// occured! Right now, we simply abort the current task.
+/// All ISRs disable interrupts while they are being
+/// serviced as a 'locking' mechanism to prevent an IRQ from
+/// happening and messing up kernel data structures
+unsafe fn fault_handler(state: *const State)
+{
+	let int_no = (*state).int_no;
+
+	if int_no < 32 {
+		info!("{} Exception ({}) at 0x{:x}:0x{:x}, error code 0x{:x}, eflags 0x{:x}",
+			EXCEPTION_MESSAGES[int_no as usize], int_no, (*state).cs, (*state).ip,
+			(*state).error, (*state).rflags);
+
+		outb(0x20, 0x20);
+
+		irq_enable();
+		abort();
+	}
+}
+
+unsafe fn timer_handler(_state: *const State)
+{
+	// nothing to do
+}
+
 pub fn init() {
 	info!("initialize interrupt descriptor table");
 
 	unsafe {
 		irq_remap();
+
+		// all exceptions will be handled by fault_handler
+		for i in 0..32 {
+			IRQ_HANDLER[i] = fault_handler;
+		}
+		// dummy handler for timer interrsupts
+		IRQ_HANDLER[32] = timer_handler;
 
 		for i in 0..IDT_ENTRY_COUNT {
 				IDT.table[i] = IdtEntry::new(VAddr::from_usize(interrupt_handlers[i] as usize),
@@ -159,8 +214,6 @@ pub fn irq_nested_enable(was_enabled: bool) {
 	}
 }
 
-/// Default IRQ handler
-///
 /// Each of the IRQ ISRs point to this function, rather than
 /// the 'fault_handler' in 'isrs.c'. The IRQ Controllers need
 /// to be told when you are done servicing them, so you need
@@ -181,19 +234,21 @@ pub extern "C" fn irq_handler(state: *const State) {
 	debug!("Task {} receive interrupt {} (eflags 0x{:x})!", get_current_taskid(), int_no,
 		get_eflags());
 
+	unsafe { IRQ_HANDLER[int_no as usize](state); }
+
 	/*
-	* If the IDT entry that was invoked was greater-than-or-equal to 40
-	* and lower than 48 (meaning IRQ8 - 15), then we need to
-	* send an EOI to the slave controller of the PIC
-	*/
+	 * If the IDT entry that was invoked was greater-than-or-equal to 40
+	 * and lower than 48 (meaning IRQ8 - 15), then we need to
+	 * send an EOI to the slave controller of the PIC
+	 */
 	if int_no >= 40 {
 		unsafe { outb(0x20, 0xA0); }
 	}
 
 	/*
-	* In either case, we need to send an EOI to the master
-	* interrupt controller of the PIC, too
-	*/
+	 * In either case, we need to send an EOI to the master
+	 * interrupt controller of the PIC, too
+	 */
 	unsafe { outb(0x20, 0x20); }
 
 	// if we handle a timer interrupt, we have to trigger the scheduler

@@ -80,9 +80,17 @@ pub fn wakeup_task(task: Shared<task::Task>) {
 
 /// Terminate the current running task
 #[inline(always)]
-pub fn do_exit() {
+pub fn exit() {
 	unsafe {
 		SCHEDULER.exit()
+	}
+}
+
+/// Terminate the current running task
+#[inline(always)]
+pub fn abort() {
+	unsafe {
+		SCHEDULER.abort()
 	}
 }
 

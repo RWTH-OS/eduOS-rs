@@ -156,6 +156,11 @@ impl Scheduler {
 		self.reschedule();
 	}
 
+	pub unsafe fn abort(&mut self) {
+			info!("abort task with id {}", self.current_task.as_ref().id);
+			self.exit();
+	}
+
 	/// Block the current task
 	pub unsafe fn block_current_task(&mut self) -> Shared<Task> {
 		if self.current_task.as_ref().status == TaskStatus::TaskRunning {

@@ -69,6 +69,9 @@ extern "C" fn foo() {
 	// simple demo, only 2 tasks are able to print at the same time
 	SEM.acquire();
 
+	// exception demo
+	//unsafe { asm!("int $$17" :::: "volatile"); }
+
 	for _i in 0..5 {
 		println!("hello from task {}", scheduler::get_current_taskid());
 		for _j in 0..100 {
