@@ -36,8 +36,8 @@ make
 make run
 
 # tests in 32bit mode
-make arch=i686 runtime
-make arch=i686
-make arch=i686 run
+#make arch=i686 runtime
+#make arch=i686
+#make arch=i686 run
 
 fi
