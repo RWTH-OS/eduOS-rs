@@ -24,7 +24,6 @@
 use consts::*;
 use logging::*;
 use cpuio::outb;
-#[cfg(any(target_arch="x86", target_arch="x86_64"))]
 use x86::shared::time::rdtsc;
 use arch::processor::mb;
 
