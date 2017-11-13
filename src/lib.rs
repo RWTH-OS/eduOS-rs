@@ -32,6 +32,7 @@
 #![feature(const_atomic_bool_new)]
 #![feature(const_unsafe_cell_new)]
 #![feature(const_shared_new)]
+#![feature(abi_x86_interrupt)]
 #![feature(shared)]
 
 #![no_std]
@@ -66,11 +67,13 @@ static ALLOCATOR: allocator::Allocator = allocator::Allocator;
 static SEM: Semaphore = Semaphore::new(2);
 
 extern "C" fn foo() {
+	// exception demo
+	if scheduler::get_current_taskid().into() == 2 {
+		unsafe { asm!("int $$0" :::: "volatile"); }
+	}
+
 	// simple demo, only 2 tasks are able to print at the same time
 	SEM.acquire();
-
-	// exception demo
-	//unsafe { asm!("int $$17" :::: "volatile"); }
 
 	for _i in 0..5 {
 		println!("hello from task {}", scheduler::get_current_taskid());

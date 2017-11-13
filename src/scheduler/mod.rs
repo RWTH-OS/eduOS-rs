@@ -87,7 +87,7 @@ pub fn wakeup_task(task: Shared<task::Task>) {
 
 /// Terminate the current running task
 #[inline(always)]
-pub fn exit() {
+pub fn exit() -> ! {
 	unsafe {
 		SCHEDULER.exit()
 	}
@@ -95,7 +95,7 @@ pub fn exit() {
 
 /// Terminate the current running task
 #[inline(always)]
-pub fn abort() {
+pub fn abort() -> ! {
 	unsafe {
 		SCHEDULER.abort()
 	}

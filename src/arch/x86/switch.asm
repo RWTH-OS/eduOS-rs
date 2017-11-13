@@ -21,13 +21,8 @@
 ; OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 ; WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-%ifidn __OUTPUT_FORMAT__, elf64
 section .text
 bits 64
-
-align 8
-rollback:
-	ret
 
 global switch
 align 8
@@ -35,23 +30,14 @@ switch:
 	; rdi => the address to store the old rsp
 	; rsi => stack pointer of the new task
 
-	; create on the stack a pseudo interrupt
-	; afterwards, we switch to the task with iret
-	push QWORD 0x10				; SS
-	push rsp					; RSP
-	add QWORD [rsp], 0x08		; => value of rsp before the creation of a pseudo interrupt
-	pushfq						; RFLAGS
-	push QWORD 0x08				; CS
-	push QWORD rollback			; RIP
-	push QWORD 0x00edbabe		; Error code
-	push QWORD 0x00				; Interrupt number
-
 	; save context
+	pushfq							; push control register
 	push rax
 	push rcx
 	push rdx
 	push rbx
-	push QWORD [rsp+9*8]
+	push rsp						; determine rsp before storing the context
+	add QWORD [rsp], 6*8
 	push rbp
 	push rsi
 	push rdi
@@ -64,7 +50,7 @@ switch:
 	push r14
 	push r15
 
-	mov QWORD [rdi], rsp				; store old rsp
+	mov QWORD [rdi], rsp			; store old rsp
 	mov rsp, rsi
 
 	; Set task switched flag
@@ -93,52 +79,6 @@ switch:
 	pop rdx
 	pop rcx
 	pop rax
+	popfq
 
-	add rsp, 16
-	iretq
-%elifidn __OUTPUT_FORMAT__, elf32
-section .text
-bits 32
-
-align 4
-rollback:
 	ret
-
-; Create a pseudo interrupt on top of the stack.
-; Afterwards, we switch to the task with iret.
-; We already are in kernel space => no pushing of SS required.
-global switch
-align 4
-switch:
-    pushf                       ; push controll register
-    push DWORD 0x8              ; CS
-    push DWORD rollback         ; EIP
-    push DWORD 0x0              ; Interrupt number
-    push DWORD 0x00edbabe       ; Error code
-    pusha                       ; push all general purpose registers...
-    push 0x10                   ; kernel data segment (for ES)
-    push 0x10                   ; kernel data segment (for DS)
-
-	; 1st argument => the address to store the old rsp
-    ; 2nd argument => stack pointer of the new task
-	mov edi, DWORD [esp+16*4]
-    mov esi, DWORD [esp+17*4]
-
-	mov DWORD [edi], esp        ; store old esp
-	mov esp, esi
-
-	; Set task switched flag
-	mov eax, cr0
-	or eax, 8
-	mov cr0, eax
-
-	; set stack pointer in TSS
-	extern set_current_kernel_stack
-	call set_current_kernel_stack;
-
-    pop ds
-    pop es
-    popa
-    add esp, 8
-    iret
-%endif

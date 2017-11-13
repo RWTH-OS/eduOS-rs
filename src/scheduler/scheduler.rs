@@ -141,7 +141,7 @@ impl Scheduler {
 	}
 
 	/// Terminate the current task
-	pub unsafe fn exit(&mut self) {
+	pub unsafe fn exit(&mut self) -> ! {
 		if self.current_task.as_ref().status != TaskStatus::TaskIdle {
 			info!("finish task with id {}", self.current_task.as_ref().id);
 			self.current_task.as_mut().status = TaskStatus::TaskFinished;
@@ -150,11 +150,24 @@ impl Scheduler {
 		}
 
 		self.reschedule();
+
+		// we should never reach this point
+		panic!("exit failed!")
 	}
 
-	pub unsafe fn abort(&mut self) {
+	pub unsafe fn abort(&mut self) -> ! {
 			info!("abort task with id {}", self.current_task.as_ref().id);
-			self.exit();
+
+			if self.current_task.as_ref().status != TaskStatus::TaskIdle {
+				self.current_task.as_mut().status = TaskStatus::TaskFinished;
+			} else {
+				panic!("unable to terminate idle task");
+			}
+
+			self.reschedule();
+
+			// we should never reach this point
+			panic!("abort failed!");
 	}
 
 	/// Block the current task

@@ -24,15 +24,8 @@
 #![allow(dead_code)]
 #![allow(private_no_mangle_fns)]
 
-#[cfg(target_arch="x86_64")]
 use x86::bits64::segmentation::*;
-#[cfg(target_arch="x86_64")]
 use x86::bits64::task::*;
-#[cfg(target_arch="x86")]
-use x86::bits32::segmentation::*;
-#[cfg(target_arch="x86")]
-use x86::bits32::task::*;
-
 use x86::shared::PrivilegeLevel;
 use x86::shared::dtables::{self, DescriptorTablePointer};
 use consts::*;
@@ -45,12 +38,7 @@ const GDT_KERNEL_DATA: usize = 2;
 const GDT_FIRST_TSS:   usize = 3;
 
 // fox x86_64 is a TSS descriptor twice larger than a code/data descriptor
-#[cfg(target_arch="x86_64")]
 const TSS_ENTRIES: usize = 2;
-
-#[cfg(target_arch="x86")]
-const TSS_ENTRIES: usize = 1;
-
 const GDT_ENTRIES: usize = (3+TSS_ENTRIES);
 
 // thread_local on a static mut, signals that the value of this static may
@@ -113,18 +101,10 @@ pub fn init()
 	}
 }
 
-#[cfg(target_arch="x86_64")]
 #[inline(always)]
 pub unsafe fn set_kernel_stack(stack: usize)
 {
 	TSS.0.rsp[0] = stack as u64;
-}
-
-#[cfg(target_arch="x86")]
-#[inline(always)]
-pub unsafe fn set_kernel_stack(stack: usize)
-{
-	TSS.0.esp0 = stack as u32;
 }
 
 #[no_mangle]
