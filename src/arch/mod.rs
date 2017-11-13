@@ -27,11 +27,11 @@
 
 // Export our platform-specific modules.
 #[cfg(target_arch="x86_64")]
-pub use self::x86::{serial,processor,irq,timer,gdt};
+pub use self::x86_64::{serial,processor,irq,timer,gdt};
 
 // Implementations for x86_64.
 #[cfg(target_arch="x86_64")]
-pub mod x86;
+pub mod x86_64;
 
 #[cfg(target_arch="x86_64")]
 const PAGE_SIZE: u64 = 4096;

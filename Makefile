@@ -2,7 +2,6 @@
 
 arch ?= x86_64
 target ?= $(arch)-unknown-none-gnu
-archdir ?= x86
 release ?= 1
 
 opt :=
@@ -24,11 +23,11 @@ ifeq ($(uname_s),Darwin)
 crossprefix += x86_64-elf-
 endif
 
-linker_script := src/arch/$(archdir)/linker.ld
+linker_script := src/arch/$(arch)/linker.ld
 grub_cfg := src/arch/$(arch)/grub.cfg
-assembly_header_files := $(wildcard src/arch/$(archdir)/*.inc)
-assembly_source_files := $(wildcard src/arch/$(archdir)/*.asm)
-assembly_object_files := $(patsubst src/arch/$(archdir)/%.asm, \
+assembly_header_files := $(wildcard src/arch/$(arch)/*.inc)
+assembly_source_files := $(wildcard src/arch/$(arch)/*.asm)
+assembly_object_files := $(patsubst src/arch/$(arch)/%.asm, \
 	build/arch/$(arch)/%.o, $(assembly_source_files))
 
 ld_for_target := $(crossprefix)ld
@@ -72,10 +71,10 @@ cargo:
 	@echo CARGO
 	@cargo build $(opt) --target $(target)
 
-build/arch/$(arch)/%.o: src/arch/$(archdir)/%.asm $(assembly_header_files)
+build/arch/$(arch)/%.o: src/arch/$(arch)/%.asm $(assembly_header_files)
 	@echo NASM $<
 	@mkdir -p $(shell dirname $@)
-	@nasm $(nasmflags) -Isrc/arch/$(archdir)/ $< -o $@
+	@nasm $(nasmflags) -Isrc/arch/$(arch)/ $< -o $@
 
 
 #==========================================================================
