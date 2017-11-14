@@ -149,7 +149,7 @@ pub fn shutdown() {
 
 /// Initialize processor dependent features
 pub fn init() {
-	info!("enable supported processor features");
+	debug!("enable supported processor features");
 
 	let mut cr0 = unsafe { control_regs::cr0() };
 
