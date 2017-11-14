@@ -104,5 +104,5 @@ $(installed_target_libs):
 
 $(installed_target_libs)/%.rlib: rust/src/%/lib.rs $(installed_target_libs)
 	@echo RUSTC $<
-	@$(RUSTC) --crate-type rlib --crate-name $(shell basename $@ | sed s,lib,, | sed s,.rlib,,) $<
+	@$(RUSTC) -O --crate-type rlib --crate-name $(shell basename $@ | sed s,lib,, | sed s,.rlib,,) $<
 	@echo Check $@
