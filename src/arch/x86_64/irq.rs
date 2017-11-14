@@ -24,6 +24,7 @@
 use core::fmt;
 use logging::*;
 use scheduler::*;
+use timer::*;
 use synch::spinlock::*;
 use cpuio::outb;
 use x86::shared::dtables::{DescriptorTablePointer,lidt};
@@ -259,6 +260,7 @@ extern "x86-interrupt" fn timer_handler(stack_frame: &mut ExceptionStackFrame)
 
 	send_eoi_to_master();
 
+	TIMER.increment();
 	schedule();
 }
 
@@ -389,7 +391,7 @@ unsafe fn irq_remap()
 }
 
 pub fn init() {
-	info!("initialize interrupt descriptor table");
+	debug!("initialize interrupt descriptor table");
 
 	unsafe {
 		irq_remap();

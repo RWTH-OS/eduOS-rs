@@ -21,7 +21,7 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-use core::sync::atomic::{AtomicUsize, AtomicBool, Ordering};
+use core::sync::atomic::{AtomicUsize, AtomicBool, Ordering, hint_core_should_pause};
 use core::cell::UnsafeCell;
 use core::marker::Sync;
 use core::fmt;
@@ -107,7 +107,7 @@ impl<T: ?Sized> Spinlock<T>
 	fn obtain_lock(&self) {
 		let ticket = self.queue.fetch_add(1, Ordering::SeqCst) + 1;
 		while self.dequeue.load(Ordering::SeqCst) != ticket {
-			arch::processor::pause();
+			hint_core_should_pause();
 		}
 	}
 
@@ -242,7 +242,7 @@ impl<T: ?Sized> SpinlockIrqSave<T>
 	fn obtain_lock(&self) {
 		let ticket = self.queue.fetch_add(1, Ordering::SeqCst) + 1;
 		while self.dequeue.load(Ordering::SeqCst) != ticket {
-			arch::processor::pause();
+			hint_core_should_pause();
 		}
 
 		self.irq.store(arch::irq::irq_nested_disable(), Ordering::SeqCst);

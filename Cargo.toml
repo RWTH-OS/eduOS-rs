@@ -16,9 +16,9 @@ alloc_kernel = { path = "crates/alloc_kernel" }
 path = "crates/rlibc"	# Low-level functions like memcpy.
 features = ["nightly"]
 
-#[dependencies.lazy_static]
-#version = "0.2"
-#features = ["spin_no_std"]
+[dependencies.lazy_static]
+version = "0.2"
+features = ["spin_no_std"]
 
 [dependencies.x86]
 path = "crates/x86"

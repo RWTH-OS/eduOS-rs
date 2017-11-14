@@ -34,6 +34,7 @@
 #![feature(const_shared_new)]
 #![feature(abi_x86_interrupt)]
 #![feature(shared)]
+#![feature(hint_core_should_pause)]
 
 #![no_std]
 
@@ -43,12 +44,15 @@ extern crate x86;
 extern crate alloc;
 extern crate alloc_kernel as allocator;
 extern crate multiboot;
+#[macro_use]
+extern crate lazy_static;
 
 // These need to be visible to the linker, so we need to export them.
 pub use runtime_glue::*;
 pub use logging::*;
 pub use synch::semaphore::*;
 pub use synch::mutex::*;
+pub use timer::*;
 
 #[macro_use]
 mod macros;
@@ -60,6 +64,7 @@ pub mod arch;
 pub mod console;
 pub mod scheduler;
 pub mod synch;
+pub mod timer;
 
 #[global_allocator]
 static ALLOCATOR: allocator::Allocator = allocator::Allocator;
@@ -68,9 +73,9 @@ static SEM: Semaphore = Semaphore::new(2);
 
 extern "C" fn foo() {
 	// exception demo
-	if scheduler::get_current_taskid().into() == 2 {
+	/*if scheduler::get_current_taskid().into() == 2 {
 		unsafe { asm!("int $$0" :::: "volatile"); }
-	}
+	}*/
 
 	// simple demo, only 2 tasks are able to print at the same time
 	SEM.acquire();
@@ -78,11 +83,21 @@ extern "C" fn foo() {
 	for _i in 0..5 {
 		println!("hello from task {}", scheduler::get_current_taskid());
 		for _j in 0..100 {
-			unsafe { arch::timer::wait_some_time(); }
+			TIMER.msleep(5);
 		}
 	}
 
 	SEM.release();
+}
+
+extern "C" fn initd() {
+	info!("Hello from initd!");
+
+	for _i in 0..4 {
+		scheduler::spawn(foo, scheduler::task::NORMAL_PRIO);
+	}
+
+	scheduler::spawn(foo, scheduler::task::REALTIME_PRIO);
 }
 
 /// Rust entry point of the kernel
@@ -95,16 +110,14 @@ pub extern "C" fn rust_main() {
 	arch::init();
 	scheduler::init();
 
-	info!("Hello from eduOS-rs!");
-
-	for _i in 0..4 {
-		scheduler::spawn(foo, scheduler::task::NORMAL_PRIO);
-	}
-
-	scheduler::spawn(foo, scheduler::task::REALTIME_PRIO);
-
 	// enable interrupts => enable preemptive multitasking
 	arch::irq::irq_enable();
+
+	info!("Hello from eduOS-rs!");
+	let freq = arch::processor::get_cpu_frequency();
+	info!("Processor frequency: {} MHz", freq);
+
+	scheduler::spawn(initd, scheduler::task::REALTIME_PRIO);
 
 	loop {
 		scheduler::reschedule();

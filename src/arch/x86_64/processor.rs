@@ -28,6 +28,14 @@
 use cpuio;
 use x86::shared::*;
 use logging::*;
+use consts::*;
+use timer::*;
+use core::sync::atomic::hint_core_should_pause;
+use x86::shared::time::rdtsc;
+
+lazy_static! {
+	static ref FREQUENCY: u32 = detect_frequency();
+}
 
 /// Force strict CPU ordering, serializes load and store operations.
 #[inline(always)]
@@ -92,12 +100,40 @@ pub fn halt() {
 	}
 }
 
-/// The pause function provides a hint to the processor that the code sequence is a spin-wait loop.
-#[inline(always)]
-pub fn pause() {
-	unsafe {
-		asm!("pause" :::: "volatile");
+fn detect_frequency() -> u32 {
+	let old = TIMER.get_clock_tick();
+	let mut ticks = old;
+	let diff: u64;
+
+	/* wait for the next time slice */
+	while ticks - old == 0 {
+		hint_core_should_pause();
+		ticks = TIMER.get_clock_tick();
 	}
+
+	rmb();
+	let start = unsafe { rdtsc() };
+	/* wait 3 ticks to determine the frequency */
+	while TIMER.get_clock_tick() - ticks < 3 {
+			hint_core_should_pause();
+	}
+	rmb();
+	let end = unsafe { rdtsc() };
+
+	if end > start {
+		diff = end - start;
+	} else {
+		diff = start - end;
+	}
+
+	let freq = (((TIMER_FREQ as u64) * diff) / (1000000u64 * 3u64)) as u32;
+
+	freq
+}
+
+/// returns the cpu frequency
+pub fn get_cpu_frequency() -> u32 {
+	*FREQUENCY
 }
 
 /// Shutdown the system, if the kernel is booted within Qemu

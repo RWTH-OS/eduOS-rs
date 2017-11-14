@@ -25,15 +25,12 @@ use consts::*;
 use logging::*;
 use cpuio::outb;
 use x86::shared::time::rdtsc;
-use arch::processor::mb;
+use core::sync::atomic::hint_core_should_pause;
+use arch::processor::{mb, get_cpu_frequency};
 
 const CLOCK_TICK_RATE: u32 = 1193182u32; /* 8254 chip's internal oscillator frequency */
 
-fn latch(f:u32) -> u16 {
-	((CLOCK_TICK_RATE + f/2) / f) as u16
-}
-
-pub unsafe fn wait_some_time() {
+unsafe fn wait_some_time() {
  	let start = rdtsc();
 
 	mb();
@@ -42,9 +39,24 @@ pub unsafe fn wait_some_time() {
 	}
 }
 
+pub fn udelay(usecs: u64)
+{
+	unsafe {
+		let end: u64 = rdtsc() + (get_cpu_frequency() as u64) * usecs;
+
+		mb();
+		while rdtsc() < end {
+			mb();
+			hint_core_should_pause();
+		}
+	}
+}
+
 pub fn init()
 {
-	info!("initialize timer");
+	debug!("initialize timer");
+
+	let latch = ((CLOCK_TICK_RATE + TIMER_FREQ/2) / TIMER_FREQ) as u16;
 
 	unsafe {
 		/*
@@ -64,10 +76,10 @@ pub fn init()
 
 		/* Port 0x40 is for the counter register of channel 0 */
 
-		outb((latch(TIMER_FREQ) & 0xFF) as u8, 0x40);   /* low byte  */
+		outb((latch & 0xFF) as u8, 0x40);   /* low byte  */
 
 		wait_some_time();
 
-		outb((latch(TIMER_FREQ) >> 8) as u8, 0x40);     /* high byte */
+		outb((latch >> 8) as u8, 0x40);     /* high byte */
 	}
 }
