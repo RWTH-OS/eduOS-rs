@@ -23,7 +23,7 @@
 
 use consts::*;
 use scheduler::*;
-use arch::timer::udelay;
+use arch::processor::udelay;
 use core::sync::atomic::{AtomicUsize, Ordering, hint_core_should_pause};
 
 pub static TIMER: Timer = Timer::new();

@@ -23,10 +23,9 @@
 
 use consts::*;
 use logging::*;
+use arch::processor::*;
 use cpuio::outb;
 use x86::shared::time::rdtsc;
-use core::sync::atomic::hint_core_should_pause;
-use arch::processor::{mb, get_cpu_frequency};
 
 const CLOCK_TICK_RATE: u32 = 1193182u32; /* 8254 chip's internal oscillator frequency */
 
@@ -39,19 +38,7 @@ unsafe fn wait_some_time() {
 	}
 }
 
-pub fn udelay(usecs: u64)
-{
-	unsafe {
-		let end: u64 = rdtsc() + (get_cpu_frequency() as u64) * usecs;
-
-		mb();
-		while rdtsc() < end {
-			mb();
-			hint_core_should_pause();
-		}
-	}
-}
-
+// initialize the Programmable Interrupt controller
 pub fn init()
 {
 	debug!("initialize timer");

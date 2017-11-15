@@ -27,7 +27,7 @@
 
 // Export our platform-specific modules.
 #[cfg(target_arch="x86_64")]
-pub use self::x86_64::{serial,processor,irq,timer,gdt};
+pub use self::x86_64::{serial,processor,irq,pit,gdt};
 
 // Implementations for x86_64.
 #[cfg(target_arch="x86_64")]
@@ -134,5 +134,5 @@ pub fn init() {
 	initialize_memory();
 	gdt::init();
 	irq::init();
-	timer::init();
+	pit::init();
 }

@@ -46,6 +46,20 @@ pub fn mb()
 	}
 }
 
+/// wait a few microseconds, realized by busy waiting 
+pub fn udelay(usecs: u64)
+{
+	unsafe {
+		let end: u64 = rdtsc() + (get_cpu_frequency() as u64) * usecs;
+
+		mb();
+		while rdtsc() < end {
+			mb();
+			hint_core_should_pause();
+		}
+	}
+}
+
 /// Force strict CPU ordering, serializes load operations.
 #[inline(always)]
 pub fn rmb()
