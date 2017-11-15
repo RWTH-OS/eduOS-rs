@@ -34,7 +34,36 @@ use core::sync::atomic::hint_core_should_pause;
 use x86::shared::time::rdtsc;
 
 lazy_static! {
-	static ref FREQUENCY: u32 = detect_frequency();
+	static ref FREQUENCY: u32 = {
+		let old = TIMER.get_clock_tick();
+		let mut ticks = old;
+		let diff: u64;
+
+		/* wait for the next time slice */
+		while ticks - old == 0 {
+			hint_core_should_pause();
+			ticks = TIMER.get_clock_tick();
+		}
+
+		rmb();
+		let start = unsafe { rdtsc() };
+		/* wait 3 ticks to determine the frequency */
+		while TIMER.get_clock_tick() - ticks < 3 {
+				hint_core_should_pause();
+		}
+		rmb();
+		let end = unsafe { rdtsc() };
+
+		if end > start {
+			diff = end - start;
+		} else {
+			diff = start - end;
+		}
+
+		let freq = (((TIMER_FREQ as u64) * diff) / (1000000u64 * 3u64)) as u32;
+
+		freq
+	};
 }
 
 /// Force strict CPU ordering, serializes load and store operations.
@@ -46,7 +75,7 @@ pub fn mb()
 	}
 }
 
-/// wait a few microseconds, realized by busy waiting 
+/// wait a few microseconds, realized by busy waiting
 pub fn udelay(usecs: u64)
 {
 	unsafe {
@@ -112,37 +141,6 @@ pub fn halt() {
 			asm!("hlt" :::: "volatile");
 		}
 	}
-}
-
-fn detect_frequency() -> u32 {
-	let old = TIMER.get_clock_tick();
-	let mut ticks = old;
-	let diff: u64;
-
-	/* wait for the next time slice */
-	while ticks - old == 0 {
-		hint_core_should_pause();
-		ticks = TIMER.get_clock_tick();
-	}
-
-	rmb();
-	let start = unsafe { rdtsc() };
-	/* wait 3 ticks to determine the frequency */
-	while TIMER.get_clock_tick() - ticks < 3 {
-			hint_core_should_pause();
-	}
-	rmb();
-	let end = unsafe { rdtsc() };
-
-	if end > start {
-		diff = end - start;
-	} else {
-		diff = start - end;
-	}
-
-	let freq = (((TIMER_FREQ as u64) * diff) / (1000000u64 * 3u64)) as u32;
-
-	freq
 }
 
 /// returns the cpu frequency
