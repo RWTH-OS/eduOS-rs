@@ -265,21 +265,21 @@ const EFER_FFXSR : u32 = (1 << 14);
 const EFER_TCE : u32 = (1 << 15);
 
 pub fn halt() {
-	loop {
-		unsafe {
-			asm!("hlt" :::: "volatile");
-		}
+	unsafe {
+		asm!("hlt" :::: "volatile");
 	}
 }
 
-pub fn shutdown() {
+pub fn shutdown() -> ! {
 	// shutdown, works only on Qemu
 	unsafe {
 		let mut shutdown_port : cpuio::Port<u8> = cpuio::Port::new(0xf4);
 		shutdown_port.write(0x00);
 	};
 
-	halt();
+	loop {
+		halt();
+	}
 }
 
 pub fn cpu_init() {

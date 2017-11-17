@@ -43,7 +43,7 @@ mod arch;
 mod console;
 
 #[no_mangle]
-pub extern "C" fn rust_main() {
+pub extern "C" fn rust_main() -> ! {
     println!("Hello world!");
 
     loop {
