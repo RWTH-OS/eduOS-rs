@@ -29,8 +29,6 @@
 
 %include 'common.inc'
 
-%ifidn __OUTPUT_FORMAT__, elf64
-
 global long_mode_start
 
 extern rust_main
@@ -48,5 +46,3 @@ long_mode_start:
 l1:
         hlt
         jmp l1
-
-%endif
