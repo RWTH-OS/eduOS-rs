@@ -46,7 +46,7 @@ start:
         mov esp, stack_top-16              ; Use our temporary stack.
         mov DWORD [MBINFO], ebx            ; store the pointer to the multiboot info
 
-        ;; Sanity-check our system.
+        ; Sanity-check our system.
         call test_multiboot
         call test_cpuid
 		; in 64bit mode, we have to enble paging before jumping in 64bit mode
@@ -236,4 +236,5 @@ gdt64:
 gdt64_code_offset:
     dw gdt64.code
 
+section .data
 MBINFO DD 0

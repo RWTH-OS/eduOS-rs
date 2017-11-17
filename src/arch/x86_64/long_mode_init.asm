@@ -32,13 +32,19 @@
 global long_mode_start
 
 extern rust_main
+extern __bss_start
+extern kernel_end
 
 section .text
 bits 64
 long_mode_start:
-        ; clear DF flag => default value by entering a function
-        ; => see ABI
+        ; initialie bss section
         cld
+        xor rax, rax
+        mov rcx, kernel_end
+        sub rcx, __bss_start
+        mov rdi, __bss_start
+        rep stosb
 
         call rust_main
 

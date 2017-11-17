@@ -46,13 +46,13 @@ use x86::shared::task::load_tr;
 use x86::shared::segmentation::SegmentSelector;
 
 extern {
-	/// Begin of the kernel.  Declared in `boot.asm` so that we can
+	/// Begin of the kernel.  Declared in `linker.ld` so that we can
 	/// easily specify alignment constraints.  We declare this as a single
 	/// variable of type `u8`, because that's how we get it to link, but we
 	/// only want to take the address of it.
 	static mut kernel_start: u8;
 
-	/// End of the kernel.  Declared in `boot.asm` so that we can
+	/// End of the kernel.  Declared in `linker.ld` so that we can
 	/// easily specify alignment constraints.  We declare this as a single
 	/// variable of type `u8`, because that's how we get it to link, but we
 	/// only want to take the address of it.
