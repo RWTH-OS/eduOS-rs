@@ -83,7 +83,7 @@ extern "C" fn foo() {
 	for _i in 0..5 {
 		println!("hello from task {}", scheduler::get_current_taskid());
 		for _j in 0..100 {
-			TIMER.msleep(5);
+			TIMER.msleep(20);
 		}
 	}
 
@@ -106,7 +106,7 @@ extern "C" fn initd() {
 ///
 /// Boot loader calls this function to start the kernel
 #[no_mangle]
-pub extern "C" fn rust_main() {
+pub extern "C" fn rust_main() -> ! {
 	arch::init();
 	scheduler::init();
 
@@ -121,6 +121,9 @@ pub extern "C" fn rust_main() {
 
 	loop {
 		scheduler::reschedule();
-		arch::processor::shutdown();
+		if scheduler::number_of_tasks() == 0 {
+			arch::processor::shutdown();
+		}
+		arch::processor::halt();
 	}
 }

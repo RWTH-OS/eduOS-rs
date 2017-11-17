@@ -22,50 +22,78 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 use consts::*;
+use scheduler::task::*;
 use scheduler::*;
+use synch::spinlock::*;
 use arch::processor::udelay;
-use core::sync::atomic::{AtomicUsize, Ordering, hint_core_should_pause};
+use core::sync::atomic::{AtomicUsize, Ordering};
+use alloc::binary_heap::BinaryHeap;
+use core::marker::Sync;
 
-pub static TIMER: Timer = Timer::new();
-
-pub struct Timer {
-	ticks: AtomicUsize
+lazy_static! {
+	pub static ref TIMER: Timer = Timer::new();
 }
 
+pub struct Timer {
+	ticks: AtomicUsize,
+	waiting: SpinlockIrqSave<BinaryHeap<WaitingTask>>
+}
+
+unsafe impl Sync for Timer {}
+
 impl Timer {
-	pub const fn new() -> Timer {
+	pub fn new() -> Timer {
 		Timer {
-			ticks: AtomicUsize::new(0)
+			ticks: AtomicUsize::new(0),
+			waiting: SpinlockIrqSave::new(BinaryHeap::new())
 		}
 	}
 
 	pub fn increment(&self) {
-		self.ticks.fetch_add(1, Ordering::SeqCst);
+		let tick = self.ticks.fetch_add(1, Ordering::SeqCst) + 1;
+		let mut guard = self.waiting.lock();
+
+		loop {
+			// do we have a task waiting?
+			match guard.peek() {
+				None => { return; }
+				Some(waiting_task) => {
+					// do we have to wake up the tasks?
+					if waiting_task.wakeup_time > tick {
+						return;
+					} else {
+						wakeup_task(waiting_task.task);
+					}
+				}
+			}
+
+			// if we reach this point, we already wakeup the tasks
+			// => remove the task from the heap
+			guard.pop();
+		}
 	}
 
 	pub fn get_clock_tick(&self) -> usize {
 		self.ticks.load(Ordering::SeqCst)
 	}
 
-	pub fn wait(&self, count: u64)
+	pub fn wait(&self, count: usize)
 	{
-		let eticks: u64 = self.ticks.load(Ordering::SeqCst) as u64 + count;
+		let eticks: usize = self.ticks.load(Ordering::SeqCst) + count;
 
-		/*
-		 * This will continuously loop until the given time has
-		 * been reached
-		 */
-		while (self.ticks.load(Ordering::SeqCst) as u64) < eticks {
-			hint_core_should_pause();
-			reschedule();
-		}
+		self.waiting.lock().push(WaitingTask::new(block_current_task(), eticks));
+
+		// switch to the next task
+		reschedule();
 	}
 
 	pub fn msleep(&self, ms: u32)
 	{
 		if (ms * TIMER_FREQ) / 1000 > 0 {
-			self.wait(((ms * TIMER_FREQ) / 1000) as u64);
+			// roundup timeout by adding 999
+			self.wait(((ms * TIMER_FREQ + 999) / 1000) as usize);
 		} else if ms > 0 {
+			// time is too small => busy waiting
 			udelay((ms as u64) * 1000u64);
 		}
 	}
