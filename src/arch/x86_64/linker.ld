@@ -10,7 +10,7 @@ ENTRY(start)
 
 SECTIONS {
 	/* Load the kernel reasonably high in memory to avoid special addresses. */
-	. = 1M;
+	. = 2M;
 
 	kernel_start = .;
 	.boot :
