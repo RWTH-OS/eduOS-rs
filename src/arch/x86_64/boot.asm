@@ -198,25 +198,25 @@ __replace_boot_stack:
 
 		ret
 
-section .bss
+section .data
 
 ;;; P4 page table for configuring virtual memory.  Must be aligned on a
 ;;; 4096-byte boundary.
 align PAGE_SIZE
 p4_table:
-        resb PAGE_SIZE
+        TIMES PAGE_SIZE DB 0x00
 
 ;;; P3 page table for configuring virtual memory.  Must be aligned on a
 ;;; 4096-byte boundary.
 p3_table:
-        resb PAGE_SIZE
+        TIMES PAGE_SIZE DB 0x00
 
 ;;; Our kernel stack.  We want to make this large enough so that we don't
 ;;; need to worry about overflowing it until we figure out how to set up
 ;;; a guard page and print errors on page faults.
 align PAGE_SIZE
 stack_bottom:
-        resb KERNEL_STACK_SIZE
+		TIMES KERNEL_STACK_SIZE DB 0x00
 stack_top:
 
 section .rodata
