@@ -136,10 +136,8 @@ pub fn lsb(i: u64) -> u64 {
 
 /// The halt function stops the processor until the next interrupt arrives
 pub fn halt() {
-	loop {
-		unsafe {
-			asm!("hlt" :::: "volatile");
-		}
+	unsafe {
+		asm!("hlt" :::: "volatile");
 	}
 }
 
@@ -149,14 +147,16 @@ pub fn get_cpu_frequency() -> u32 {
 }
 
 /// Shutdown the system, if the kernel is booted within Qemu
-pub fn shutdown() {
+pub fn shutdown() -> ! {
 	// shutdown, works only on Qemu
 	unsafe {
 		let mut shutdown_port : cpuio::Port<u8> = cpuio::Port::new(0xf4);
 		shutdown_port.write(0x00);
 	};
 
-	halt();
+	loop {
+		halt();
+	}
 }
 
 /// Initialize processor dependent features
