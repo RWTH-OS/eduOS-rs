@@ -27,6 +27,7 @@ use consts::*;
 use core;
 use alloc;
 use alloc::heap::{Heap, Alloc, Layout};
+use core::cmp::Ordering;
 use core::ptr::Shared;
 use logging::*;
 use arch::processor::lsb;
@@ -190,6 +191,7 @@ pub struct PriorityTaskQueue {
 	prio_bitmap: u64
 }
 
+// wieso liste?
 impl PriorityTaskQueue {
 	/// Creates an empty priority queue for tasks
 	pub const fn new() -> PriorityTaskQueue {
@@ -299,4 +301,39 @@ impl Task {
 			stack: tmp
 		}
 	}
+}
+
+/// Struct to sort the tasks by wakeup time
+pub struct WaitingTask {
+	pub wakeup_time: usize,
+	pub task: Shared<Task>,
+}
+
+impl WaitingTask {
+	pub fn new(t: Shared<Task>, wt: usize) -> WaitingTask {
+		WaitingTask {
+			wakeup_time: wt,
+			task: t
+		}
+	}
+}
+
+impl Eq for WaitingTask {}
+
+impl PartialOrd for WaitingTask {
+    fn partial_cmp(&self, other: &WaitingTask) -> Option<Ordering> {
+        Some(self.wakeup_time.cmp(&other.wakeup_time).reverse())
+    }
+}
+
+impl Ord for WaitingTask {
+    fn cmp(&self, other: &WaitingTask) -> Ordering {
+        self.wakeup_time.cmp(&other.wakeup_time).reverse()
+    }
+}
+
+impl PartialEq for WaitingTask {
+    fn eq(&self, other: &WaitingTask) -> bool {
+        self.wakeup_time == other.wakeup_time
+    }
 }
