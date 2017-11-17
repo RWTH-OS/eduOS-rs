@@ -308,59 +308,59 @@ impl InteruptHandler {
 
 	pub unsafe fn load_idt(&mut self) {
 		self.idt[0] = IdtEntry::new(VAddr::from_usize(divide_by_zero_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 1);
 		self.idt[1] = IdtEntry::new(VAddr::from_usize(debug_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 1);
 		self.idt[2] = IdtEntry::new(VAddr::from_usize(nmi_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 2);
 		self.idt[3] = IdtEntry::new(VAddr::from_usize(int3_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 1);
 		self.idt[4] = IdtEntry::new(VAddr::from_usize(int0_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 1);
 		self.idt[5] = IdtEntry::new(VAddr::from_usize(out_of_bound_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 1);
 		self.idt[6] = IdtEntry::new(VAddr::from_usize(invalid_opcode_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 1);
 		self.idt[7] = IdtEntry::new(VAddr::from_usize(no_coprocessor_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 1);
 		self.idt[8] = IdtEntry::new(VAddr::from_usize(double_fault_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 3);
 		self.idt[9] = IdtEntry::new(VAddr::from_usize(overrun_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 1);
 		self.idt[10] = IdtEntry::new(VAddr::from_usize(bad_tss_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 1);
 		self.idt[11] = IdtEntry::new(VAddr::from_usize(not_present_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 1);
 		self.idt[12] = IdtEntry::new(VAddr::from_usize(stack_fault_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 1);
 		self.idt[13] = IdtEntry::new(VAddr::from_usize(general_protection_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 1);
 		self.idt[14] = IdtEntry::new(VAddr::from_usize(page_fault_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 1);
 		self.idt[15] = IdtEntry::new(VAddr::from_usize(reserved_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 1);
 		self.idt[16] = IdtEntry::new(VAddr::from_usize(floating_point_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 1);
 		self.idt[17] = IdtEntry::new(VAddr::from_usize(alignment_check_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 1);
 		self.idt[18] = IdtEntry::new(VAddr::from_usize(machine_check_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 4);
 		for i in 19..32 {
 			self.idt[i] = IdtEntry::new(VAddr::from_usize(reserved_exception as usize),
-				KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+				KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 1);
 		}
 		self.idt[32] = IdtEntry::new(VAddr::from_usize(timer_handler as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 1);
 
 		// send only eoi to the master
 		for i in 33..40 {
 			self.idt[i] = IdtEntry::new(VAddr::from_usize(unhandled_irq1 as usize),
-				KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+				KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 1);
 		}
 		// send  eoi to the master and to the slave
 		for i in 40..IDT_ENTRIES {
 			self.idt[i] = IdtEntry::new(VAddr::from_usize(unhandled_irq2 as usize),
-				KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+				KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 1);
 		}
 
 		let idtr = DescriptorTablePointer::new(&self.idt);

@@ -266,6 +266,8 @@ pub struct Task {
 	prev: Option<Shared<Task>>,
 	/// Stack of the task
 	pub stack: *mut KernelStack,
+	/// Stack for interrupt handling
+	pub ist: *mut KernelStack,
 }
 
 pub trait TaskFrame {
@@ -277,18 +279,20 @@ impl Drop for Task {
     fn drop(&mut self) {
 		debug!("deallocate stack of task {} (stack at 0x{:x})", self.id, self.stack as usize);
 
-		// deallocate stack
+		// deallocate stacks
 		unsafe {
 			Heap.dealloc(self.stack as *mut u8, Layout::new::<KernelStack>());
+			Heap.dealloc(self.ist as *mut u8, Layout::new::<KernelStack>());
 		}
 	}
 }
 
 impl Task {
 	pub fn new(tid: TaskId, task_status: TaskStatus, task_prio: Priority) -> Task {
-		let tmp = unsafe { Heap.alloc(Layout::new::<KernelStack>()).unwrap() as *mut KernelStack };
+		let tmp1 = unsafe { Heap.alloc(Layout::new::<KernelStack>()).unwrap() as *mut KernelStack };
+		let tmp2 = unsafe { Heap.alloc(Layout::new::<KernelStack>()).unwrap() as *mut KernelStack };
 
-		debug!("allocate stack for task {} at 0x{:x}", tid, tmp as usize);
+		debug!("allocate stack for task {} at 0x{:x}", tid, tmp1 as usize);
 
 		Task {
 			id: tid,
@@ -298,7 +302,8 @@ impl Task {
 			next: None,
 			prev: None,
 			// allocate stack directly from the heap
-			stack: tmp
+			stack: tmp1,
+			ist: tmp2
 		}
 	}
 }

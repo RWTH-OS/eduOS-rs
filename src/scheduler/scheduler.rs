@@ -89,14 +89,15 @@ impl Scheduler {
 
 		// boot task is implicitly task 0 and and the idle task of core 0
 		let idle_box = Box::new(Task::new(tid, TaskStatus::TaskIdle, LOW_PRIO));
-		let bottom = (*idle_box.stack).bottom();
+		let rsp = (*idle_box.stack).bottom();
+		let ist = (*idle_box.ist).bottom();
 		let idle_shared = Shared::new_unchecked(Box::into_raw(idle_box));
 
 		self.idle_task = idle_shared;
 		self.current_task = self.idle_task;
 
 		// replace temporary boot stack by the kernel stack of the boot task
-		replace_boot_stack(bottom);
+		replace_boot_stack(rsp, ist);
 
 		self.tasks.lock().as_mut().unwrap().insert(tid, idle_shared);
 	}
@@ -215,8 +216,10 @@ impl Scheduler {
 
 	/// Determines the start address of the stack
 	#[inline(always)]
-	pub fn get_current_stack(&self) -> usize {
-		unsafe { (*self.current_task.as_ref().stack).bottom() }
+	pub fn get_current_stack(&self) -> (usize, usize) {
+		unsafe {
+			((*self.current_task.as_ref().stack).bottom(), (*self.current_task.as_ref().ist).bottom())
+		}
 	}
 
 	/// Determines the priority of the current task

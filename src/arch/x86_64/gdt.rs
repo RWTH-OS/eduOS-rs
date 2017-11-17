@@ -28,6 +28,8 @@ use x86::bits64::segmentation::*;
 use x86::bits64::task::*;
 use x86::shared::PrivilegeLevel;
 use x86::shared::dtables::{self, DescriptorTablePointer};
+use alloc::heap::{Heap, Alloc, Layout};
+use scheduler::task::KernelStack;
 use consts::*;
 //use logging::*;
 use scheduler;
@@ -89,6 +91,12 @@ pub fn init()
 		GDT[GDT_FIRST_TSS..GDT_FIRST_TSS+TSS_ENTRIES].copy_from_slice(
 			&SegmentDescriptor::new_tss(&TSS.0, PrivilegeLevel::Ring0));
 
+		// stacks for NMIs
+		TSS.0.ist[0] = 0; //Heap.alloc(Layout::new::<KernelStack>()).unwrap() as u64 + KERNEL_STACK_SIZE as u64 - 0x10;
+		TSS.0.ist[1] = Heap.alloc(Layout::new::<KernelStack>()).unwrap() as u64 + KERNEL_STACK_SIZE as u64 - 0x10;
+		TSS.0.ist[2] = Heap.alloc(Layout::new::<KernelStack>()).unwrap() as u64 + KERNEL_STACK_SIZE as u64 - 0x10;
+		TSS.0.ist[3] = Heap.alloc(Layout::new::<KernelStack>()).unwrap() as u64 + KERNEL_STACK_SIZE as u64- 0x10;
+
 		// load GDT
 		let gdtr = DescriptorTablePointer::new(&GDT);
 		dtables::lgdt(&gdtr);
@@ -102,13 +110,16 @@ pub fn init()
 }
 
 #[inline(always)]
-pub unsafe fn set_kernel_stack(stack: usize)
+pub unsafe fn set_kernel_stack(stack: usize, ist: usize)
 {
 	TSS.0.rsp[0] = stack as u64;
+	TSS.0.ist[0] = ist as u64;
 }
 
 #[no_mangle]
  pub unsafe extern "C" fn set_current_kernel_stack()
  {
-	 set_kernel_stack(scheduler::get_current_stack() + KERNEL_STACK_SIZE - 0x10);
+	 let (rsp, ist) = scheduler::get_current_stack();
+
+	 set_kernel_stack(rsp + KERNEL_STACK_SIZE - 0x10, ist + KERNEL_STACK_SIZE - 0x10);
  }

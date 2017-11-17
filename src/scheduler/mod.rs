@@ -79,7 +79,7 @@ pub fn block_current_task() -> Shared<task::Task> {
 }
 
 #[inline(always)]
-pub fn get_current_stack() -> usize {
+pub fn get_current_stack() -> (usize, usize) {
 	unsafe {
 		SCHEDULER.get_current_stack()
 	}

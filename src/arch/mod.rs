@@ -115,12 +115,13 @@ extern {
 /// The boot loader initialize a stack, which is later also required to
 /// to boot other core. Consequently, the kernel has to replace with this
 /// function the boot stack by a new one.
-pub fn replace_boot_stack(stack_bottom: usize)
+pub fn replace_boot_stack(stack_bottom: usize, ist_bottom: usize)
 {
 	unsafe {
 		__replace_boot_stack(stack_bottom);
 
-		gdt::set_kernel_stack(stack_bottom + KERNEL_STACK_SIZE - 0x10);
+		gdt::set_kernel_stack(stack_bottom + KERNEL_STACK_SIZE - 0x10,
+			ist_bottom + KERNEL_STACK_SIZE - 0x10);
 
 		// register task
 		let sel: u16 = 3 << 3;
