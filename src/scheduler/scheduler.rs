@@ -48,7 +48,9 @@ pub struct Scheduler {
 	/// queue of tasks, which are finished and can be released
 	finished_tasks: SpinlockIrqSave<Option<VecDeque<TaskId>>>,
 	/// map between task id and task controll block
-	tasks: SpinlockIrqSave<Option<BTreeMap<TaskId, Shared<Task>>>>
+	tasks: SpinlockIrqSave<Option<BTreeMap<TaskId, Shared<Task>>>>,
+	/// number of tasks managed by the scheduler
+	no_tasks: AtomicUsize
 }
 
 impl Scheduler {
@@ -61,7 +63,8 @@ impl Scheduler {
 			idle_task: unsafe { Shared::new_unchecked(0 as *mut Task) },
 			ready_queue: SpinlockIrqSave::new(PriorityTaskQueue::new()),
 			finished_tasks: SpinlockIrqSave::new(None),
-			tasks: SpinlockIrqSave::new(None)
+			tasks: SpinlockIrqSave::new(None),
+			no_tasks: AtomicUsize::new(0)
 		}
 	}
 
@@ -137,6 +140,9 @@ impl Scheduler {
 
 		info!("create task with id {}", tid);
 
+		// update the number of tasks
+		self.no_tasks.fetch_add(1, Ordering::SeqCst);
+
 		tid
 	}
 
@@ -145,6 +151,8 @@ impl Scheduler {
 		if self.current_task.as_ref().status != TaskStatus::TaskIdle {
 			info!("finish task with id {}", self.current_task.as_ref().id);
 			self.current_task.as_mut().status = TaskStatus::TaskFinished;
+			// update the number of tasks
+			self.no_tasks.fetch_sub(1, Ordering::SeqCst);
 		} else {
 			panic!("unable to terminate idle task");
 		}
@@ -156,10 +164,11 @@ impl Scheduler {
 	}
 
 	pub unsafe fn abort(&mut self) -> ! {
-			info!("abort task with id {}", self.current_task.as_ref().id);
-
 			if self.current_task.as_ref().status != TaskStatus::TaskIdle {
+				info!("abort task with id {}", self.current_task.as_ref().id);
 				self.current_task.as_mut().status = TaskStatus::TaskFinished;
+				// update the number of tasks
+				self.no_tasks.fetch_sub(1, Ordering::SeqCst);
 			} else {
 				panic!("unable to terminate idle task");
 			}
@@ -168,6 +177,10 @@ impl Scheduler {
 
 			// we should never reach this point
 			panic!("abort failed!");
+	}
+
+	pub fn number_of_tasks(&self) -> usize {
+		self.no_tasks.load(Ordering::SeqCst)
 	}
 
 	/// Block the current task

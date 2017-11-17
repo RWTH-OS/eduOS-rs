@@ -55,6 +55,13 @@ pub fn reschedule() {
 	}
 }
 
+#[inline(always)]
+pub fn number_of_tasks() -> usize {
+	unsafe {
+		SCHEDULER.number_of_tasks()
+	}
+}
+
 /// Trigger the scheduler from an interrupt to switch to the next available task
 #[inline(always)]
 pub fn schedule() {
