@@ -51,7 +51,7 @@ lazy_static! {
 		let start = unsafe { rdtsc() };
 		/* wait 3 ticks to determine the frequency */
 		while TIMER.get_clock_tick() - ticks < 3 {
-				hint_core_should_pause();
+			hint_core_should_pause();
 		}
 		rmb();
 		let end = unsafe { rdtsc() };
@@ -216,4 +216,27 @@ pub fn init() {
 	debug!("set CR4 to {:?}", cr4);
 
 	unsafe { control_regs::cr4_write(cr4) };
+
+	print!("Detected processor: ");
+	match cpuid.get_extended_function_info() {
+		Some(exinfo) => {
+			match exinfo.processor_brand_string() {
+				Some(str) => println!("{}", str),
+				None => println!("unknwon")
+			}
+		},
+		None => println!("unknwon")
+	}
+
+	println!("Summary of cache information:");
+	match cpuid.get_cache_parameters() {
+		Some(cparams) => {
+			for cache in cparams {
+				let size = cache.associativity() * cache.physical_line_partitions() * cache.coherency_line_size() * cache.sets();
+				println!("L{}-Cache size is {}", cache.level(), size);
+			}
+		},
+		None => println!("No cache parameter information available"),
+	}
+	println!("");
 }
