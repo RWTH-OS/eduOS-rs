@@ -125,7 +125,7 @@ pub fn replace_boot_stack(stack_bottom: usize, ist_bottom: usize)
 			ist_bottom + KERNEL_STACK_SIZE - 0x10);
 
 		// register task
-		let sel: u16 = 3 << 3;
+		let sel: u16 = 6 << 3;
 		load_tr(SegmentSelector::from_raw(sel));
 	}
 }
