@@ -97,7 +97,8 @@ fn initialize_memory() {
 						info!("Heap starts at 0x{:x} with a size of {} MBytes",
 							base, len / (1024*1024));
 						init_heap = true;
-						allocator::init(base as usize, len as usize);
+						// TODO: fix limit after realization of a full memory management
+						allocator::init(base as usize, 0x4000000usize /*len as usize*/);
 					}
 				}
 			}

@@ -35,6 +35,8 @@ global HEAP_TOP
 global MBINFO
 
 extern long_mode_start
+extern kernel_start
+extern kernel_end
 
 KERNEL_STACK_SIZE equ 8192
 PAGE_SIZE equ 4096
@@ -142,23 +144,46 @@ test_long_mode:
         mov al, "L"
         jmp error
 
-;;; Configure p4_table and p3_table to map a single, huge 1GB page that
-;;; has the same virtual and physical addresses, located at 0x0.
 setup_page_tables:
-        ;; Point first entry in P4 at P3, setting appropriate flag
-        ;; bits in the unused portions of the pointer.
-        mov eax, p3_table
-        or eax, 0b11                      ; Present & writable.
-        mov [p4_table], eax
+        ; map multiboot info 1:1
+        push edi
+        mov eax, DWORD [MBINFO]   ; map multiboot info
+        and eax, 0xFFFFF000       ; page align lower half
+        mov edi, eax
+        shr edi, 9                ; (edi >> 12) * 8 (index for boot_pgt)
+        add edi, boot_pgt
+        or eax, 0x101             ; set present and global bits
+        mov DWORD [edi], eax
+        pop edi
 
-        ;; Map first entry in P3 to 0, with flag bits set.
-        mov dword [p3_table], 0b10000011  ; Present & writable & huge.
+        ; map kernel 1:1
+        push eax
+        push edi
+        push ecx
+        mov edi, kernel_start
+        shr edi, 18                ; (edi >> 21) * 8 (index for boot_pgd)
+        add edi, boot_pgd
+        mov eax, kernel_start
+        or eax, 0x1A3  ; if we want to allow user access 0x1A7 otherwuse 0x1A3
+        xor ecx, ecx
+Lmap:
+        mov DWORD [edi], eax
+        add eax, 0x200000
+        add ecx, 0x200000
+        add edi, 8
+        ; note: the whole code segement has to fit in the first pgd
+        cmp ecx, 0x4000000   ; reserve 64 MB
+        jl Lmap
+        pop ecx
+        pop edi
+        pop eax
+
         ret
 
 ;;; Turn on paging.
 enable_paging:
         ;; Load P4 into cr3.
-        mov eax, p4_table
+        mov eax, boot_pml4
         mov cr3, eax
 
         ;; Enable Physical Address Extension in cr4.
@@ -200,16 +225,22 @@ __replace_boot_stack:
 
 section .data
 
-;;; P4 page table for configuring virtual memory.  Must be aligned on a
-;;; 4096-byte boundary.
-align PAGE_SIZE
-p4_table:
-        TIMES PAGE_SIZE DB 0x00
-
-;;; P3 page table for configuring virtual memory.  Must be aligned on a
-;;; 4096-byte boundary.
-p3_table:
-        TIMES PAGE_SIZE DB 0x00
+; Bootstrap page tables are used during the initialization.
+align 4096
+boot_pml4:
+	DQ boot_pdpt + 0x107 ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_USER
+	times 510 DQ 0       ; PAGE_MAP_ENTRIES - 2
+	DQ boot_pml4 + 0x303 ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_SELF (self-reference)
+boot_pdpt:
+	DQ boot_pgd + 0x107  ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_USER
+	times 510 DQ 0       ; PAGE_MAP_ENTRIES - 2
+	DQ boot_pml4 + 0x303 ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_SELF (self-reference)
+boot_pgd:
+	DQ boot_pgt + 0x107  ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_USER
+	times 510 DQ 0       ; PAGE_MAP_ENTRIES - 2
+	DQ boot_pml4 + 0x303 ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_SELF (self-reference)
+boot_pgt:
+	times 512 DQ 0
 
 ;;; Our kernel stack.  We want to make this large enough so that we don't
 ;;; need to worry about overflowing it until we figure out how to set up
