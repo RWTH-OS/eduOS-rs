@@ -41,6 +41,7 @@
 extern crate cpuio;
 extern crate rlibc;
 extern crate x86;
+extern crate raw_cpuid;
 extern crate alloc;
 extern crate alloc_kernel as allocator;
 extern crate multiboot;

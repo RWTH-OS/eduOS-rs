@@ -26,7 +26,9 @@
 //! Interface to initialize the processor and to detect CPU features
 
 use cpuio;
+use raw_cpuid::*;
 use x86::shared::*;
+use x86::shared::control_regs::*;
 use logging::*;
 use consts::*;
 use timer::*;
@@ -163,6 +165,8 @@ pub fn shutdown() -> ! {
 pub fn init() {
 	debug!("enable supported processor features");
 
+	let cpuid = CpuId::new();
+
 	let mut cr0 = unsafe { control_regs::cr0() };
 
 	// be sure that AM, NE and MP is enabled
@@ -175,4 +179,41 @@ pub fn init() {
 	debug!("set CR0 to {:?}", cr0);
 
 	unsafe { control_regs::cr0_write(cr0) };
+
+	let mut cr4 = unsafe { control_regs::cr4() };
+
+	let has_pge = match cpuid.get_feature_info() {
+		Some(finfo) => finfo.has_pge(),
+		None => false
+	};
+
+	if has_pge {
+		cr4 |= CR4_ENABLE_GLOBAL_PAGES;
+	}
+
+	let has_fsgsbase = match cpuid.get_extended_feature_info() {
+		Some(efinfo) => efinfo.has_fsgsbase(),
+		None => false
+	};
+
+	if has_fsgsbase {
+		cr4 |= CR4_ENABLE_FSGSBASE;
+	}
+
+	let has_mce = match cpuid.get_feature_info() {
+		Some(finfo) => finfo.has_mce(),
+		None => false
+	};
+
+	if has_mce {
+		cr4 |= CR4_ENABLE_MACHINE_CHECK; // enable machine check exceptions
+	}
+
+	// disable performance monitoring counter
+	// allow the usage of rdtsc in user space
+	cr4 &= !(CR4_ENABLE_PPMC|CR4_TIME_STAMP_DISABLE);
+
+	debug!("set CR4 to {:?}", cr4);
+
+	unsafe { control_regs::cr4_write(cr4) };
 }
