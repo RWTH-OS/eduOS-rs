@@ -26,7 +26,6 @@
 //! As usual, inspired by http://wiki.osdev.org/Serial_Ports
 
 use core::fmt;
-use synch::spinlock::*;
 use cpuio;
 use self::Register::*;
 
@@ -56,25 +55,21 @@ pub struct ComPort {
     /// COM ports are identified by the base address of their associated
     /// I/O registers.
     base_addr: u16,
-    /// Has this port been initialized yet?
-    initialized: bool,
 }
 
 impl ComPort {
     /// Create a new COM port with the specified base address.  Note that
     /// this does not actually finish initializing the serial port, because
     /// this is `const` function that may be computed at compile time.
-    /// Initialization is finished by `lazy_initialize`, which should be
-    /// called by all safe, public functions in this API.
-    const unsafe fn new(base_addr: u16) -> ComPort {
-        ComPort { base_addr: base_addr, initialized: false }
+    /// Initialization is finished by `lazy_initialize`.
+    const fn new(base_addr: u16) -> ComPort {
+        ComPort {
+			base_addr: base_addr
+		}
     }
 
     /// Finish the runtime-only setup needed by this port.
-    unsafe fn lazy_initialize(&mut self) {
-        if self.initialized == true { return; }
-        self.initialized = true;
-
+    unsafe fn lazy_initialize(&self) {
         // Disable interrupts.
         self.port(InterruptEnableOrBaudMsb).write(0x00);
 
@@ -95,15 +90,13 @@ impl ComPort {
     /// marked as `unsafe` because the returned port can potentially be
     /// used to mess with processor interrupts and otherwise violate
     /// fundamental abstractions about how Rust code works.
-    unsafe fn port(&mut self, register: Register) -> cpuio::Port<u8> {
+    unsafe fn port(&self, register: Register) -> cpuio::Port<u8> {
         cpuio::Port::new(self.base_addr + (register as u8 as u16))
     }
 
     /// Set the baud rate as a divisor of 115,200.
-    fn set_baud_divisor(&mut self, divisor: u16) {
+    fn set_baud_divisor(&self, divisor: u16) {
         unsafe {
-            self.lazy_initialize();
-
             // Switch ports DataOrBaudLsb and InterruptEnableOrBaudMsb to
             // their baud mode by setting the high bit of LineControl.
             let saved_line_control = self.port(LineControl).read();
@@ -120,24 +113,19 @@ impl ComPort {
 
     /// Can we safely transmit data on this serial port right now, or will
     /// we block?
-    fn can_transmit(&mut self) -> bool {
+    fn can_transmit(&self) -> bool {
         unsafe {
-            self.lazy_initialize();
             // TODO: Check to see what the meaning of this bit is. OSDev
             // calls it "is_transmit_empty", so maybe we actually want a
             // different bit.
             (self.port(LineStatus).read() & 0x20) != 0
         }
     }
-}
 
-impl fmt::Write for ComPort {
-    /// Output a string to our COM port.  This allows using nice,
+	/// Output a string to our COM port.  This allows using nice,
     /// high-level tools like Rust's `write!` macro.
-    fn write_str(&mut self, s: &str) -> fmt::Result {
+    pub fn write_str(&self, s: &str) -> fmt::Result {
         unsafe {
-            self.lazy_initialize();
-
             // Output each byte of our string.
             for &b in s.as_bytes() {
                 // Loop until the port's available.
@@ -152,6 +140,9 @@ impl fmt::Write for ComPort {
 }
 
 /// Our primary serial port.
-pub static COM1: SpinlockIrqSave<ComPort> = SpinlockIrqSave::new(unsafe {
-    ComPort::new(0x03F8)
-});
+pub static COM1: ComPort = ComPort::new(0x03F8);
+
+pub fn init()
+{
+	unsafe { COM1.lazy_initialize(); }
+}
