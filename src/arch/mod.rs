@@ -44,6 +44,7 @@ use logging::*;
 use consts::*;
 use x86::shared::task::load_tr;
 use x86::shared::segmentation::SegmentSelector;
+use x86::shared::PrivilegeLevel;
 
 extern {
 	/// Begin of the kernel.  Declared in `linker.ld` so that we can
@@ -125,8 +126,8 @@ pub fn replace_boot_stack(stack_bottom: usize, ist_bottom: usize)
 			ist_bottom + KERNEL_STACK_SIZE - 0x10);
 
 		// register task
-		let sel: u16 = 6 << 3;
-		load_tr(SegmentSelector::from_raw(sel));
+		let sel = SegmentSelector::new(gdt::GDT_FIRST_TSS as u16, PrivilegeLevel::Ring0);
+		load_tr(sel);
 	}
 }
 
