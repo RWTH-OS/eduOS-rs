@@ -55,7 +55,7 @@ pub struct Scheduler {
 
 impl Scheduler {
 	/// Create a new scheduler
-	pub const fn new() -> Scheduler {
+	pub fn new() -> Scheduler {
 		Scheduler {
 			// I know that this is unsafe. But I know also that I initialize
 			// the Scheduler (with add_idle_task correctly) before the system schedules task.
