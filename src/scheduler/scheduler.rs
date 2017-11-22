@@ -39,15 +39,15 @@ extern {
 }
 
 pub struct Scheduler {
-	/// task id which is currently running
+	/// task which is currently running
 	current_task: Shared<Task>,
-	/// id of the idle task
+	/// idle task
 	idle_task: Shared<Task>,
 	/// queues of tasks, which are ready
 	ready_queue: SpinlockIrqSave<PriorityTaskQueue>,
 	/// queue of tasks, which are finished and can be released
 	finished_tasks: SpinlockIrqSave<Option<VecDeque<TaskId>>>,
-	/// map between task id and task controll block
+	/// map between task id and task control block
 	tasks: SpinlockIrqSave<Option<BTreeMap<TaskId, Shared<Task>>>>,
 	/// number of tasks managed by the scheduler
 	no_tasks: AtomicUsize
