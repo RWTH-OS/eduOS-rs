@@ -46,9 +46,9 @@ pub struct Scheduler {
 	/// queues of tasks, which are ready
 	ready_queue: SpinlockIrqSave<PriorityTaskQueue>,
 	/// queue of tasks, which are finished and can be released
-	finished_tasks: SpinlockIrqSave<Option<VecDeque<TaskId>>>,
+	finished_tasks: SpinlockIrqSave<VecDeque<TaskId>>,
 	/// map between task id and task control block
-	tasks: SpinlockIrqSave<Option<BTreeMap<TaskId, Shared<Task>>>>,
+	tasks: SpinlockIrqSave<BTreeMap<TaskId, Shared<Task>>>,
 	/// number of tasks managed by the scheduler
 	no_tasks: AtomicUsize
 }
@@ -62,8 +62,8 @@ impl Scheduler {
 			current_task: unsafe { Shared::new_unchecked(0 as *mut Task) },
 			idle_task: unsafe { Shared::new_unchecked(0 as *mut Task) },
 			ready_queue: SpinlockIrqSave::new(PriorityTaskQueue::new()),
-			finished_tasks: SpinlockIrqSave::new(None),
-			tasks: SpinlockIrqSave::new(None),
+			finished_tasks: SpinlockIrqSave::new(VecDeque::new()),
+			tasks: SpinlockIrqSave::new(BTreeMap::new()),
 			no_tasks: AtomicUsize::new(0)
 		}
 	}
@@ -72,7 +72,7 @@ impl Scheduler {
 		loop {
 			let id = TaskId::from(TID_COUNTER.fetch_add(1, Ordering::SeqCst));
 
-			if self.tasks.lock().as_ref().unwrap().contains_key(&id) == false {
+			if self.tasks.lock().contains_key(&id) == false {
 				return id;
 			}
 		}
@@ -80,11 +80,6 @@ impl Scheduler {
 
 	/// add the current task as idle task the scheduler
 	pub unsafe fn add_idle_task(&mut self) {
-		// idle task is the first task for the scheduler => initialize queues and btree
-
-		// initialize vector of queues
-		*self.finished_tasks.lock() = Some(VecDeque::new());
-		*self.tasks.lock() = Some(BTreeMap::new());
 		let tid = self.get_tid();
 
 		// boot task is implicitly task 0 and and the idle task of core 0
@@ -99,7 +94,7 @@ impl Scheduler {
 		// replace temporary boot stack by the kernel stack of the boot task
 		replace_boot_stack(rsp, ist);
 
-		self.tasks.lock().as_mut().unwrap().insert(tid, idle_shared);
+		self.tasks.lock().insert(tid, idle_shared);
 	}
 
 	/// Spawn a new task
@@ -107,7 +102,7 @@ impl Scheduler {
 		let tid: TaskId;
 
 		// do we have finished a task? => reuse it
-		match self.finished_tasks.lock().as_mut().unwrap().pop_front() {
+		match self.finished_tasks.lock().pop_front() {
 			None => {
 				debug!("create new task control block");
 				tid = self.get_tid();
@@ -117,13 +112,13 @@ impl Scheduler {
 
 				let shared_task = &mut Shared::new_unchecked(Box::into_raw(task));
 				self.ready_queue.lock().push(prio, shared_task);
-				self.tasks.lock().as_mut().unwrap().insert(tid, *shared_task);
+				self.tasks.lock().insert(tid, *shared_task);
 			},
 			Some(id) => {
 				debug!("resuse existing task control block");
 
 				tid = id;
-				match self.tasks.lock().as_mut().unwrap().get_mut(&tid) {
+				match self.tasks.lock().get_mut(&tid) {
 					Some(task) => {
 						// reset old task and setup stack frame
 						task.as_mut().status = TaskStatus::TaskReady;
@@ -232,7 +227,7 @@ impl Scheduler {
 	pub fn get_priority(&self, tid: TaskId) -> Priority {
 		let mut prio: Priority = NORMAL_PRIO;
 
-		match self.tasks.lock().as_ref().unwrap().get(&tid) {
+		match self.tasks.lock().get(&tid) {
 			Some(task) => prio = unsafe { task.as_ref().prio },
 			None => { info!("didn't find current task"); }
 		}
@@ -283,7 +278,7 @@ impl Scheduler {
 					// release the task later, because the stack is required
 					// to call the function "switch"
 					// => push id to a queue and release the task later
-					self.finished_tasks.lock().as_mut().unwrap().push_back(old_id);
+					self.finished_tasks.lock().push_back(old_id);
 				}
 
 				let next_stack_pointer = next_task.as_ref().last_stack_pointer;
@@ -303,9 +298,9 @@ impl Scheduler {
 	unsafe fn cleanup_tasks(&mut self)
 	{
 		// do we have finished tasks? => drop first tasks => deallocate implicitly the stack
-		match self.finished_tasks.lock().as_mut().unwrap().pop_front() {
+		match self.finished_tasks.lock().pop_front() {
 			Some(id) => {
-				match self.tasks.lock().as_mut().unwrap().remove(&id) {
+				match self.tasks.lock().remove(&id) {
 					Some(task) => drop(Box::from_raw(task.as_ptr())),
 					None => info!("unable to drop task {}", id)
 				}
