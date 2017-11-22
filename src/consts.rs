@@ -39,5 +39,8 @@ pub const PAGE_SIZE : usize = 4096;
 /// Maximum number of priorities
 pub const NO_PRIORITIES: usize = 32;
 
+/// penalty for multilevel feedback
+pub const SCHEDULING_PENALTY: u8 = 8;
+
 /// frequency of the timer interrupt
 pub const TIMER_FREQ: u32 = 100; /* in HZ */

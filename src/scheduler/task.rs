@@ -256,8 +256,10 @@ pub struct Task {
 	pub id: TaskId,
 	/// Status of a task, e.g. if the task is ready or blocked
 	pub status: TaskStatus,
-	/// Task priority,
-	pub prio: Priority,
+	/// Task base priority,
+	pub base_prio: Priority,
+	/// Task scheduling penalty
+	pub penalty: u8,
 	/// Last stack pointer before a context switch to another task
 	pub last_stack_pointer: usize,
 	/// points to the next task within a task queue
@@ -288,7 +290,7 @@ impl Drop for Task {
 }
 
 impl Task {
-	pub fn new(tid: TaskId, task_status: TaskStatus, task_prio: Priority) -> Task {
+	pub fn new(tid: TaskId, task_status: TaskStatus, task_base_prio: Priority) -> Task {
 		let tmp1 = unsafe { Heap.alloc(Layout::new::<KernelStack>()).unwrap() as *mut KernelStack };
 		let tmp2 = unsafe { Heap.alloc(Layout::new::<KernelStack>()).unwrap() as *mut KernelStack };
 
@@ -297,7 +299,8 @@ impl Task {
 		Task {
 			id: tid,
 			status: task_status,
-			prio: task_prio,
+			base_prio: task_base_prio,
+			penalty: 0,
 			last_stack_pointer: 0,
 			next: None,
 			prev: None,
@@ -305,6 +308,9 @@ impl Task {
 			stack: tmp1,
 			ist: tmp2
 		}
+	}
+	pub fn prio(&self) -> Priority {
+		Priority::from(self.base_prio.into() + self.penalty)
 	}
 }
 
