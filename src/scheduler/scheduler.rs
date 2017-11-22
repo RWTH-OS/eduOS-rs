@@ -55,15 +55,36 @@ pub struct Scheduler {
 impl Scheduler {
 	/// Create a new scheduler
 	pub fn new() -> Scheduler {
-		Scheduler {
+		let tid = TaskId::from(0);
+
+		// boot task is implicitly task 0 and and the idle task of core 0
+		let idle_box = Box::new(Task::new(tid, TaskStatus::TaskIdle, LOW_PRIO));
+		unsafe {
+
+			let rsp = (*idle_box.stack).bottom();
+			let ist = (*idle_box.ist).bottom();
+
+			// replace temporary boot stack by the kernel stack of the boot task
+			replace_boot_stack(rsp, ist);
+		}
+		let mut idle_task = unsafe { Shared::new_unchecked(Box::into_raw(idle_box)) };
+
+		let s = Scheduler {
 			// I know that this is unsafe. But I know also that I initialize
 			// the Scheduler (with add_idle_task correctly) before the system schedules task.
-			current_task: unsafe { Shared::new_unchecked(0 as *mut Task) },
-			idle_task: unsafe { Shared::new_unchecked(0 as *mut Task) },
+			current_task: idle_task,
+			idle_task: idle_task,
 			finished_tasks: SpinlockIrqSave::new(VecDeque::new()),
 			tasks: SpinlockIrqSave::new(BTreeMap::new()),
 			no_tasks: AtomicUsize::new(0)
-		}
+		};
+
+		let tid = s.get_tid();
+		s.tasks.lock().insert(tid, idle_task);
+
+		unsafe { idle_task.as_mut().id = tid; }
+
+		s
 	}
 
 	fn get_tid(&self) -> TaskId {
@@ -74,25 +95,6 @@ impl Scheduler {
 				return id;
 			}
 		}
-	}
-
-	/// add the current task as idle task the scheduler
-	pub unsafe fn add_idle_task(&mut self) {
-		let tid = self.get_tid();
-
-		// boot task is implicitly task 0 and and the idle task of core 0
-		let idle_box = Box::new(Task::new(tid, TaskStatus::TaskIdle, LOW_PRIO));
-		let rsp = (*idle_box.stack).bottom();
-		let ist = (*idle_box.ist).bottom();
-		let idle_shared = Shared::new_unchecked(Box::into_raw(idle_box));
-
-		self.idle_task = idle_shared;
-		self.current_task = self.idle_task;
-
-		// replace temporary boot stack by the kernel stack of the boot task
-		replace_boot_stack(rsp, ist);
-
-		self.tasks.lock().insert(tid, idle_shared);
 	}
 
 	/// Spawn a new task

@@ -38,7 +38,7 @@ static mut SCHEDULER: Option<scheduler::Scheduler> = None;
 pub fn init() {
 	unsafe {
 		SCHEDULER = Some(scheduler::Scheduler::new());
-		SCHEDULER.as_mut().unwrap().add_idle_task();
+		debug!("scheduler initialized");
 	}
 }
 
