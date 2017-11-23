@@ -65,14 +65,14 @@ impl alloc::fmt::Display for TaskId {
 
 /// Priority of a task
 #[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone, Copy)]
-pub struct Priority(u8);
+pub struct Priority(i8);
 
 impl Priority {
-	pub const fn into(self) -> u8 {
+	pub const fn into(self) -> i8 {
 		self.0
 	}
 
-	pub const fn from(x: u8) -> Self {
+	pub const fn from(x: i8) -> Self {
 		Priority(x)
 	}
 }
@@ -83,10 +83,11 @@ impl alloc::fmt::Display for Priority {
 	}
 }
 
-pub const REALTIME_PRIO: Priority = Priority::from(0);
-pub const HIGH_PRIO: Priority = Priority::from(0);
-pub const NORMAL_PRIO: Priority = Priority::from(24);
-pub const LOW_PRIO: Priority = Priority::from(NO_PRIORITIES as u8 - 1);
+pub const REALTIME_PRIO: Priority = Priority::from(-128);
+pub const HIGH_PRIO: Priority = Priority::from(-30);
+pub const NORMAL_PRIO: Priority = Priority::from(0);
+pub const LOW_PRIO: Priority = Priority::from(100);
+pub const IDLE_PRIO: Priority = Priority::from(127);
 
 #[derive(Copy, Clone)]
 #[repr(align(64))]
@@ -259,7 +260,7 @@ pub struct Task {
 	/// Task base priority,
 	pub base_prio: Priority,
 	/// Task scheduling penalty
-	pub penalty: u8,
+	pub penalty: i8,
 	/// Last stack pointer before a context switch to another task
 	pub last_stack_pointer: usize,
 	/// points to the next task within a task queue
@@ -310,7 +311,17 @@ impl Task {
 		}
 	}
 	pub fn prio(&self) -> Priority {
-		Priority::from(self.base_prio.into() + self.penalty)
+		// idle task has always idle prio
+		if self.base_prio == IDLE_PRIO {
+			IDLE_PRIO
+		} else if self.base_prio.into().checked_add(self.penalty) == None {
+			// overflow occured
+			// clamp under idle task
+			Priority::from(IDLE_PRIO.into() - 1)
+		} else {
+			// normal case
+			Priority::from(self.base_prio.into() + self.penalty)
+		}
 	}
 }
 

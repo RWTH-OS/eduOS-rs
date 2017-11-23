@@ -58,7 +58,7 @@ impl Scheduler {
 		let tid = TaskId::from(0);
 
 		// boot task is implicitly task 0 and and the idle task of core 0
-		let idle_box = Box::new(Task::new(tid, TaskStatus::TaskIdle, LOW_PRIO));
+		let idle_box = Box::new(Task::new(tid, TaskStatus::TaskIdle, IDLE_PRIO));
 		unsafe {
 
 			let rsp = (*idle_box.stack).bottom();
