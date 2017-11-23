@@ -70,8 +70,6 @@ impl Scheduler {
 		let mut idle_task = unsafe { Shared::new_unchecked(Box::into_raw(idle_box)) };
 
 		let s = Scheduler {
-			// I know that this is unsafe. But I know also that I initialize
-			// the Scheduler (with add_idle_task correctly) before the system schedules task.
 			current_task: idle_task,
 			idle_task: idle_task,
 			finished_tasks: SpinlockIrqSave::new(VecDeque::new()),
@@ -82,7 +80,11 @@ impl Scheduler {
 		let tid = s.get_tid();
 		s.tasks.lock().insert(tid, idle_task);
 
-		unsafe { idle_task.as_mut().id = tid; }
+		// consume running boot task as idle task
+		unsafe {
+			idle_task.as_mut().id = tid;
+			idle_task.as_mut().status = TaskStatus::TaskRunning;
+		}
 
 		s
 	}
@@ -184,7 +186,9 @@ impl Scheduler {
 			self.current_task.as_mut().status = TaskStatus::TaskBlocked;
 			return self.current_task;
 		} else {
-			panic!("unable to block task {}", self.current_task.as_ref().id);
+			panic!("unable to block task {} with status {:?}",
+			       self.current_task.as_ref().id,
+			       self.current_task.as_ref().status);
 		}
 	}
 
@@ -233,11 +237,6 @@ impl Scheduler {
 		// candidate with the highest priority found yet
 		let mut candidate: Shared<Task> = self.idle_task;
 
-		// if the current task is runnable, it is the first candidate
-		if self.current_task.as_ref().status == TaskStatus::TaskRunning {
-			candidate = self.current_task;
-		}
-
 		// search for ready task with highest priority
 		for (_id, task) in self.tasks.lock().iter() {
 			if (task.as_ref().status == TaskStatus::TaskReady)
@@ -250,11 +249,7 @@ impl Scheduler {
 	}
 
 	pub unsafe fn schedule(&mut self) {
-		// do we have a task, which is ready?
-		let next_task = self.get_next_task();
-
-		let old_id: TaskId = self.current_task.as_ref().id;
-
+		// update status of current task
 		if self.current_task.as_ref().status == TaskStatus::TaskRunning {
 			self.current_task.as_mut().status = TaskStatus::TaskReady;
 			self.current_task.as_mut().penalty += SCHEDULING_PENALTY;
@@ -263,7 +258,7 @@ impl Scheduler {
 			// release the task later, because the stack is required
 			// to call the function "switch"
 			// => push id to a queue and release the task later
-			self.finished_tasks.lock().push_back(old_id);
+			self.finished_tasks.lock().push_back(self.current_task.as_mut().id);
 		}
 
 		// update penalties
@@ -271,12 +266,22 @@ impl Scheduler {
 			task.as_mut().penalty /= 2;
 		}
 
+		let mut next_task = self.get_next_task();
+
+		// return early if no need for switch
+		if next_task.as_ref().id == self.current_task.as_ref().id {
+			debug!("no need to switch");
+			return;
+		}
+
+		debug!("switch task from {} to {}", self.current_task.as_mut().id, next_task.as_ref().id);
+
+		next_task.as_mut().status = TaskStatus::TaskRunning;
+
 		let next_stack_pointer = next_task.as_ref().last_stack_pointer;
 		let old_stack_pointer = &self.current_task.as_ref().last_stack_pointer as *const usize;
 
 		self.current_task = Shared::<Task>::from(next_task);
-
-		debug!("switch task from {} to {}", old_id, next_task.as_ref().id);
 
 		switch(old_stack_pointer, next_stack_pointer);
 	}

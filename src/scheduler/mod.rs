@@ -27,6 +27,7 @@
 //! Interface to the scheduler
 
 use core::ptr::Shared;
+use logging::*;
 
 /// task control block
 pub mod task;
@@ -37,8 +38,8 @@ static mut SCHEDULER: Option<scheduler::Scheduler> = None;
 /// Initialite module, must be called once, and only once
 pub fn init() {
 	unsafe {
+		debug!("initialize scheduler");
 		SCHEDULER = Some(scheduler::Scheduler::new());
-		debug!("scheduler initialized");
 	}
 }
 
