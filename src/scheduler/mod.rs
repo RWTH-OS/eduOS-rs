@@ -27,38 +27,40 @@
 //! Interface to the scheduler
 
 use core::ptr::Shared;
+use logging::*;
 
 /// task control block
 pub mod task;
 mod scheduler;
 
-static mut SCHEDULER: scheduler::Scheduler = scheduler::Scheduler::new();
+static mut SCHEDULER: Option<scheduler::Scheduler> = None;
 
 /// Initialite module, must be called once, and only once
 pub fn init() {
 	unsafe {
-		SCHEDULER.add_idle_task();
+		debug!("initialize scheduler");
+		SCHEDULER = Some(scheduler::Scheduler::new());
 	}
 }
 
 /// Create a new kernel task
 #[inline(always)]
 pub fn spawn(func: extern fn(), prio: task::Priority) -> task::TaskId {
-	unsafe { SCHEDULER.spawn(func, prio) }
+	unsafe { SCHEDULER.as_mut().unwrap().spawn(func, prio) }
 }
 
 /// Trigger the scheduler to switch to the next available task
 #[inline(always)]
 pub fn reschedule() {
 	unsafe {
-		SCHEDULER.reschedule()
+		SCHEDULER.as_mut().unwrap().reschedule()
 	}
 }
 
 #[inline(always)]
 pub fn number_of_tasks() -> usize {
 	unsafe {
-		SCHEDULER.number_of_tasks()
+		SCHEDULER.as_mut().unwrap().number_of_tasks()
 	}
 }
 
@@ -66,7 +68,7 @@ pub fn number_of_tasks() -> usize {
 #[inline(always)]
 pub fn schedule() {
 	unsafe {
-		SCHEDULER.schedule()
+		SCHEDULER.as_mut().unwrap().schedule()
 	}
 }
 
@@ -74,21 +76,21 @@ pub fn schedule() {
 #[inline(always)]
 pub fn block_current_task() -> Shared<task::Task> {
 	unsafe {
-		SCHEDULER.block_current_task()
+		SCHEDULER.as_mut().unwrap().block_current_task()
 	}
 }
 
 #[inline(always)]
 pub fn get_current_stack() -> (usize, usize) {
 	unsafe {
-		SCHEDULER.get_current_stack()
+		SCHEDULER.as_mut().unwrap().get_current_stack()
 	}
 }
 
 #[inline(always)]
 pub fn wakeup_task(task: Shared<task::Task>) {
 	unsafe {
-		SCHEDULER.wakeup_task(task)
+		SCHEDULER.as_mut().unwrap().wakeup_task(task)
 	}
 }
 
@@ -96,7 +98,7 @@ pub fn wakeup_task(task: Shared<task::Task>) {
 #[inline(always)]
 pub fn exit() -> ! {
 	unsafe {
-		SCHEDULER.exit()
+		SCHEDULER.as_mut().unwrap().exit()
 	}
 }
 
@@ -104,7 +106,7 @@ pub fn exit() -> ! {
 #[inline(always)]
 pub fn abort() -> ! {
 	unsafe {
-		SCHEDULER.abort()
+		SCHEDULER.as_mut().unwrap().abort()
 	}
 }
 
@@ -112,14 +114,14 @@ pub fn abort() -> ! {
 #[inline(always)]
 pub fn get_current_taskid() -> task::TaskId {
 	unsafe {
-		SCHEDULER.get_current_taskid()
+		SCHEDULER.as_mut().unwrap().get_current_taskid()
 	}
 }
 
 #[inline(always)]
 pub fn get_current_priority() -> task::Priority {
 	unsafe {
-		SCHEDULER.get_current_priority()
+		SCHEDULER.as_mut().unwrap().get_current_priority()
 	}
 }
 
@@ -127,6 +129,6 @@ pub fn get_current_priority() -> task::Priority {
 #[inline(always)]
 pub fn get_priority(id: task::TaskId) -> task::Priority {
 	unsafe {
-		SCHEDULER.get_priority(id)
+		SCHEDULER.as_mut().unwrap().get_priority(id)
 	}
 }
