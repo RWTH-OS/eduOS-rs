@@ -214,11 +214,19 @@ impl Scheduler {
 		unsafe { self.current_task.as_ref().id }
 	}
 
-	/// Determines the start address of the stack
+	/// Determines the start addresses of the stacks
 	#[inline(always)]
-	pub fn get_current_stack(&self) -> (usize, usize) {
+	pub fn get_current_stacks(&self) -> (usize, usize) {
 		unsafe {
 			((*self.current_task.as_ref().stack).bottom(), (*self.current_task.as_ref().ist).bottom())
+		}
+	}
+
+	/// Determines the start address of kernel stack (rsp0)
+	#[inline(always)]
+	pub fn get_kernel_stack(&self) -> usize {
+		unsafe {
+			(*self.current_task.as_ref().stack).bottom()
 		}
 	}
 

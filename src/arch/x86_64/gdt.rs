@@ -113,7 +113,7 @@ pub fn init()
 		TSS.0.ist[0] = 0; //Heap.alloc(Layout::new::<KernelStack>()).unwrap() as u64 + KERNEL_STACK_SIZE as u64 - 0x10;
 		TSS.0.ist[1] = Heap.alloc(Layout::new::<KernelStack>()).unwrap() as u64 + KERNEL_STACK_SIZE as u64 - 0x10;
 		TSS.0.ist[2] = Heap.alloc(Layout::new::<KernelStack>()).unwrap() as u64 + KERNEL_STACK_SIZE as u64 - 0x10;
-		TSS.0.ist[3] = Heap.alloc(Layout::new::<KernelStack>()).unwrap() as u64 + KERNEL_STACK_SIZE as u64- 0x10;
+		TSS.0.ist[3] = Heap.alloc(Layout::new::<KernelStack>()).unwrap() as u64 + KERNEL_STACK_SIZE as u64 - 0x10;
 
 		// load GDT
 		let gdtr = DescriptorTablePointer::new(&GDT);
@@ -137,7 +137,7 @@ pub unsafe fn set_kernel_stack(stack: usize, ist: usize)
 #[no_mangle]
  pub unsafe extern "C" fn set_current_kernel_stack()
  {
-	 let (rsp, ist) = scheduler::get_current_stack();
+	 let (rsp, ist) = scheduler::get_current_stacks();
 
 	 set_kernel_stack(rsp + KERNEL_STACK_SIZE - 0x10, ist + KERNEL_STACK_SIZE - 0x10);
  }

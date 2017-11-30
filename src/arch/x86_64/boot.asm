@@ -164,7 +164,7 @@ setup_page_tables:
         shr edi, 18                ; (edi >> 21) * 8 (index for boot_pgd)
         add edi, boot_pgd
         mov eax, kernel_start
-        or eax, 0x1A3  ; if we want to allow user access 0x1A7 otherwuse 0x1A3
+        or eax, 0x1A7  ; if we want to allow user access 0x1A7 otherwise 0x1A3
         xor ecx, ecx
 Lmap:
         mov DWORD [edi], eax

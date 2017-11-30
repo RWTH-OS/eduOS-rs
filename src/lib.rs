@@ -54,6 +54,7 @@ pub use logging::*;
 pub use synch::semaphore::*;
 pub use synch::mutex::*;
 pub use timer::*;
+pub use syscall::*;
 
 #[macro_use]
 mod macros;
@@ -61,23 +62,38 @@ mod macros;
 mod logging;
 mod runtime_glue;
 pub mod consts;
+#[macro_use]
 pub mod arch;
 pub mod console;
 pub mod scheduler;
 pub mod synch;
 pub mod timer;
+pub mod syscall;
 
 #[global_allocator]
 static ALLOCATOR: allocator::Allocator = allocator::Allocator;
 
 static SEM: Semaphore = Semaphore::new(2);
 
-extern "C" fn foo() {
-	// exception demo
-	/*if scheduler::get_current_taskid().into() == 2 {
-		unsafe { asm!("int $$0" :::: "volatile"); }
-	}*/
+fn user_foo() {
+	let str = b"Hello from user_foo!\n\0";
 
+	//arch::x86_64::serial::COM1.write_str("Hello from user_foo!").unwrap();
+
+	unsafe {
+		syscall!(SYSNO_WRITE, str.as_ptr() as u64, str.len());
+		syscall!(SYSNO_EXIT);
+	}
+
+	loop {}
+}
+
+extern "C" fn create_user_foo() {
+	debug!("jump to user land");
+	arch::jump_to_user_land(user_foo);
+}
+
+extern "C" fn foo() {
 	// simple demo, only 2 tasks are able to print at the same time
 	SEM.acquire();
 
@@ -98,6 +114,7 @@ extern "C" fn initd() {
 		scheduler::spawn(foo, scheduler::task::NORMAL_PRIO);
 	}
 
+	scheduler::spawn(create_user_foo, scheduler::task::NORMAL_PRIO);
 	scheduler::spawn(foo, scheduler::task::REALTIME_PRIO);
 }
 

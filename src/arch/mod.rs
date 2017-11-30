@@ -31,6 +31,7 @@ pub use self::x86_64::{serial,processor,irq,pit,gdt};
 
 // Implementations for x86_64.
 #[cfg(target_arch="x86_64")]
+#[macro_use]
 pub mod x86_64;
 
 #[cfg(target_arch="x86_64")]
@@ -131,8 +132,25 @@ pub fn replace_boot_stack(stack_bottom: usize, ist_bottom: usize)
 	}
 }
 
+pub fn jump_to_user_land(func: fn()) -> !
+{
+	let ds = 0x23u64;
+	let cs = 0x2bu64;
+
+	unsafe {
+		asm!("mov $0, %ds; mov $0, %es; push $0; push %rsp; addq $$16, (%rsp); pushfq; push $1; push $2; iretq"
+			:: "r"(ds), "r"(cs), "r"(func as u64)
+			:: "volatile");
+	}
+
+	loop {
+		processor::halt();
+	}
+}
+
 /// Initialize module, must be called once, and only once
 pub fn init() {
+	serial::init();
 	processor::init();
 	initialize_memory();
 	gdt::init();

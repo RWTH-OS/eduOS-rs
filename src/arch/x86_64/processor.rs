@@ -34,6 +34,21 @@ use consts::*;
 use timer::*;
 use core::sync::atomic::hint_core_should_pause;
 use x86::shared::time::rdtsc;
+use x86::shared::msr::*;
+
+// MSR EFER bits
+const EFER_SCE: u64 = (1 << 0);
+const EFER_LME: u64 = (1 << 8);
+const EFER_LMA: u64 = (1 << 10);
+const EFER_NXE: u64 = (1 << 11);
+const EFER_SVME: u64 = (1 << 12);
+const EFER_LMSLE: u64 = (1 << 13);
+const EFER_FFXSR: u64 = (1 << 14);
+const EFER_TCE: u64 = (1 << 15);
+
+extern {
+	pub fn syscall_handler();
+}
 
 lazy_static! {
 	static ref FREQUENCY: u32 = {
@@ -216,6 +231,23 @@ pub fn init() {
 	debug!("set CR4 to {:?}", cr4);
 
 	unsafe { control_regs::cr4_write(cr4) };
+
+	let has_syscall = match cpuid.get_extended_function_info() {
+		Some(finfo) => finfo.has_syscall_sysret(),
+		None => false
+	};
+
+	if has_syscall == false {
+		panic!("Syscall support is missing");
+	}
+
+	// enable support of syscall and sysret
+	unsafe {
+		wrmsr(IA32_EFER, rdmsr(IA32_EFER) | EFER_LMA | EFER_SCE);
+		wrmsr(IA32_STAR, (0x1Bu64 << 48) | (0x08u64 << 32));
+		wrmsr(IA32_LSTAR, syscall_handler as u64);
+		wrmsr(IA32_FMASK, (1 << 9)); // clear IF flag during system call
+	}
 
 	print!("Detected processor: ");
 	match cpuid.get_extended_function_info() {

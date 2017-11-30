@@ -79,9 +79,17 @@ pub fn block_current_task() -> Shared<task::Task> {
 }
 
 #[inline(always)]
-pub fn get_current_stack() -> (usize, usize) {
+pub fn get_current_stacks() -> (usize, usize) {
 	unsafe {
-		SCHEDULER.get_current_stack()
+		SCHEDULER.get_current_stacks()
+	}
+}
+
+/// Determines the start address of kernel stack (rsp0)
+#[no_mangle]
+pub extern "C" fn get_kernel_stack() -> usize {
+	unsafe {
+		SCHEDULER.get_kernel_stack()
 	}
 }
 
