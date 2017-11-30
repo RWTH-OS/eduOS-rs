@@ -75,7 +75,7 @@ static ALLOCATOR: allocator::Allocator = allocator::Allocator;
 
 static SEM: Semaphore = Semaphore::new(2);
 
-fn user_foo() {
+fn user_foo() -> ! {
 	let str = b"Hello from user_foo!\n\0";
 
 	//arch::x86_64::serial::COM1.write_str("Hello from user_foo!").unwrap();
@@ -85,7 +85,9 @@ fn user_foo() {
 		syscall!(SYSNO_EXIT);
 	}
 
-	loop {}
+	loop {
+		arch::processor::halt();
+	}
 }
 
 extern "C" fn create_user_foo() {

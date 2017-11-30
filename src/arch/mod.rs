@@ -132,7 +132,7 @@ pub fn replace_boot_stack(stack_bottom: usize, ist_bottom: usize)
 	}
 }
 
-pub fn jump_to_user_land(func: fn()) -> !
+pub fn jump_to_user_land(func: fn() -> !) -> !
 {
 	let ds = 0x23u64;
 	let cs = 0x2bu64;
