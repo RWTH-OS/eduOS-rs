@@ -30,7 +30,6 @@ use consts::*;
 use rlibc::*;
 use logging::*;
 
-#[derive(Debug)]
 #[repr(C, packed)]
 pub struct State {
 	/// R15 register
