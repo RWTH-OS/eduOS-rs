@@ -37,7 +37,7 @@ pub mod x86_64;
 #[cfg(target_arch="x86_64")]
 const PAGE_SIZE: u64 = 4096;
 
-use allocator;
+use mm;
 use multiboot::{Multiboot, MemoryType, PAddr};
 use core::slice;
 use core::mem;
@@ -100,7 +100,7 @@ fn initialize_memory() {
 							base, len / (1024*1024));
 						init_heap = true;
 						// TODO: fix limit after realization of a full memory management
-						allocator::init(base as usize, 0x4000000usize /*len as usize*/);
+						mm::init(base as usize, 0x4000000usize /*len as usize*/);
 					}
 				}
 			}

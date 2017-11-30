@@ -1,18 +1,19 @@
-#![deny(warnings)]
-#![feature(alloc)]
-#![feature(allocator_api)]
-#![feature(const_fn)]
-#![no_std]
-
-extern crate alloc;
-extern crate spin;
-extern crate linked_list_allocator;
+// Copyright (c) 2016 Philipp Oppermann
+//
+// The original crate is dual-licensed under MIT or the Apache License (Version 2.0).
+// See LICENSE-APACHE and LICENSE-MIT for details.
+//
+// original repository = "https://github.com/phil-opp/linked-list-allocator"
+// documentation = "https://docs.rs/crate/linked_list_allocator"
+// homepage = "http://os.phil-opp.com/kernel-heap.html#a-better-allocator"
+//
+// November 2017: adapted for eduOS-rs by Stefan Lankes
 
 use alloc::heap::{Alloc, AllocErr, Layout};
-use spin::Mutex;
+use synch::spinlock::Spinlock;
 use linked_list_allocator::Heap;
 
-static HEAP: Mutex<Option<Heap>> = Mutex::new(None);
+static HEAP: Spinlock<Option<Heap>> = Spinlock::new(None);
 
 pub unsafe fn init(offset: usize, size: usize) {
     *HEAP.lock() = Some(Heap::new(offset, size));

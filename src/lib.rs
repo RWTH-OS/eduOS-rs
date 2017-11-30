@@ -43,8 +43,8 @@ extern crate rlibc;
 extern crate x86;
 extern crate raw_cpuid;
 extern crate alloc;
-extern crate alloc_kernel as allocator;
 extern crate multiboot;
+extern crate linked_list_allocator;
 #[macro_use]
 extern crate lazy_static;
 
@@ -69,9 +69,10 @@ pub mod scheduler;
 pub mod synch;
 pub mod timer;
 pub mod syscall;
+pub mod mm;
 
 #[global_allocator]
-static ALLOCATOR: allocator::Allocator = allocator::Allocator;
+static ALLOCATOR: mm::Allocator = mm::Allocator;
 
 static SEM: Semaphore = Semaphore::new(2);
 
