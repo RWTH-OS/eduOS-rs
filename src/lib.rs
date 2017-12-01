@@ -35,6 +35,7 @@
 #![feature(abi_x86_interrupt)]
 #![feature(shared)]
 #![feature(hint_core_should_pause)]
+#![feature(unique)]
 
 #![no_std]
 
@@ -44,7 +45,6 @@ extern crate x86;
 extern crate raw_cpuid;
 extern crate alloc;
 extern crate multiboot;
-extern crate linked_list_allocator;
 #[macro_use]
 extern crate lazy_static;
 

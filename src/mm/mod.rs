@@ -1,4 +1,4 @@
-// Copyright (c) 2016 Philipp Oppermann
+// derived from Philipp Oppermann's memory allocator
 //
 // The original crate is dual-licensed under MIT or the Apache License (Version 2.0).
 // See LICENSE-APACHE and LICENSE-MIT for details.
@@ -11,7 +11,10 @@
 
 use alloc::heap::{Alloc, AllocErr, Layout};
 use synch::spinlock::Spinlock;
-use linked_list_allocator::Heap;
+use self::linked_list_allocator::Heap;
+
+mod hole;
+mod linked_list_allocator;
 
 static HEAP: Spinlock<Option<Heap>> = Spinlock::new(None);
 
