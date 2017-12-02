@@ -12,13 +12,16 @@
 use alloc::heap::{Alloc, AllocErr, Layout};
 use synch::spinlock::Spinlock;
 use self::linked_list_allocator::Heap;
+use logging::*;
 
 mod hole;
 mod linked_list_allocator;
+pub mod page_allocator;
 
 static HEAP: Spinlock<Option<Heap>> = Spinlock::new(None);
 
 pub unsafe fn init(offset: usize, size: usize) {
+	info!("Initialize heap at [0x{:x} - 0x{:x}]", offset, offset + size);
     *HEAP.lock() = Some(Heap::new(offset, size));
 }
 
@@ -40,4 +43,24 @@ unsafe impl<'a> Alloc for &'a Allocator {
             panic!("__rust_deallocate: heap not initialized");
         }
     }
+}
+
+/// Align downwards. Returns the greatest x with alignment `align`
+/// so that x <= addr. The alignment must be a power of 2.
+#[inline(always)]
+pub fn align_down(addr: usize, align: usize) -> usize {
+    if align.is_power_of_two() {
+        addr & !(align - 1)
+    } else if align == 0 {
+        addr
+    } else {
+        panic!("`align` must be a power of 2");
+    }
+}
+
+/// Align upwards. Returns the smallest x with alignment `align`
+/// so that x >= addr. The alignment must be a power of 2.
+#[inline(always)]
+pub fn align_up(addr: usize, align: usize) -> usize {
+    align_down(addr + align - 1, align)
 }

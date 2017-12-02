@@ -38,11 +38,13 @@ pub mod x86_64;
 const PAGE_SIZE: u64 = 4096;
 
 use mm;
+use mm::align_up;
 use multiboot::{Multiboot, MemoryType, PAddr};
 use core::slice;
 use core::mem;
 use logging::*;
 use consts::*;
+use mm::page_allocator::add_region;
 use x86::shared::task::load_tr;
 use x86::shared::segmentation::SegmentSelector;
 use x86::shared::PrivilegeLevel;
@@ -75,11 +77,13 @@ fn initialize_memory() {
 	unsafe {
 		let kernel_end_ptr = &mut kernel_end as *mut _;
 		let kernel_start_ptr = &mut kernel_start as *mut _;
-		let kernel_end_u64 = (kernel_end_ptr as u64 + (PAGE_SIZE - 1)) & !(PAGE_SIZE - 1);
-		let kernel_start_u64 = (kernel_start_ptr as u64 + (PAGE_SIZE - 1)) & !(PAGE_SIZE - 1);
-		let mut init_heap: bool = false;
+		let kernel_end_usize = align_up(kernel_end_ptr as usize, PAGE_SIZE as usize);
+		let kernel_start_usize = align_up(kernel_start_ptr as usize, PAGE_SIZE as usize);
 		let mut total: u64 = 0;
 		let mb = Multiboot::new(MBINFO as PAddr, paddr_to_slice);
+
+		// start heap directly after the kernel
+		mm::init(kernel_end_usize as usize, align_up(kernel_end_usize, 0x200000usize) - kernel_end_usize);
 
 		mb.as_ref().unwrap().memory_regions().map(|regions| {
 			for region in regions {
@@ -89,25 +93,26 @@ fn initialize_memory() {
 
 					total += len;
 
-					if base < kernel_end_u64 && base + len > kernel_end_u64 {
-						len = len - (kernel_end_u64 - base);
-						base = kernel_end_u64;
+					if  region.base_address() < kernel_start_usize as u64
+					 && region.base_address() + region.length() >= kernel_start_usize as u64 {
+						// regions below 1M are reserved for IO devices
+						add_region(0x100000, kernel_start_usize - 0x100000);
 					}
 
-					// use only memory, which is located above the kernel
-					if init_heap == false && base >= kernel_end_u64 {
-						info!("Heap starts at 0x{:x} with a size of {} MBytes",
-							base, len / (1024*1024));
-						init_heap = true;
-						// TODO: fix limit after realization of a full memory management
-						mm::init(base as usize, 0x4000000usize /*len as usize*/);
+					if base < (kernel_end_usize as u64) && base + len > (kernel_end_usize as u64) {
+						len = len - (align_up(kernel_end_usize, 0x200000usize) as u64 - base);
+						base = align_up(kernel_end_usize, 0x200000usize) as u64;
+					}
+
+					if base > 0x100000 {
+						add_region(base as usize, len as usize);
 					}
 				}
 			}
 		});
 
-		info!("Current allocated memory: {} KiB", (kernel_end_u64 - kernel_start_u64) / 1024);
-		info!("Current available memory: {} MiB", total / (1024*1024));
+		info!("Current allocated memory: {} KiB", (kernel_end_usize - kernel_start_usize) >> 10);
+		info!("Current available memory: {} MiB", total >> 20);
 	}
 }
 

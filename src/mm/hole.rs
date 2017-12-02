@@ -12,7 +12,7 @@
 use core::ptr::Unique;
 use core::mem::{self, size_of};
 use alloc::allocator::{Layout, AllocErr};
-use mm::linked_list_allocator::align_up;
+use mm::align_up;
 
 /// A sorted list of holes. It uses the the holes itself to store its nodes.
 pub struct HoleList {
