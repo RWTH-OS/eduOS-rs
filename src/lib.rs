@@ -36,6 +36,7 @@
 #![feature(shared)]
 #![feature(hint_core_should_pause)]
 #![feature(unique)]
+#![feature(fn_must_use)]
 
 #![no_std]
 
@@ -70,6 +71,7 @@ pub mod synch;
 pub mod timer;
 pub mod syscall;
 pub mod mm;
+pub mod collections;
 
 #[global_allocator]
 static ALLOCATOR: mm::Allocator = mm::Allocator;
@@ -117,7 +119,7 @@ extern "C" fn initd() {
 		scheduler::spawn(foo, scheduler::task::NORMAL_PRIO);
 	}
 
-	scheduler::spawn(create_user_foo, scheduler::task::NORMAL_PRIO);
+	//scheduler::spawn(create_user_foo, scheduler::task::NORMAL_PRIO);
 	scheduler::spawn(foo, scheduler::task::REALTIME_PRIO);
 }
 
