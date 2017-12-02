@@ -140,6 +140,6 @@ impl<'a> Drop for SemaphoreGuard<'a>
 	}
 }
 
-// Same unsafe impls as `std::sync::Mutex`
+// Same unsafe impls as `Semaphore`
 unsafe impl Sync for Semaphore {}
 unsafe impl Send for Semaphore {}
