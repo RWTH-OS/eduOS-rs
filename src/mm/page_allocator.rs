@@ -23,7 +23,7 @@
 
 use logging::*;
 use consts::*;
-use collections::{FreeList, FreeListEntry};
+use mm::freelist::{FreeList, FreeListEntry};
 
 static PHYSICAL_FREE_LIST: FreeList = FreeList::new();
 

@@ -16,6 +16,7 @@ use logging::*;
 
 mod hole;
 mod linked_list_allocator;
+mod freelist;
 pub mod page_allocator;
 
 static HEAP: Spinlock<Option<Heap>> = Spinlock::new(None);
