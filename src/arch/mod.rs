@@ -113,9 +113,9 @@ fn initialize_memory() {
 			}
 		});
 
+		vma_dump();
 		info!("Current allocated memory: {} KiB", (kernel_end_usize - kernel_start_usize) >> 10);
 		info!("Current available memory: {} MiB", total >> 20);
-		vma_dump();
 	}
 }
 

@@ -47,6 +47,12 @@ bitflags! {
 
 impl fmt::Display for VmaType {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		if self.contains(VmaType::CACHEABLE) == true {
+        	write!(f, "c")?;
+		} else {
+			write!(f, "-")?;
+		}
+		
 		if self.contains(VmaType::READ) == true {
         	write!(f, "r")?;
 		} else {
@@ -63,10 +69,6 @@ impl fmt::Display for VmaType {
         	write!(f, "x")?;
 		} else {
 			write!(f, "-")?;
-		}
-
-		if self.contains(VmaType::CACHEABLE) == true {
-        	write!(f, " cacheable")?;
 		}
 
 		Ok(())

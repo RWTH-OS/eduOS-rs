@@ -25,7 +25,8 @@ static HEAP: Spinlock<Option<Heap>> = Spinlock::new(None);
 pub unsafe fn init(offset: usize, size: usize) {
 	info!("Initialize heap at [0x{:x} - 0x{:x}]", offset, offset + size);
     *HEAP.lock() = Some(Heap::new(offset, size));
-	vma::vma_add(offset, size, vma::VmaType::READ | vma::VmaType::WRITE | vma::VmaType::CACHEABLE);
+	vma::vma_add(offset, size, vma::VmaType::READ | vma::VmaType::WRITE |
+		vma::VmaType::EXECUTE | vma::VmaType::CACHEABLE);
 }
 
 pub struct Allocator;
