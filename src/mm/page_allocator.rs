@@ -29,7 +29,7 @@ static PHYSICAL_FREE_LIST: FreeList = FreeList::new();
 
 pub fn add_region(start: usize, len: usize)
 {
-	info!("add free memory region [0x{:x} - 0x{:x}] to the page allocator", start, start+len);
+	info!("add free memory region [0x{:08x} - 0x{:08x}] to the page allocator", start, start+len);
 
 	let entry = FreeListEntry {
 		start: start as usize,
