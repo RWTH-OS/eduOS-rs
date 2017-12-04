@@ -47,6 +47,8 @@ extern crate raw_cpuid;
 extern crate alloc;
 extern crate multiboot;
 #[macro_use]
+extern crate bitflags;
+#[macro_use]
 extern crate lazy_static;
 
 // These need to be visible to the linker, so we need to export them.

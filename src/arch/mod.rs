@@ -38,13 +38,14 @@ pub mod x86_64;
 const PAGE_SIZE: u64 = 4096;
 
 use mm;
-use mm::align_up;
+use mm::{align_up, align_down};
 use multiboot::{Multiboot, MemoryType, PAddr};
 use core::slice;
 use core::mem;
 use logging::*;
 use consts::*;
 use mm::page_allocator::add_region;
+use mm::vma::{vma_dump, vma_add, VmaType};
 use x86::shared::task::load_tr;
 use x86::shared::segmentation::SegmentSelector;
 use x86::shared::PrivilegeLevel;
@@ -84,6 +85,7 @@ fn initialize_memory() {
 
 		// start heap directly after the kernel
 		mm::init(kernel_end_usize as usize, align_up(kernel_end_usize, 0x200000usize) - kernel_end_usize);
+		vma_add(align_down(MBINFO as usize, PAGE_SIZE as usize), PAGE_SIZE as usize, VmaType::READ);
 
 		mb.as_ref().unwrap().memory_regions().map(|regions| {
 			for region in regions {
@@ -113,6 +115,7 @@ fn initialize_memory() {
 
 		info!("Current allocated memory: {} KiB", (kernel_end_usize - kernel_start_usize) >> 10);
 		info!("Current available memory: {} MiB", total >> 20);
+		vma_dump();
 	}
 }
 

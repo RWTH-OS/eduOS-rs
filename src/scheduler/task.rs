@@ -191,7 +191,6 @@ pub struct PriorityTaskQueue {
 	prio_bitmap: u64
 }
 
-// wieso liste?
 impl PriorityTaskQueue {
 	/// Creates an empty priority queue for tasks
 	pub const fn new() -> PriorityTaskQueue {

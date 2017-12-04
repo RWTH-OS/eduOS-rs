@@ -10,6 +10,7 @@ crate-type = ["staticlib"]
 raw-cpuid = "2.*"
 cpuio = "0.2.0"
 multiboot = { path = "crates/multiboot" }
+bitflags = "1.*"
 
 [dependencies.rlibc]
 path = "crates/rlibc"	# Low-level functions like memcpy.
