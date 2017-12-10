@@ -41,3 +41,6 @@ pub const NO_PRIORITIES: usize = 32;
 
 /// frequency of the timer interrupt
 pub const TIMER_FREQ: u32 = 100; /* in HZ */
+
+/// limit of the kernel space
+pub const KERNEL_BOUNDARY: usize = 0x1000000;

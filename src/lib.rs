@@ -32,6 +32,8 @@
 #![feature(const_atomic_bool_new)]
 #![feature(const_unsafe_cell_new)]
 #![feature(const_shared_new)]
+#![feature(const_refcell_new)]
+#![feature(refcell_replace_swap)]
 #![feature(abi_x86_interrupt)]
 #![feature(shared)]
 #![feature(hint_core_should_pause)]

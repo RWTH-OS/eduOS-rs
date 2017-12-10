@@ -25,6 +25,16 @@ use alloc::{fmt,BinaryHeap};
 use core::cmp::Ordering;
 use synch::spinlock::SpinlockIrqSave;
 use logging::*;
+use consts::*;
+use mm::align_up;
+
+extern {
+	/// Begin of the kernel.  Declared in `linker.ld` so that we can
+	/// easily specify alignment constraints.  We declare this as a single
+	/// variable of type `u8`, because that's how we get it to link, but we
+	/// only want to take the address of it.
+	static mut kernel_start: u8;
+}
 
 bitflags! {
 	pub struct VmaType: u8 {
@@ -52,7 +62,7 @@ impl fmt::Display for VmaType {
 		} else {
 			write!(f, "-")?;
 		}
-		
+
 		if self.contains(VmaType::READ) == true {
         	write!(f, "r")?;
 		} else {
@@ -75,7 +85,6 @@ impl fmt::Display for VmaType {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
 pub struct VirtualMemoryArea {
 	start: usize,
 	length: usize,
@@ -119,27 +128,79 @@ impl fmt::Display for VirtualMemoryArea {
 }
 
 pub struct VmaManager {
-	vmheap: BinaryHeap<VirtualMemoryArea>
+	vmheap: BinaryHeap<VirtualMemoryArea>,
+	limit: usize
 }
 
 impl VmaManager {
-	pub fn new() -> VmaManager
+	pub fn new(li: usize) -> VmaManager
 	{
 		VmaManager {
-			vmheap: BinaryHeap::new()
+			vmheap: BinaryHeap::new(),
+			limit: li
 		}
+	}
+
+	pub fn allocate(&mut self, sz: usize, vtype: VmaType) -> Option<usize>
+	{
+		let kernel_start_ptr = unsafe { &mut kernel_start as *mut _ };
+		let start = kernel_start_ptr as usize;
+		let mut i: usize = 0;
+		let len = self.vmheap.len();
+		let mut vm: Option<VirtualMemoryArea> = None;
+		let mut ret: Option<usize> = None;
+
+		for x in (&self.vmheap).into_iter() {
+			let nlimit = align_up(x.start+x.length+sz, PAGE_SIZE);
+
+			if x.start > start && nlimit < self.limit {
+				if i+1 < len {
+					let n = (&self.vmheap).into_iter().nth(i+1);
+
+					if nlimit < n.as_ref().unwrap().start {
+						vm = Some(VirtualMemoryArea::new(x.start+x.length, align_up(sz, PAGE_SIZE), vtype));
+						ret = Some(x.start+x.length);
+						break;
+					} else {
+						vm = Some(VirtualMemoryArea::new(x.start+x.length, align_up(sz, PAGE_SIZE), vtype));
+						ret = Some(x.start+x.length);
+						break;
+					}
+				}
+			}
+			i = i+1;
+		}
+
+		if vm.is_none() == false {
+			self.vmheap.push(vm.unwrap());
+		}
+
+		ret
+	}
+
+	pub fn deallocate(&mut self, saddr: usize)
+	{
+		let mut new_heap: BinaryHeap<VirtualMemoryArea> = BinaryHeap::new();
+
+		while let Some(x) = self.vmheap.pop() {
+			if x.start != saddr {
+				new_heap.push(x);
+			}
+		}
+
+		self.vmheap = new_heap;
 	}
 }
 
 lazy_static! {
 	pub static ref VMA_MANAGER: SpinlockIrqSave<VmaManager> = {
-		SpinlockIrqSave::new(VmaManager::new())
+		SpinlockIrqSave::new(VmaManager::new(KERNEL_BOUNDARY))
 	};
 }
 
-pub fn vma_add(size: usize, len: usize, vt: VmaType)
+pub fn vma_add(start: usize, len: usize, vt: VmaType)
 {
-	let vm = VirtualMemoryArea::new(size, len, vt);
+	let vm = VirtualMemoryArea::new(start, len, vt);
 
 	VMA_MANAGER.lock().vmheap.push(vm);
 }
@@ -150,4 +211,9 @@ pub fn vma_dump()
 	for x in VMA_MANAGER.lock().vmheap.iter() {
 		info!("VMA: {}", x);
 	}
+}
+
+pub fn vma_alloc(sz: usize, vtype: VmaType) -> Option<usize>
+{
+	VMA_MANAGER.lock().allocate(sz, vtype)
 }
