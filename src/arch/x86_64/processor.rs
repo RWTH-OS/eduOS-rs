@@ -32,7 +32,7 @@ use x86::shared::control_regs::*;
 use logging::*;
 use consts::*;
 use timer::*;
-use core::sync::atomic::hint_core_should_pause;
+use core::sync::atomic::spin_loop_hint;
 use x86::shared::time::rdtsc;
 use x86::shared::msr::*;
 
@@ -58,7 +58,7 @@ lazy_static! {
 
 		/* wait for the next time slice */
 		while ticks - old == 0 {
-			hint_core_should_pause();
+			spin_loop_hint();
 			ticks = TIMER.get_clock_tick();
 		}
 
@@ -66,7 +66,7 @@ lazy_static! {
 		let start = unsafe { rdtsc() };
 		/* wait 3 ticks to determine the frequency */
 		while TIMER.get_clock_tick() - ticks < 3 {
-			hint_core_should_pause();
+			spin_loop_hint();
 		}
 		rmb();
 		let end = unsafe { rdtsc() };
@@ -101,7 +101,7 @@ pub fn udelay(usecs: u64)
 		mb();
 		while rdtsc() < end {
 			mb();
-			hint_core_should_pause();
+			spin_loop_hint();
 		}
 	}
 }

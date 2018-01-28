@@ -69,7 +69,7 @@ docs:
 
 cargo:
 	@echo CARGO
-	@cargo build $(opt) --target $(target)
+	@RUST_TARGET_PATH=$(shell pwd) cargo build $(opt) --target $(target)
 
 build/arch/$(arch)/%.o: src/arch/$(arch)/%.asm $(assembly_header_files)
 	@echo NASM $<

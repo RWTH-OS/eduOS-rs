@@ -36,9 +36,9 @@
 #![feature(refcell_replace_swap)]
 #![feature(abi_x86_interrupt)]
 #![feature(shared)]
-#![feature(hint_core_should_pause)]
 #![feature(unique)]
 #![feature(fn_must_use)]
+#![feature(ptr_internals)]
 
 #![no_std]
 
