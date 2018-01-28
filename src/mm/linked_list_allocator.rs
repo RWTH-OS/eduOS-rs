@@ -10,7 +10,6 @@
 // November 2017: adapted for eduOS-rs by Stefan Lankes
 
 use mm::hole::{Hole, HoleList};
-use mm::align_up;
 use core::mem;
 use core::ops::Deref;
 use alloc::allocator::{Alloc, Layout, AllocErr};
@@ -67,7 +66,7 @@ impl Heap {
         if size < HoleList::min_size() {
             size = HoleList::min_size();
         }
-        let size = align_up(size, mem::align_of::<Hole>());
+        let size = align_up!(size, mem::align_of::<Hole>());
         let layout = Layout::from_size_align(size, layout.align()).unwrap();
 
         self.holes.allocate_first_fit(layout)
@@ -85,7 +84,7 @@ impl Heap {
         if size < HoleList::min_size() {
             size = HoleList::min_size();
         }
-        let size = align_up(size, mem::align_of::<Hole>());
+        let size = align_up!(size, mem::align_of::<Hole>());
         let layout = Layout::from_size_align(size, layout.align()).unwrap();
 
         self.holes.deallocate(ptr, layout);

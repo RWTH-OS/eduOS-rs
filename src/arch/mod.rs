@@ -27,7 +27,7 @@
 
 // Export our platform-specific modules.
 #[cfg(target_arch="x86_64")]
-pub use self::x86_64::{serial,processor,irq,pit,gdt};
+pub use self::x86_64::{serial,processor,irq,pit,gdt,paging};
 
 // Implementations for x86_64.
 #[cfg(target_arch="x86_64")]
@@ -37,8 +37,7 @@ pub mod x86_64;
 #[cfg(target_arch="x86_64")]
 const PAGE_SIZE: u64 = 4096;
 
-use mm;
-use mm::{align_up, align_down};
+pub use mm;
 use multiboot::{Multiboot, MemoryType, PAddr};
 use core::slice;
 use core::mem;
@@ -78,14 +77,14 @@ fn initialize_memory() {
 	unsafe {
 		let kernel_end_ptr = &mut kernel_end as *mut _;
 		let kernel_start_ptr = &mut kernel_start as *mut _;
-		let kernel_end_usize = align_up(kernel_end_ptr as usize, PAGE_SIZE as usize);
-		let kernel_start_usize = align_up(kernel_start_ptr as usize, PAGE_SIZE as usize);
+		let kernel_end_usize = align_up!(kernel_end_ptr as usize, PAGE_SIZE as usize);
+		let kernel_start_usize = align_up!(kernel_start_ptr as usize, PAGE_SIZE as usize);
 		let mut total: u64 = 0;
 		let mb = Multiboot::new(MBINFO as PAddr, paddr_to_slice);
 
 		// start heap directly after the kernel
-		mm::init(kernel_end_usize as usize, align_up(kernel_end_usize, 0x200000usize) - kernel_end_usize);
-		vma_add(align_down(MBINFO as usize, PAGE_SIZE as usize), PAGE_SIZE as usize, VmaType::READ);
+		mm::init(kernel_end_usize as usize, align_up!(kernel_end_usize, 0x200000usize) - kernel_end_usize);
+		vma_add(align_down!(MBINFO as usize, PAGE_SIZE as usize), PAGE_SIZE as usize, VmaType::READ);
 
 		mb.as_ref().unwrap().memory_regions().map(|regions| {
 			for region in regions {
@@ -102,8 +101,8 @@ fn initialize_memory() {
 					}
 
 					if base < (kernel_end_usize as u64) && base + len > (kernel_end_usize as u64) {
-						len = len - (align_up(kernel_end_usize, 0x200000usize) as u64 - base);
-						base = align_up(kernel_end_usize, 0x200000usize) as u64;
+						len = len - (align_up!(kernel_end_usize, 0x200000usize) as u64 - base);
+						base = align_up!(kernel_end_usize, 0x200000usize) as u64;
 					}
 
 					if base > 0x100000 {

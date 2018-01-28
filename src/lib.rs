@@ -24,7 +24,6 @@
 #![feature(asm)]
 #![feature(const_fn)]
 #![feature(lang_items)]
-#![feature(repr_align)]
 #![feature(attr_literals)]
 #![feature(collections)]
 #![feature(alloc, global_allocator, allocator_api, heap_api)]
@@ -39,6 +38,7 @@
 #![feature(unique)]
 #![feature(fn_must_use)]
 #![feature(ptr_internals)]
+#![feature(specialization)]
 
 #![no_std]
 

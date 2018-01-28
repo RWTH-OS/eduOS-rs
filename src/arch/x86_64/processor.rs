@@ -46,6 +46,10 @@ const EFER_LMSLE: u64 = (1 << 13);
 const EFER_FFXSR: u64 = (1 << 14);
 const EFER_TCE: u64 = (1 << 15);
 
+static mut PHYSICAL_ADDRESS_BITS: u8 = 0;
+static mut LINEAR_ADDRESS_BITS: u8 = 0;
+static mut SUPPORTS_1GIB_PAGES: bool = false;
+
 extern {
 	pub fn syscall_handler();
 }
@@ -81,6 +85,21 @@ lazy_static! {
 
 		freq
 	};
+}
+
+#[inline]
+pub fn get_linear_address_bits() -> u8 {
+	unsafe { LINEAR_ADDRESS_BITS }
+}
+
+#[inline]
+pub fn get_physical_address_bits() -> u8 {
+	unsafe { PHYSICAL_ADDRESS_BITS }
+}
+
+#[inline]
+pub fn supports_1gib_pages() -> bool {
+	unsafe { SUPPORTS_1GIB_PAGES }
 }
 
 /// Force strict CPU ordering, serializes load and store operations.
@@ -181,6 +200,13 @@ pub fn init() {
 	debug!("enable supported processor features");
 
 	let cpuid = CpuId::new();
+	let extended_function_info = cpuid.get_extended_function_info().expect("CPUID Extended Function Info not available!");
+
+	unsafe {
+		PHYSICAL_ADDRESS_BITS = extended_function_info.physical_address_bits().expect("CPUID Physical Address Bits not available!");
+		LINEAR_ADDRESS_BITS = extended_function_info.linear_address_bits().expect("CPUID Linear Address Bits not available!");
+		SUPPORTS_1GIB_PAGES = extended_function_info.has_1gib_pages();
+	}
 
 	let mut cr0 = unsafe { control_regs::cr0() };
 

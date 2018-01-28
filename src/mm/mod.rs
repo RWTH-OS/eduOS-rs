@@ -13,12 +13,21 @@ use alloc::heap::{Alloc, AllocErr, Layout};
 use synch::spinlock::Spinlock;
 use self::linked_list_allocator::Heap;
 use logging::*;
+use arch::paging;
 
 mod hole;
 mod linked_list_allocator;
 mod freelist;
 pub mod page_allocator;
 pub mod vma;
+
+extern "C" {
+	/// entry point of the kernel and defined by the linker script
+	static kernel_start: u8;
+
+	/// end point of the kernel and defined by the linker script
+	static kernel_end: u8;
+}
 
 static HEAP: Spinlock<Option<Heap>> = Spinlock::new(None);
 
@@ -27,6 +36,16 @@ pub unsafe fn init(offset: usize, size: usize) {
     *HEAP.lock() = Some(Heap::new(offset, size));
 	vma::vma_add(offset, size, vma::VmaType::READ | vma::VmaType::WRITE |
 		vma::VmaType::EXECUTE | vma::VmaType::CACHEABLE);
+
+	paging::init();
+}
+
+pub fn kernel_start_address() -> usize {
+	unsafe { align_down!(&kernel_start as *const u8 as usize, 0x200000) }
+}
+
+pub fn kernel_end_address() -> usize {
+	unsafe { align_up!(&kernel_end as *const u8 as usize, 0x200000) }
 }
 
 pub struct Allocator;
@@ -47,24 +66,4 @@ unsafe impl<'a> Alloc for &'a Allocator {
             panic!("__rust_deallocate: heap not initialized");
         }
     }
-}
-
-/// Align downwards. Returns the greatest x with alignment `align`
-/// so that x <= addr. The alignment must be a power of 2.
-#[inline(always)]
-pub fn align_down(addr: usize, align: usize) -> usize {
-    if align.is_power_of_two() {
-        addr & !(align - 1)
-    } else if align == 0 {
-        addr
-    } else {
-        panic!("`align` must be a power of 2");
-    }
-}
-
-/// Align upwards. Returns the smallest x with alignment `align`
-/// so that x >= addr. The alignment must be a power of 2.
-#[inline(always)]
-pub fn align_up(addr: usize, align: usize) -> usize {
-    align_down(addr + align - 1, align)
 }

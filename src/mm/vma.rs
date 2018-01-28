@@ -26,7 +26,6 @@ use core::cmp::Ordering;
 use synch::spinlock::SpinlockIrqSave;
 use logging::*;
 use consts::*;
-use mm::align_up;
 
 extern {
 	/// Begin of the kernel.  Declared in `linker.ld` so that we can
@@ -151,18 +150,18 @@ impl VmaManager {
 		let mut ret: Option<usize> = None;
 
 		for x in (&self.vmheap).into_iter() {
-			let nlimit = align_up(x.start+x.length+sz, PAGE_SIZE);
+			let nlimit = align_up!(x.start+x.length+sz, PAGE_SIZE);
 
 			if x.start > start && nlimit < self.limit {
 				if i+1 < len {
 					let n = (&self.vmheap).into_iter().nth(i+1);
 
 					if nlimit < n.as_ref().unwrap().start {
-						vm = Some(VirtualMemoryArea::new(x.start+x.length, align_up(sz, PAGE_SIZE), vtype));
+						vm = Some(VirtualMemoryArea::new(x.start+x.length, align_up!(sz, PAGE_SIZE), vtype));
 						ret = Some(x.start+x.length);
 						break;
 					} else {
-						vm = Some(VirtualMemoryArea::new(x.start+x.length, align_up(sz, PAGE_SIZE), vtype));
+						vm = Some(VirtualMemoryArea::new(x.start+x.length, align_up!(sz, PAGE_SIZE), vtype));
 						ret = Some(x.start+x.length);
 						break;
 					}

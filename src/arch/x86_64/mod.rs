@@ -27,6 +27,7 @@ pub mod task;
 pub mod irq;
 pub mod pit;
 pub mod gdt;
+pub mod paging;
 
 /// Invokes an OS system-call handler at privilege level 0.
 ///

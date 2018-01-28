@@ -32,13 +32,14 @@ use x86::shared::PrivilegeLevel;
 use x86::shared::paging::VAddr;
 use x86::bits64::irq::{IdtEntry, Type};
 use x86::shared::segmentation::SegmentSelector;
+use arch::paging;
 
 /// Maximum possible number of interrupts
 const IDT_ENTRIES: usize = 256;
 const KERNEL_CODE_SELECTOR: SegmentSelector = SegmentSelector::new(1, PrivilegeLevel::Ring0);
 
 #[inline(always)]
-fn send_eoi_to_slave()
+pub fn send_eoi_to_slave()
 {
 	/*
 	 * If the IDT entry that was invoked was greater-than-or-equal to 40
@@ -49,7 +50,7 @@ fn send_eoi_to_slave()
 }
 
 #[inline(always)]
-fn send_eoi_to_master()
+pub fn send_eoi_to_master()
 {
 	/*
 	 * In either case, we need to send an EOI to the master
@@ -196,15 +197,6 @@ extern "x86-interrupt" fn general_protection_exception(stack_frame: &mut Excepti
 	abort();
 }
 
-extern "x86-interrupt" fn page_fault_exception(stack_frame: &mut ExceptionStackFrame,
-	error_code: u64)
-{
-	info!("Task {} receive a Page Fault Exception: {:#?}, error_code {:x}", get_current_taskid(),
-		stack_frame, error_code);
-	send_eoi_to_master();
-	abort();
-}
-
 // 15: Reserved Exception
 // 16: Floating Point Exception
 // 17: Alignment Check Exception
@@ -335,7 +327,7 @@ impl InteruptHandler {
 			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 1);
 		self.idt[13] = IdtEntry::new(VAddr::from_usize(general_protection_exception as usize),
 			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 1);
-		self.idt[14] = IdtEntry::new(VAddr::from_usize(page_fault_exception as usize),
+		self.idt[14] = IdtEntry::new(VAddr::from_usize(paging::page_fault_handler as usize),
 			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 1);
 		self.idt[15] = IdtEntry::new(VAddr::from_usize(reserved_exception as usize),
 			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 1);
