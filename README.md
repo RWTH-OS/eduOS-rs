@@ -4,7 +4,7 @@
 
 ## Introduction
 
-eduOS-rs is a Unix-like computer operating system based on a monolithic architecture for educational purposes, which is developed for the course [Operating Systems][acsos] at the RWTH Aachen Univeristy.
+eduOS-rs is a Unix-like computer operating system based on a monolithic architecture for educational purposes, which is developed for the course [Operating Systems][acsos] at the RWTH Aachen University.
 It is derived from following tutorials and software distributions.
 
 1. Philipp Oppermann's [excellent series of blog posts][opp].
