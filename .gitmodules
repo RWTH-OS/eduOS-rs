@@ -1,4 +1,0 @@
-[submodule "rust"]
-	path = rust
-	url = https://github.com/RWTH-OS/rust.git
-	branch = master
