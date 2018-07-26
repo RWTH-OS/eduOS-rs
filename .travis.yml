@@ -11,9 +11,7 @@ env:
     - OS_TYPE=ubuntu OS_VERSION=18.04
 
 before_install:
-  - echo "deb https://dl.bintray.com/rwth-os/hermitcore vivid main" | sudo tee -a /etc/apt/sources.list
   - travis_retry sudo apt-get -qq update
-  - git submodule update --init rust
   - echo 'DOCKER_OPTS="-H tcp://127.0.0.1:2375 -H unix:///var/run/docker.sock -s devicemapper"' | sudo tee /etc/default/docker > /dev/null
   - sudo service docker restart
   - sleep 5
