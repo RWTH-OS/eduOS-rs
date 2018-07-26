@@ -10,9 +10,6 @@ env:
     - OS_TYPE=centos OS_VERSION=7
     - OS_TYPE=ubuntu OS_VERSION=18.04
 
-git:
-  submodules: true
-
 before_install:
   - echo "deb https://dl.bintray.com/rwth-os/hermitcore vivid main" | sudo tee -a /etc/apt/sources.list
   - travis_retry sudo apt-get -qq update
