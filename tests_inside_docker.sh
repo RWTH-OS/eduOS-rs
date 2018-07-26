@@ -23,6 +23,7 @@ fi
 
 curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
 export PATH=$PATH:~/.cargo/bin
-make runtime
+cargo install xargo
+rustup component add rust-src
 make
 make run
