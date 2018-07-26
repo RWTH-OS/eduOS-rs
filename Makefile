@@ -1,7 +1,5 @@
-# Copied from http://blog.phil-opp.com/rust-os/multiboot-kernel.html
-
 arch ?= x86_64
-target ?= $(arch)-unknown-none-gnu
+target ?= $(arch)-unknown-eduos
 release ?=
 
 opt :=
@@ -53,7 +51,7 @@ debug: $(kernel).elf
 	@echo QEMU -d int $(kernel).elf
 	@qemu-system-x86_64 -display none -smp 1 -net nic,model=rtl8139 -device isa-debug-exit,iobase=0xf4,iosize=0x04 -monitor telnet:127.0.0.1:18767,server,nowait -kernel $(kernel).elf -d int -no-reboot -serial stdio
 
-$(kernel).elf: cargo $(assembly_object_files) $(linker_script)
+$(kernel).elf: xargo $(assembly_object_files) $(linker_script)
 	@echo LD $(kernel).elf
 	@$(ld_for_target) -n --gc-sections -T $(linker_script) -o $(kernel).elf \
 		$(assembly_object_files) $(rust_os)
@@ -66,42 +64,11 @@ docs:
 	@echo DOC
 	@cargo doc
 
-cargo:
-	@echo CARGO
-	@cargo build $(opt) --target $(target)
+xargo:
+	@echo XARGO
+	@RUST_TARGET_PATH=${CURDIR} xargo build $(opt) --target $(target)
 
 build/arch/$(arch)/%.o: src/arch/$(arch)/%.asm $(assembly_header_files)
 	@echo NASM $<
 	@mkdir -p $(shell dirname $@)
 	@nasm -felf64 -Isrc/arch/$(arch)/ $< -o $@
-
-
-#==========================================================================
-# Building the Rust runtime for our bare-metal target
-
-# Where to put our compiled runtime libraries for this platform.
-installed_target_libs := \
-	$(shell rustup which rustc | \
-		sed s,bin/rustc,lib/rustlib/$(target)/lib,)
-
-runtime_rlibs := \
-	$(installed_target_libs)/libcore.rlib \
-	$(installed_target_libs)/libstd_unicode.rlib \
-	$(installed_target_libs)/liballoc.rlib
-
-RUSTC := \
-	rustc --verbose --target $(target) \
-		-Z no-landing-pads \
-		--out-dir $(installed_target_libs)
-
-.PHONY: runtime
-
-runtime: $(runtime_rlibs)
-
-$(installed_target_libs):
-	@mkdir -p $(installed_target_libs)
-
-$(installed_target_libs)/%.rlib: rust/src/%/lib.rs $(installed_target_libs)
-	@echo RUSTC $<
-	@$(RUSTC) --crate-type rlib --crate-name $(shell basename $@ | sed s,lib,, | sed s,.rlib,,) $<
-	@echo Check $@

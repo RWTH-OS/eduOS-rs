@@ -22,6 +22,8 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #![feature(asm, const_fn, lang_items)]
+#![feature(panic_implementation)]
+#![feature(panic_info_message)]
 #![no_std]
 
 extern crate cpuio;
