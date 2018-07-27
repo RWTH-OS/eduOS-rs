@@ -1,13 +1,18 @@
 arch ?= x86_64
-target ?= $(arch)-unknown-eduos
+target ?= $(arch)-unknown-unknown
 release ?=
 
 opt :=
 rdir := debug
+suffix := elf
 
 ifeq ($(release), 1)
 opt := --release
 rdir := release
+endif
+
+ifeq ($(arch), wasm32)
+suffix := wasm
 endif
 
 rust_os := target/$(target)/$(rdir)/libeduos_rs.a
@@ -35,7 +40,7 @@ output_format := -O elf32-i386
 
 .PHONY: all fmt clean run debug cargo docs
 
-all: $(kernel).elf
+all: $(kernel).$(suffix)
 
 fmt:
 	rustfmt --write-mode overwrite src/lib.rs
@@ -50,6 +55,10 @@ run: $(kernel).elf
 debug: $(kernel).elf
 	@echo QEMU -d int $(kernel).elf
 	@qemu-system-x86_64 -display none -smp 1 -net nic,model=rtl8139 -device isa-debug-exit,iobase=0xf4,iosize=0x04 -monitor telnet:127.0.0.1:18767,server,nowait -kernel $(kernel).elf -d int -no-reboot -serial stdio
+
+$(kernel).wasm: xargo
+	@echo WASM_GC
+	@wasm-gc target/$(target)/$(rdir)/eduos_rs.wasm eduos.wasm
 
 $(kernel).elf: xargo $(assembly_object_files) $(linker_script)
 	@echo LD $(kernel).elf
