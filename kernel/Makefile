@@ -59,9 +59,12 @@ $(kernel).wasm: xargo
 	@echo WASM_GC
 	@wasm-gc target/$(target)/$(rdir)/eduos_rs.wasm eduos.wasm
 
-$(kernel).elf: xargo $(assembly_object_files) $(linker_script)
+$(kernel).elf: xargo build $(assembly_object_files) $(linker_script)
 	@echo LD $(kernel).elf
 	@$(ld_for_target) -n --gc-sections -T $(linker_script) -o $(kernel).elf $(assembly_object_files) $(rust_os)
+
+build:
+	mkdir -p build
 
 docs:
 	@echo DOC
