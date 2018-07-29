@@ -26,4 +26,3 @@ export PATH=$PATH:~/.cargo/bin
 cargo install xargo
 rustup component add rust-src
 make
-make run
