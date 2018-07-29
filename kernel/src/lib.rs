@@ -24,6 +24,7 @@
 #![feature(asm, const_fn, lang_items)]
 #![feature(panic_implementation)]
 #![feature(panic_info_message)]
+#![feature(asm)]
 #![no_std]
 
 extern crate spin;
@@ -50,7 +51,6 @@ mod console;
 pub extern "C" fn rust_main() {
     println!("Hello world!");
 
-	// only on a real pc we have to call a shutdown command
 	#[cfg(target_arch = "x86_64")]
-	shutdown();
+	println!("CPU frequency {} MHz", arch::x86_64::get_cpufreq());
 }

@@ -6,13 +6,19 @@
 
 OUTPUT_FORMAT("elf64-x86-64")
 OUTPUT_ARCH("i386:x86-64")
-ENTRY(rust_main)
+ENTRY(rust_start)
 
 SECTIONS {
 	/* Load the kernel reasonably high in memory to avoid special addresses. */
 	. = 1M;
 
 	kernel_start = .;
+
+	.boot :
+	{
+		/* This goes first. */
+		KEEP(*(.kheader))
+	}
 
 	.text ALIGN(4096) : AT(ADDR(.text))
 	{

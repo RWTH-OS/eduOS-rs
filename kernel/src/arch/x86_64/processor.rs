@@ -270,7 +270,8 @@ pub fn halt() {
 	}
 }
 
-pub fn shutdown() -> ! {
+#[no_mangle]
+pub extern "C" fn shutdown() -> ! {
 	// shutdown, works only on Qemu
 	unsafe {
 		let mut shutdown_port : cpuio::Port<u8> = cpuio::Port::new(0xf4);

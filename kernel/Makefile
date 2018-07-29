@@ -27,6 +27,10 @@ endif
 
 linker_script := src/arch/$(arch)/linker.ld
 grub_cfg := src/arch/$(arch)/grub.cfg
+assembly_header_files := $(wildcard src/arch/$(arch)/*.inc)
+assembly_source_files := $(wildcard src/arch/$(arch)/*.asm)
+assembly_object_files := $(patsubst src/arch/$(arch)/%.asm, \
+	build/arch/$(arch)/%.o, $(assembly_source_files))
 
 ld_for_target := $(crossprefix)ld
 objcopy_for_target := $(crossprefix)objcopy
@@ -55,9 +59,9 @@ $(kernel).wasm: xargo
 	@echo WASM_GC
 	@wasm-gc target/$(target)/$(rdir)/eduos_rs.wasm eduos.wasm
 
-$(kernel).elf: xargo $(linker_script)
+$(kernel).elf: xargo $(assembly_object_files) $(linker_script)
 	@echo LD $(kernel).elf
-	@$(ld_for_target) -n --gc-sections -T $(linker_script) -o $(kernel).elf $(rust_os)
+	@$(ld_for_target) -n --gc-sections -T $(linker_script) -o $(kernel).elf $(assembly_object_files) $(rust_os)
 
 docs:
 	@echo DOC
