@@ -2,7 +2,7 @@
 //! GDT. The Global Descriptor Table contains information about the memory structure used by the
 //! X86 family.
 
-use vm::kvm::*;
+use linux::kvm::*;
 
 /// Used segments in order
 pub const BOOT_NULL: isize = 0;

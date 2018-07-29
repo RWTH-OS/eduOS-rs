@@ -1,5 +1,5 @@
-use vm::error::*;
-use vm::kvm::*;
+use linux::error::*;
+use linux::kvm::*;
 
 pub const PORT_UART:		u16 = 0x3f8;
 pub const PORT_QEMU_SHUTDOWN:	u16 = 0xf4;

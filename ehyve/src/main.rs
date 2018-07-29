@@ -25,28 +25,16 @@ extern crate nix;
 extern crate log;
 extern crate env_logger;
 
+mod linux;
 mod vm;
 
 use std::env;
 use std::process;
-
-use vm::VmParameter;
-use vm::Vm;
-use vm::ehyve::Ehyve;
-use vm::error::Result;
-
-fn create_vm(path: Option<String>, specs: VmParameter) -> Result<()> {
-    let mut vm: Box<Vm> = match specs {
-        VmParameter::Kvm{ mem_size, num_cpus } => Box::new(Ehyve::new(path, mem_size, num_cpus)?)
-    };
-
-    vm.run()?;
-
-    Ok(())
-}
+use linux::*;
 
 fn main() {
-	    env_logger::init();
+	env_logger::init();
+
     let verbose = VmParameter::parse_bool("EHYVE_VERBOSE", false);
     unsafe { vm::VERBOSE = verbose; }
 

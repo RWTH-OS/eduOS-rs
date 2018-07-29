@@ -16,10 +16,10 @@ use nix;
 
 use memmap::{MmapMut, MmapOptions};
 
-use vm::ehyve;
-use vm::kvm::*;
-use vm::error::*;
-use vm::vm::KernelHeader;
+use linux::ehyve;
+use linux::kvm::*;
+use linux::error::*;
+use linux::vm::KernelHeader;
 use super::proto;
 use super::vm::{KVMExtensions, ControlData};
 use super::utils;

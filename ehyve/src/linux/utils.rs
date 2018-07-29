@@ -6,8 +6,8 @@ use std::fmt;
 use nix::unistd::{mkstemp, close};
 use raw_cpuid::CpuId;
 
-use vm::error::*;
-use vm::kvm::*;
+use linux::error::*;
+use linux::kvm::*;
 
 pub unsafe fn any_as_u8_mut_slice<T: Sized>(p: &mut T) -> &mut [u8] {
     ::std::slice::from_raw_parts_mut(

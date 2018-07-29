@@ -18,12 +18,12 @@ use elf;
 use elf::types::{ELFCLASS64, PT_LOAD, ET_EXEC, EM_X86_64};
 use chan_signal::Signal;
 
-use vm::utils;
-use vm::ehyve;
-use vm::error::*;
-use vm::kvm::*;
-use vm::vcpu::{ExitCode, VirtualCPU};
-use vm::gdt;
+use linux::utils;
+use linux::ehyve;
+use linux::error::*;
+use linux::kvm::*;
+use linux::vcpu::{ExitCode, VirtualCPU};
+use linux::gdt;
 
 // TODO configuration missing
 pub const GUEST_SIZE: usize = 0x20000000;
