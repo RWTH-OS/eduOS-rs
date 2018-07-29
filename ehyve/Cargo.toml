@@ -1,0 +1,18 @@
+[package]
+name = "ehyve"
+version = "0.0.1"
+authors = ["Stefan Lankes <slankes@eonerc.rwth-aachen>"]
+
+[dependencies]
+libc = "0.2.42"
+nix = "0.11"
+memmap = "0.6"
+elf = "0.0.10"
+inotify = "0.5"
+byteorder = "1"
+log = "0.4"
+env_logger = "0.5.10"
+chan-signal = "0.3.1"
+chan = "0.1.21"
+raw-cpuid = "5.0.0"
+rand = "0.5"
