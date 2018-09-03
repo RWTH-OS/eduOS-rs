@@ -24,7 +24,6 @@
 #![feature(asm, const_fn, lang_items)]
 #![feature(panic_implementation)]
 #![feature(panic_info_message)]
-#![feature(asm)]
 #![no_std]
 
 extern crate spin;
