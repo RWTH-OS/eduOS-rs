@@ -1,46 +1,58 @@
 #![feature(untagged_unions)]
 #![feature(core_intrinsics)]
-#![feature(unique)]
 #![allow(dead_code)]
-#![allow(non_camel_case_types)]
-#![allow(non_upper_case_globals)]
-#![allow(non_snake_case)]
 
 extern crate libc;
 extern crate memmap;
 extern crate elf;
-extern crate inotify;
-extern crate byteorder;
+extern crate x86;
 extern crate raw_cpuid;
-extern crate rand;
-
-#[macro_use]
-extern crate chan;
-extern crate chan_signal;
-
-#[macro_use]
-extern crate nix;
+extern crate aligned_alloc;
+#[cfg(target_os = "macos")]
+extern crate hypervisor;
 
 #[macro_use]
 extern crate log;
 extern crate env_logger;
 
-mod linux;
 mod vm;
+#[cfg(target_os = "linux")]
+mod linux;
+#[cfg(target_os = "macos")]
+mod macos;
+pub mod utils;
+pub mod consts;
 
 use std::env;
-use std::process;
-use linux::*;
+use std::thread;
+use std::sync::Arc;
+use vm::*;
 
 fn main() {
 	env_logger::init();
 
-    let verbose = VmParameter::parse_bool("EHYVE_VERBOSE", false);
-    unsafe { vm::VERBOSE = verbose; }
+    let path = env::args().nth(1).expect("Expect path to the kernel!");
+	let mut vm = create_vm(path, VmParameter::from_env()).unwrap();
+	let num_cpus = vm.num_cpus();
 
-    let path = env::args().nth(1);
-    if let Err(e) = create_vm(path, VmParameter::from_env()) {
-        eprintln!("Error: {}", e);
-        process::exit(1);
-    }
+	vm.load_kernel().unwrap();
+
+	let vm = Arc::new(vm);
+	let threads: Vec<_> = (0..num_cpus)
+		.map(|tid| {
+			let vm = vm.clone();
+
+			thread::spawn(move || {
+				debug!("Create thread for CPU {}", tid);
+
+				let mut cpu = vm.create_cpu(tid).unwrap();
+				cpu.init(vm.get_entry_point()).unwrap();
+
+				cpu.run().unwrap();
+			})
+		}).collect();
+
+	for t in threads {
+		t.join().unwrap();
+	}
 }
