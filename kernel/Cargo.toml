@@ -7,7 +7,7 @@ authors = ["Stefan Lankes <slankes@eonerc.rwth-aachen.de>"]
 crate-type = ["staticlib", "cdylib"]
 
 [dependencies]
-spin = "0.4.6"	# Spinlocks.
+spin = "0.4.9"	# Spinlocks.
 
 [target.'cfg(target_arch = "x86_64")'.dependencies.cpuio]
 version = "0.2.0"
@@ -16,7 +16,7 @@ version = "0.2.0"
 version = "3.0.0"
 
 [target.'cfg(target_arch = "x86_64")'.dependencies.x86]
-version = "0.7"
+path = "../crates/x86"
 default-features = false
 
 

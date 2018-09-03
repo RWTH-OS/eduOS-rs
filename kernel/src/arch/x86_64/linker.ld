@@ -1,16 +1,10 @@
-/* Based on http://blog.phil-opp.com/rust-os/multiboot-kernel.html
- *
- * Used to specify a custom linking layout that puts our multiboot header
- * before everything else.
- */
-
 OUTPUT_FORMAT("elf64-x86-64")
 OUTPUT_ARCH("i386:x86-64")
 ENTRY(rust_start)
 
 SECTIONS {
 	/* Load the kernel reasonably high in memory to avoid special addresses. */
-	. = 1M;
+	. = 2M;
 
 	kernel_start = .;
 
@@ -18,6 +12,7 @@ SECTIONS {
 	{
 		/* This goes first. */
 		KEEP(*(.kheader))
+		KEEP(*(.boot_page_table))
 	}
 
 	.text ALIGN(4096) : AT(ADDR(.text))
