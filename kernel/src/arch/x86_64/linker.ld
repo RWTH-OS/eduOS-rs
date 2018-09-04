@@ -12,7 +12,6 @@ SECTIONS {
 	{
 		/* This goes first. */
 		KEEP(*(.kheader))
-		KEEP(*(.boot_page_table))
 	}
 
 	.text ALIGN(4096) : AT(ADDR(.text))

@@ -6,6 +6,11 @@ use vm::{Vm, VirtualCPU};
 use linux::error::*;
 use linux::vcpu::*;
 use linux::{KVMFD, kvm_create_vm, kvm_init, kvm_init_vm};
+use x86::bits64::segmentation::*;
+
+struct Gdt {
+	entries: [SegmentDescriptor; 3]
+}
 
 #[derive(Debug, Clone)]
 pub struct Ehyve {
@@ -83,7 +88,7 @@ impl Vm for Ehyve {
 	}
 
 	fn create_cpu(&self, id: u32) -> Result<Box<VirtualCPU>> {
-		Ok(Box::new(EhyveCPU::new(id, self.vmfd, self.guest_mem)))
+		Ok(Box::new(EhyveCPU::new(id, self.vmfd)))
 	}
 }
 

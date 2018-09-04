@@ -141,7 +141,7 @@ extern {
     fn kvm_create_vm(fd: c_int, flags: c_int) -> c_int;
 	fn kvm_init_vm(fd: c_int, guest_size: size_t) -> *mut c_void;
     fn kvm_create_vcpu(fd: c_int, vcpu_id: c_int) -> c_int;
-	fn kvm_init_vcpu(vcpufd: c_int, cpuid: c_int, elf_entry: size_t, guest_mem: *mut c_void) ->  c_int;
+	fn kvm_init_vcpu(vcpufd: c_int, cpuid: c_int, elf_entry: size_t) ->  c_int;
 	fn kvm_map_run(fd: c_int, cpufd: c_int) -> *mut c_void;
     fn kvm_run(fd: c_int) -> c_int;
     fn kvm_get_regs(fd: c_int, regs: *mut Regs) -> c_int;

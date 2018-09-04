@@ -48,6 +48,7 @@
 #define IOAPIC_DEFAULT_BASE	0xfec00000
 #define APIC_DEFAULT_BASE	0xfee00000
 #define GUEST_OFFSET		0x0
+#define GUEST_PAGE_SIZE		0x200000   /* 2 MB pages in guest */
 #define API_VERSION		12
 #define BOOT_GDT		0x1000
 #define BOOT_INFO		0x2000
@@ -132,9 +133,8 @@
 #define GDT_GET_S(x)   (__u8)(((x) & 0x0000100000000000) >> 44)
 #define GDT_GET_TYPE(x)(__u8)(((x) & 0x00000F0000000000) >> 40)
 
-#define GDT_TO_KVM_SEGMENT(seg, gdt_table, sel) \
+#define GDT_TO_KVM_SEGMENT(seg, sel, gdt_ent) \
     do {                                        \
-        __u64 gdt_ent = gdt_table[sel];         \
         seg.base = GDT_GET_BASE(gdt_ent);       \
         seg.limit = GDT_GET_LIMIT(gdt_ent);     \
         seg.selector = sel * 8;                 \

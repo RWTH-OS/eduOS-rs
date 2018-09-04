@@ -137,6 +137,34 @@ int kvm_create_vm(int fd, int flags) {
 	return vmfd;
 }
 
+static void setup_guest_mem(uint8_t *mem)
+{
+	uint64_t *gdt = (uint64_t *) (mem + BOOT_GDT);
+	uint64_t *pml4 = (uint64_t *) (mem + BOOT_PML4);
+	uint64_t *pdpte = (uint64_t *) (mem + BOOT_PDPTE);
+	uint64_t *pde = (uint64_t *) (mem + BOOT_PDE);
+	uint64_t paddr;
+
+	/*
+	 * For simplicity we currently use 2MB pages and only a single
+	 * PML4/PDPTE/PDE.
+	 */
+
+	memset(pml4, 0x00, 4096);
+	memset(pdpte, 0x00, 4096);
+	memset(pde, 0x00, 4096);
+
+	*pml4 = BOOT_PDPTE | (X86_PDPT_P | X86_PDPT_RW);
+	*pdpte = BOOT_PDE | (X86_PDPT_P | X86_PDPT_RW);
+	for (paddr = 0; paddr < 0x20000000ULL; paddr += GUEST_PAGE_SIZE, pde++)
+		*pde = paddr | (X86_PDPT_P | X86_PDPT_RW | X86_PDPT_PS);
+
+	/* flags, base, limit */
+	gdt[BOOT_GDT_NULL] = GDT_ENTRY(0, 0, 0);
+	gdt[BOOT_GDT_CODE] = GDT_ENTRY(0xA09B, 0, 0xFFFFF);
+	gdt[BOOT_GDT_DATA] = GDT_ENTRY(0xC093, 0, 0xFFFFF);
+}
+
 uint8_t* kvm_init_vm(int vmfd, size_t guest_size) {
 	uint8_t* guest_mem = NULL;
 	uint64_t identity_base = 0xfffbc000;
@@ -193,6 +221,8 @@ uint8_t* kvm_init_vm(int vmfd, size_t guest_size) {
                 kvm_ioctl(vmfd, KVM_SET_USER_MEMORY_REGION, &kvm_region);
         }
 
+	setup_guest_mem(guest_mem);
+
 	return guest_mem;
 }
 
@@ -219,35 +249,23 @@ struct kvm_run* kvm_map_run(int fd, int vcpufd)
 
 static void setup_system_64bit(struct kvm_sregs *sregs)
 {
-        sregs->cr0 |= X86_CR0_PE;
+	sregs->cr3 = BOOT_PML4;
+        sregs->cr0 |= X86_CR0_PE | X86_CR0_PG;
         sregs->cr4 |= X86_CR4_PAE;
-        sregs->efer |= EFER_LME|EFER_LMA;
+        sregs->efer |= EFER_LME | EFER_LMA;
 }
 
-static void setup_system_page_tables(struct kvm_sregs *sregs)
+static void setup_system_gdt(struct kvm_sregs *sregs)
 {
-        sregs->cr3 = 0x201000;
-        sregs->cr4 |= X86_CR4_PAE;
-        sregs->cr0 |= X86_CR0_PG;
-}
-
-static void setup_system_gdt(struct kvm_sregs *sregs,
-                             uint8_t *mem,
-                             uint64_t off)
-{
-        uint64_t *gdt = (uint64_t *) (mem + off);
         struct kvm_segment data_seg, code_seg;
 
-        /* flags, base, limit */
-        gdt[BOOT_GDT_NULL] = GDT_ENTRY(0, 0, 0);
-        gdt[BOOT_GDT_CODE] = GDT_ENTRY(0xA09B, 0, 0xFFFFF);
-        gdt[BOOT_GDT_DATA] = GDT_ENTRY(0xC093, 0, 0xFFFFF);
-
-        sregs->gdt.base = off;
+        sregs->gdt.base = BOOT_GDT;
         sregs->gdt.limit = (sizeof(uint64_t) * BOOT_GDT_MAX) - 1;
 
-        GDT_TO_KVM_SEGMENT(code_seg, gdt, BOOT_GDT_CODE);
-        GDT_TO_KVM_SEGMENT(data_seg, gdt, BOOT_GDT_DATA);
+	uint64_t code_ent = GDT_ENTRY(0xA09B, 0, 0xFFFFF);
+	uint64_t data_ent = GDT_ENTRY(0xC093, 0, 0xFFFFF);
+        GDT_TO_KVM_SEGMENT(code_seg, BOOT_GDT_CODE, code_ent);
+        GDT_TO_KVM_SEGMENT(data_seg, BOOT_GDT_DATA, data_ent);
 
         sregs->cs = code_seg;
         sregs->ds = data_seg;
@@ -259,7 +277,7 @@ static void setup_system_gdt(struct kvm_sregs *sregs,
 	sregs->apic_base = APIC_DEFAULT_BASE;
 }
 
-static void setup_system(int vcpufd, uint8_t *mem, uint32_t id)
+static void setup_system(int vcpufd, uint32_t id)
 {
         static struct kvm_sregs sregs;
 
@@ -270,15 +288,14 @@ static void setup_system(int vcpufd, uint8_t *mem, uint32_t id)
                 kvm_ioctl(vcpufd, KVM_GET_SREGS, &sregs);
 
                 /* Set all cpu/mem system structures */
-                setup_system_gdt(&sregs, mem, BOOT_GDT);
-                setup_system_page_tables(&sregs);
+                setup_system_gdt(&sregs);
                 setup_system_64bit(&sregs);
         }
 
         kvm_ioctl(vcpufd, KVM_SET_SREGS, &sregs);
 }
 
-int kvm_init_vcpu(int vcpufd, int cpuid, uint64_t elf_entry, uint8_t* guest_mem) {
+int kvm_init_vcpu(int vcpufd, int cpuid, uint64_t elf_entry) {
 	struct kvm_regs regs = {
 		.rip = elf_entry,       // entry point to HermitCore
 		.rflags = 0x2,          // POR value required by x86 architecture
@@ -309,7 +326,7 @@ int kvm_init_vcpu(int vcpufd, int cpuid, uint64_t elf_entry, uint8_t* guest_mem)
 	//*((volatile uint32_t*) (mboot + 0x30)) = cpuid;
 
 	/* Setup registers and memory. */
-	setup_system(vcpufd, guest_mem, cpuid);
+	setup_system(vcpufd, cpuid);
 	kvm_ioctl(vcpufd, KVM_SET_REGS, &regs);
 
 	return 0;

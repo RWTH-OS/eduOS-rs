@@ -46,28 +46,3 @@ align PAGE_SIZE
 stack_bottom:
 	resb KERNEL_STACK_SIZE
 stack_top:
-
-section .boot_page_table
-
-%macro pagestub 1
-    DQ (0x1000 * %1) + 0x200107
-%endmacro
-
-; Bootstrap page tables are used during the initialization.
-ALIGN 4096
-boot_pml4:
-    DQ boot_pdpt + 0x107  ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_USER
-    times 511 DQ 0      ; PAGE_MAP_ENTRIES - 1
-boot_pdpt:
-    DQ boot_pgd + 0x107   ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_USER
-    times 511 DQ 0      ; PAGE_MAP_ENTRIES - 1
-boot_pgd:
-    DQ 0
-    DQ boot_pgt + 0x107   ; PG_PRESENT | PG_GLOBAL | PG_RW | PG_USER
-    times 510 DQ 0      ; PAGE_MAP_ENTRIES - 2
-boot_pgt:
-%assign i 0
-%rep 512
-  pagestub i
-%assign i i+1
-%endrep

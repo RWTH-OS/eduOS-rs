@@ -12,12 +12,11 @@ pub struct EhyveCPU
 {
 	id: u32,
 	cpufd: c_int,
-	guest_mem: *mut c_void,
 	run: *mut Run
 }
 
 impl EhyveCPU {
-    pub fn new(id: u32, fd: c_int, guest_mem: *mut c_void,) -> EhyveCPU {
+    pub fn new(id: u32, fd: c_int) -> EhyveCPU {
 		unsafe {
 			let cpufd = kvm_create_vcpu(fd, id as c_int);
 			let run = kvm_map_run(KVMFD, cpufd);
@@ -25,7 +24,6 @@ impl EhyveCPU {
 			EhyveCPU {
 				id: id,
 				cpufd: cpufd,
-				guest_mem: guest_mem,
 				run: run as *mut Run
 			}
 		}
@@ -59,7 +57,7 @@ impl EhyveCPU {
 impl VirtualCPU for EhyveCPU {
 	fn init(&mut self, entry_point: u64) -> Result<()>
 	{
-		let ret = unsafe { kvm_init_vcpu(self.cpufd, self.id as c_int, entry_point as size_t, self.guest_mem) };
+		let ret = unsafe { kvm_init_vcpu(self.cpufd, self.id as c_int, entry_point as size_t) };
 		if ret != 0 {
 			return Err(Error::InternalError);
 		}
@@ -70,7 +68,7 @@ impl VirtualCPU for EhyveCPU {
 	fn run(&mut self) -> Result<()>
 	{
 		self.print_registers();
-		
+
 		loop {
 			let ret = unsafe { kvm_run(self.cpufd) };
 
