@@ -21,14 +21,16 @@
 ; OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 ; WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-KERNEL_STACK_SIZE equ 8192
-PAGE_SIZE equ 4096
+OFFSET equ 4096
 
 section .text
 
 global rust_start
 rust_start:
-	mov rsp, stack_top-16 ; Use our temporary stack.
+	extern kernel_start
+	; dirty tricky to create a temporary stack
+	; => use memory below the kernel
+	mov rsp, kernel_start-OFFSET
 
 	extern rust_main
 	call rust_main
@@ -38,11 +40,3 @@ rust_start:
 L1:
 	call shutdown
 	jmp L1
-
-;;; Our kernel stack.  We want to make this large enough so that we don't
-;;; need to worry about overflowing it until we figure out how to set up
-;;; a guard page and print errors on page faults.
-align PAGE_SIZE
-stack_bottom:
-	resb KERNEL_STACK_SIZE
-stack_top:
