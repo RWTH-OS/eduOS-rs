@@ -34,7 +34,7 @@ pub fn halt() {
 
 #[no_mangle]
 pub extern "C" fn shutdown() -> ! {
-	// shutdown, works only on Qemu
+	// shutdown, works like Qemu's shutdown command
 	unsafe {
 		let mut shutdown_port : cpuio::Port<u8> = cpuio::Port::new(0xf4);
 		shutdown_port.write(0x00);

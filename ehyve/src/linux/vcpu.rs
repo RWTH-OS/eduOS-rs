@@ -85,12 +85,15 @@ impl VirtualCPU for EhyveCPU {
 							let data = data.offset((*(*self.run).io()).data_offset as isize);
 							let cstr = std::str::from_utf8(std::slice::from_raw_parts(data, 1)).unwrap();
 							print!("{}", cstr);
+						} else if (*(*self.run).io()).port == 0xf4 {
+							return Ok(());
+						} else {
+							return Err(Error::UnknownIOPort((*(*self.run).io()).port));
 						}
 					}
 				},
 				Exit::Hlt => {
 						//debug!("Halt Exit");
-						return Ok(());
 				},
 				_ => {
 					error!("Unknown exit reason: {:?}", unsafe { (*self.run).exit_reason });
