@@ -47,14 +47,6 @@ fmt:
 clean:
 	rm -rf build target
 
-run: $(kernel).elf
-	@echo QEMU $(kernel).elf
-	@qemu-system-x86_64 -display none -smp 1 -net nic,model=rtl8139 -device isa-debug-exit,iobase=0xf4,iosize=0x04 -monitor telnet:127.0.0.1:18767,server,nowait -kernel $(kernel).elf -serial stdio 2>/dev/null || true
-
-debug: $(kernel).elf
-	@echo QEMU -d int $(kernel).elf
-	@qemu-system-x86_64 -display none -smp 1 -net nic,model=rtl8139 -device isa-debug-exit,iobase=0xf4,iosize=0x04 -monitor telnet:127.0.0.1:18767,server,nowait -kernel $(kernel).elf -d int -no-reboot -serial stdio
-
 $(kernel).wasm: xargo
 	@echo WASM_GC
 	@wasm-gc target/$(target)/$(rdir)/eduos_rs.wasm eduos.wasm

@@ -7,7 +7,9 @@ clean:
 	make -C ehyve clean
 
 run:
-	make -C kernel run
+	make -C kernel
+	make -C ehyve
+	make -C ehyve run
 
 debug:
 	make -C kernel debug
