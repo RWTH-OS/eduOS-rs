@@ -76,7 +76,9 @@ static struct kvm_cpuid2 *kvm_cpuid = NULL;
 /// features according to our needs.
 static void filter_cpuid(struct kvm_cpuid2 *kvm_cpuid)
 {
-        for (uint32_t i = 0; i < kvm_cpuid->nent; i++) {
+	uint32_t i;
+
+        for (i = 0; i < kvm_cpuid->nent; i++) {
                 struct kvm_cpuid_entry2 *entry = &kvm_cpuid->entries[i];
 
                 switch (entry->function) {
