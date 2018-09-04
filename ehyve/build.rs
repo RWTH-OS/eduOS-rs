@@ -1,7 +1,9 @@
 #[cfg(target_os = "linux")]
-extern crate gcc;
+extern crate cc;
 
 fn main() {
 	#[cfg(target_os = "linux")]
-    gcc::compile_library("libkvm.a", &["src/linux/kvm.c"]);
+	cc::Build::new()
+        .file("src/linux/kvm.c")
+        .compile("kvm");
 }
