@@ -1,4 +1,6 @@
 sudo: required
+git:
+  submodules: true
 dist: trusty
 language: c
 
