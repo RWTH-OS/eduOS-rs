@@ -3,4 +3,4 @@
 	url = https://github.com/rwth-os/rust-x86.git
 [submodule "crates/hypervisor"]
 	path = crates/hypervisor
-	url = https://github.com/RWTH-OS/hypervisor-rs.git:
+	url = https://github.com/RWTH-OS/hypervisor-rs.git
