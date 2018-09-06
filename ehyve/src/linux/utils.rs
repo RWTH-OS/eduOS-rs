@@ -4,18 +4,18 @@ use linux::*;
 impl fmt::Display for Regs {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f,
-            "rip: {:016x}   rsp: {:016x} flags: {:016x}\n\
-            rax: {:016x}   rbx: {:016x}   rcx: {:016x}\n\
-            rdx: {:016x}   rsi: {:016x}   rdi: {:016x}\n\
-            rbp: {:016x}    r8: {:016x}    r9: {:016x}\n\
-            r10: {:016x}   r11: {:016x}   r12: {:016x}\n\
-            r13: {:016x}   r14: {:016x}   r15: {:016x}\n",
-            self.rip, self.rsp, self.rflags,
-            self.rax, self.rbx, self.rcx,
-            self.rdx, self.rsi, self.rdi,
-            self.rbp, self.r8,  self.r9,
-            self.r10, self.r11, self.r12,
-            self.r13, self.r14, self.r15
+	            "rip: {:016x}   rsp: {:016x} flags: {:016x}\n\
+	            rax: {:016x}   rbx: {:016x}   rcx: {:016x}\n\
+	            rdx: {:016x}   rsi: {:016x}   rdi: {:016x}\n\
+	            rbp: {:016x}    r8: {:016x}    r9: {:016x}\n\
+	            r10: {:016x}   r11: {:016x}   r12: {:016x}\n\
+	            r13: {:016x}   r14: {:016x}   r15: {:016x}\n",
+	            self.rip, self.rsp, self.rflags,
+	            self.rax, self.rbx, self.rcx,
+	            self.rdx, self.rsi, self.rdi,
+	            self.rbp, self.r8,  self.r9,
+	            self.r10, self.r11, self.r12,
+	            self.r13, self.r14, self.r15
         )
     }
 }

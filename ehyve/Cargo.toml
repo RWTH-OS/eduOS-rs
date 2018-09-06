@@ -12,6 +12,7 @@ aligned_alloc = "0.1"
 elf = "0.0.10"
 libc = "0.2.42"
 memmap = "0.6"
+lazy_static = "1.1"
 
 [dependencies.x86]
 path = "../crates/x86"
@@ -20,5 +21,5 @@ path = "../crates/x86"
 [target.'cfg(target_os = "macos")'.dependencies.hypervisor]
 path = "../crates/hypervisor"
 
-[target.'cfg(target_os = "linux")'.build-dependencies]
+[build-dependencies]
 cc = "1.0"

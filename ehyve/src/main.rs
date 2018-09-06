@@ -8,6 +8,8 @@ extern crate elf;
 extern crate x86;
 extern crate raw_cpuid;
 extern crate aligned_alloc;
+#[macro_use]
+extern crate lazy_static;
 #[cfg(target_os = "macos")]
 extern crate hypervisor;
 
