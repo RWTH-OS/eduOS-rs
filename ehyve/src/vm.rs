@@ -9,6 +9,8 @@ use elf;
 use elf::types::{ELFCLASS64, PT_LOAD, ET_EXEC, EM_X86_64};
 #[cfg(target_os = "linux")]
 use linux::error::*;
+#[cfg(target_os = "macos")]
+use macos::error::*;
 #[cfg(target_os = "linux")]
 pub use linux::ehyve::*;
 
@@ -53,6 +55,22 @@ pub trait VirtualCPU {
 	fn init(&mut self, entry_point: u64) -> Result<()>;
 	fn run(&mut self) -> Result<()>;
 	fn print_registers(&self);
+
+	fn io_exit(&self, port: u16, message: String) -> Result<()>
+	{
+		match port {
+		COM_PORT => {
+				print!("{}", message);
+				Ok(())
+			},
+		SHUTDOWN_PORT => {
+				Err(Error::Shutdown)
+			},
+		_ => {
+				Err(Error::UnknownIOPort(port))
+			}
+		}
+	}
 }
 
 pub trait Vm {

@@ -45,7 +45,7 @@ impl Ehyve {
 				mem::size_of::<&[u8]>()), 0, &MemPerm::ExecAndWrite).or_else(to_error)?;
 
 			let ret = setup_guest_mem(self.guest_mem as *mut c_void);
-			debug!("Initialized guest memory - return value = {}", ret);
+			debug!("Initialized guest memory - return value {}", ret);
 		}
 
 		Ok(())

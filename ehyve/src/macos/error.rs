@@ -11,6 +11,9 @@ pub enum Error {
 	NotEnoughMemory,
 	MissingFrequency,
 	Hypervisor(hypervisor::Error),
+	UnknownExitReason(u32),
+	UnknownIOPort(u16),
+	Shutdown,
 	ParseMemory,
 	UnhandledExitReason
 }
@@ -32,6 +35,9 @@ impl fmt::Display for Error {
 			Error::NotEnoughMemory => write!(f, "The host system has not enough memory, please check your memory usage."),
 			Error::MissingFrequency => write!(f, "Couldn't get the CPU frequency from your system. (is /proc/cpuinfo missing?)"),
 			Error::Hypervisor(ref err) => write!(f, "The hypervisor has failed: {:?}", err),
+			Error::UnknownExitReason(ref exit_reason) => write!(f, "Unknown exit reason {:?}.", exit_reason),
+			Error::UnknownIOPort(ref port) => write!(f, "Unknown io port 0x{}.", port),
+			Error::Shutdown => write!(f, "Receives shutdown command"),
 			Error::ParseMemory => write!(f, "Couldn't parse the guest memory size from the environment"),
 			Error::UnhandledExitReason => write!(f, "Unhandled exit reason")
 		}

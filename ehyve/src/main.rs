@@ -29,6 +29,10 @@ use std::env;
 use std::thread;
 use std::sync::Arc;
 use vm::*;
+#[cfg(target_os = "linux")]
+use linux::error::*;
+#[cfg(target_os = "macos")]
+use macos::error::*;
 
 fn main() {
 	env_logger::init();
@@ -50,7 +54,16 @@ fn main() {
 				let mut cpu = vm.create_cpu(tid).unwrap();
 				cpu.init(vm.get_entry_point()).unwrap();
 
-				cpu.run().unwrap();
+				let result = cpu.run();
+				match result {
+					Ok(()) => {},
+					Err(Error::Shutdown) => {
+						info!("Receive shutdown command!");
+					},
+					_ => {
+						error!("CPU {} crashes!", tid);
+					}
+				}
 			})
 		}).collect();
 

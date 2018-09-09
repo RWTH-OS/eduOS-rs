@@ -2,21 +2,103 @@ use std;
 use consts::*;
 use vm::VirtualCPU;
 use macos::error::*;
-use hypervisor::{vCPU, x86Reg,read_vmx_cap};
+use hypervisor::{vCPU, x86Reg,read_vmx_cap,VMXCap};
 use hypervisor::consts::vmcs::*;
+use hypervisor::consts::vmx_cap::*;
+use hypervisor::consts::vmx_exit::*;
 use hypervisor;
 use x86::bits64::segmentation::*;
 use x86::shared::control_regs::*;
 use x86::shared::msr::*;
 use x86::shared::PrivilegeLevel;
 
+fn allows_one_setting(msr_val: u64, bitpos: u32) -> bool {
+	if (msr_val & (1u64 << (bitpos + 32))) != 0 {
+		return true;
+	}
+
+	false
+}
+
+fn allows_zero_setting(msr_val: u64, bitpos: u32) -> bool {
+	if (msr_val & (1u64 << bitpos)) == 0 {
+		return true;
+	}
+
+	false
+}
+
+fn set_ctlreg(cap_field: &VMXCap, ones_mask: u64, zeros_mask: u64) -> Result<u64> {
+	let mut retval: u64 = 0;
+	let cap: u64 = { read_vmx_cap(cap_field).unwrap() };
+
+	for i in 0..32  {
+		let one_allowed = allows_one_setting(cap, i);
+		let zero_allowed = allows_zero_setting(cap, i);
+
+		if zero_allowed && !one_allowed {
+			/* must be zero */
+			if (ones_mask & (1 << i)) != 0 {
+				debug!("set_ctlreg: bit {} must be zero for {}", i, cap_field);
+				return Err(Error::InternalError);
+			}
+
+			retval = retval & !(1 << i);
+		} else if one_allowed && !zero_allowed {
+			/* must be one */
+			if (zeros_mask & (1 << i)) != 0 {
+				debug!("set_ctlreg: bit {} must be one for {}", i, cap_field);
+				return Err(Error::InternalError);
+			}
+
+			retval = retval | (1 << i);
+		} else {
+			if (zeros_mask & (1 << i)) != 0 {
+				retval = retval & !(1 << i);
+			} else if (ones_mask & (1 << i)) != 0 {
+				retval = retval | (1 << i);
+			} else {
+				debug!("set_ctlreg: cap_field: bit {} unspecified for {}", i, cap_field);
+				return Err(Error::InternalError);
+			}
+		}
+	}
+
+	Ok(retval)
+}
+
 lazy_static! {
 	/* read hypervisor enforced capabilities of the machine, (see Intel docs) */
-	static ref CAP_PINBASED: u64 = { read_vmx_cap(&hypervisor::VMXCap::PINBASED).unwrap() };
-	static ref CAP_PROCBASED: u64 = { read_vmx_cap(&hypervisor::VMXCap::PROCBASED).unwrap() };
-	static ref CAP_PROCBASED2: u64 = { read_vmx_cap(&hypervisor::VMXCap::PROCBASED2).unwrap() };
-	static ref CAP_ENTRY: u64 = { read_vmx_cap(&hypervisor::VMXCap::ENTRY).unwrap() };
-	static ref CAP_EXIT: u64 = { read_vmx_cap(&hypervisor::VMXCap::EXIT).unwrap() };
+	static ref CAP_PINBASED: u64 = {
+		set_ctlreg(&hypervisor::VMXCap::PINBASED,
+			PIN_BASED_NMI|PIN_BASED_VIRTUAL_NMI, PIN_BASED_PREEMPTION_TIMER).unwrap()
+	};
+
+	static ref CAP_PROCBASED: u64 = {
+		set_ctlreg(&hypervisor::VMXCap::PROCBASED, CPU_BASED_IRQ_WND|CPU_BASED_SECONDARY_CTLS|CPU_BASED_MWAIT|CPU_BASED_MONITOR
+			|CPU_BASED_UNCOND_IO|CPU_BASED_MSR_BITMAPS|CPU_BASED_CR8_LOAD|CPU_BASED_CR8_STORE
+			|CPU_BASED_HLT|CPU_BASED_TSC_OFFSET|CPU_BASED_VIRTUAL_NMI_WND	,
+			CPU_BASED_CR3_LOAD|CPU_BASED_CR3_STORE|CPU_BASED_RDTSC|CPU_BASED_TPR_SHADOW
+			|CPU_BASED_MOV_DR|CPU_BASED_MTF|CPU_BASED_INVLPG|CPU_BASED_PAUSE|CPU_BASED_IO_BITMAPS).unwrap()
+	};
+
+	static ref CAP_PROCBASED2: u64 = {
+		set_ctlreg(&hypervisor::VMXCap::PROCBASED2, CPU_BASED2_VPID
+			|CPU_BASED2_EPT|CPU_BASED2_VIRTUAL_APIC|CPU_BASED2_RDTSCP|CPU_BASED2_UNRESTRICTED,
+			CPU_BASED2_DESC_TABLE|CPU_BASED2_WBINVD|CPU_BASED2_PAUSE_LOOP|CPU_BASED2_RDRAND
+			|CPU_BASED2_INVPCID|CPU_BASED2_RDSEED).unwrap()
+	};
+
+	static ref CAP_ENTRY: u64 = {
+		set_ctlreg(&hypervisor::VMXCap::ENTRY,
+			VMENTRY_LOAD_EFER|VMENTRY_GUEST_IA32E,
+			VMENTRY_SMM|VMENTRY_DEACTIVATE_DUAL_MONITOR|VMENTRY_LOAD_IA32_PAT
+			|VMENTRY_LOAD_IA32_PERF_GLOBAL_CTRL).unwrap()
+	};
+
+	static ref CAP_EXIT: u64 = {
+		set_ctlreg(&hypervisor::VMXCap::EXIT, VMEXIT_HOST_IA32E|VMEXIT_LOAD_EFER, VMEXIT_SAVE_VMX_TIMER).unwrap()
+	};
 }
 
 #[derive(Debug)]
@@ -89,23 +171,24 @@ impl EhyveCPU {
 	fn setup_system_64bit(&mut self) -> Result<()> {
 		debug!("Setup 64bit mode");
 
-		/*self.vcpu.write_vmcs(VMCS_CTRL_CR0_MASK, !0u64).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_CTRL_CR4_MASK, !0u64).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_CTRL_CR4_SHADOW, 0).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_CTRL_CR0_SHADOW, 0).or_else(to_error)?;*/
+		let cr0 = (CR0_PROTECTED_MODE | CR0_ENABLE_PAGING /*| CR0_CACHE_DISABLE*/
+					/*| CR0_NOT_WRITE_THROUGH*/ | CR0_EXTENSION_TYPE).bits() as u64;
+		let cr4 = (CR4_ENABLE_PAE /*| CR4_ENABLE_PPMC*/).bits() as u64;
 
-		let value = CR0_PROTECTED_MODE | CR0_ENABLE_PAGING | CR0_CACHE_DISABLE |
-					CR0_NOT_WRITE_THROUGH | CR0_EXTENSION_TYPE;
-		self.vcpu.write_vmcs(VMCS_GUEST_CR0, value.bits() as u64).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_CTRL_CR0_MASK, (CR0_PROTECTED_MODE | CR0_CACHE_DISABLE
+			| CR0_NOT_WRITE_THROUGH | CR0_EXTENSION_TYPE | CR0_ENABLE_PAGING
+			| CR0_NUMERIC_ERROR).bits() as u64).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_CTRL_CR4_MASK, CR4_ENABLE_PAE.bits() as u64).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_CTRL_CR0_SHADOW, cr0).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_CTRL_CR4_SHADOW, cr4).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_GUEST_CR0, cr0).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_GUEST_CR4, cr4).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_GUEST_ACTIVITY_STATE, 0).or_else(to_error)?;
 
-		let value = CR4_ENABLE_PAE /*| CR4_ENABLE_PPMC*/;
-		self.vcpu.write_vmcs(VMCS_GUEST_CR4, value.bits() as u64).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_GUEST_IA32_EFER, EFER_LME | EFER_LMA).or_else(to_error)?;
 
-		let value = EFER_LME | EFER_LMA;
-		self.vcpu.write_vmcs(VMCS_GUEST_IA32_EFER, value).or_else(to_error)?;
-
-		self.vcpu.write_vmcs(VMCS_GUEST_CR3, BOOT_PML4).or_else(to_error)?;
-		//self.vcpu.write_vmcs(VMCS_CTRL_CR3_VALUE0, 0x201000).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_GUEST_CR3, BOOT_PML4+3 /* for present, read and wrire*/).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_CTRL_CR3_VALUE0, BOOT_PML4).or_else(to_error)?;
 
 		Ok(())
 	}
@@ -134,38 +217,15 @@ impl EhyveCPU {
 impl VirtualCPU for EhyveCPU {
 	fn init(&mut self, entry_point: u64) -> Result<()>
 	{
-
 		self.setup_msr()?;
 
-		/*vmx_cap_pinbased = vmx_cap_pinbased | PIN_BASED_INTR | PIN_BASED_NMI | PIN_BASED_VIRTUAL_NMI;
-		vmx_cap_pinbased = vmx_cap_pinbased & !PIN_BASED_PREEMPTION_TIMER;
-		self.vcpu.write_vmcs(VMCS_CTRL_PIN_BASED, vmx_cap_pinbased).or_else(to_error)?;
-
-		vmx_cap_procbased = vmx_cap_procbased | CPU_BASED_SECONDARY_CTLS | CPU_BASED_MONITOR | CPU_BASED_MWAIT;
-		vmx_cap_procbased = vmx_cap_procbased | CPU_BASED_CR8_STORE | CPU_BASED_CR8_LOAD | CPU_BASED_HLT;
-		self.vcpu.write_vmcs(VMCS_CTRL_CPU_BASED, vmx_cap_procbased).or_else(to_error)?;
-
-		vmx_cap_procbased2 = vmx_cap_procbased2 | CPU_BASED2_RDTSCP;
-		self.vcpu.write_vmcs(VMCS_CTRL_CPU_BASED2, vmx_cap_procbased2).or_else(to_error)?;
-
-		vmx_cap_entry = vmx_cap_entry | VMENTRY_LOAD_EFER;
-		self.vcpu.write_vmcs(VMCS_CTRL_VMEXIT_CONTROLS, vmx_cap_entry).or_else(to_error)?;
-
-		vmx_cap_exit = vmx_cap_exit | VMEXIT_HOST_IA32E|VMEXIT_LOAD_EFER;
-		self.vcpu.write_vmcs(VMCS_CTRL_VMENTRY_CONTROLS, vmx_cap_exit).or_else(to_error)?;
-
-		self.vcpu.write_vmcs(VMCS_CTRL_EXC_BITMAP, 0xffffffffu64).or_else(to_error)?;
-
-		vmx_cap_pinbased = read_vmx_cap(&hypervisor::VMXCap::PINBASED).unwrap();
-		debug!("VMX Pinbased 0x{:x}", vmx_cap_pinbased);
-		vmx_cap_procbased = read_vmx_cap(&hypervisor::VMXCap::PROCBASED).unwrap();
-		debug!("VMX Procbased 0x{:x}", vmx_cap_procbased);
-		vmx_cap_procbased2 = read_vmx_cap(&hypervisor::VMXCap::PROCBASED2).unwrap();
-		debug!("VMX Procbased2 0x{:x}", vmx_cap_procbased2);
-		vmx_cap_entry = read_vmx_cap(&hypervisor::VMXCap::ENTRY).unwrap();
-		debug!("VMX Entry 0x{:x}", vmx_cap_entry);
-		vmx_cap_exit = read_vmx_cap(&hypervisor::VMXCap::EXIT).unwrap();
-		debug!("VMX Exit 0x{:x}", vmx_cap_exit);*/
+		debug!("Setup VMX capabilities");
+		self.vcpu.write_vmcs(VMCS_CTRL_PIN_BASED, *CAP_PINBASED).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_CTRL_CPU_BASED, *CAP_PROCBASED).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_CTRL_CPU_BASED2, *CAP_PROCBASED2).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_CTRL_VMENTRY_CONTROLS, *CAP_ENTRY).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_CTRL_VMEXIT_CONTROLS, *CAP_EXIT).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_CTRL_EXC_BITMAP, 0xffffffff).or_else(to_error)?;
 
 		debug!("Setup APIC");
 		self.vcpu.set_apic_addr(APIC_DEFAULT_BASE).or_else(to_error)?;
@@ -187,20 +247,26 @@ impl VirtualCPU for EhyveCPU {
 			self.vcpu.run().or_else(to_error)?;
 
 			let reason = self.vcpu.read_vmcs(VMCS_RO_EXIT_REASON).unwrap() & 0xffff;
+			let qualification = self.vcpu.read_vmcs(VMCS_RO_EXIT_QUALIFIC).unwrap();
+			let len = self.vcpu.read_vmcs(VMCS_RO_VMEXIT_INSTR_LEN).unwrap();
+			debug!("Qualification 0x{:x}, len {}", qualification, len);
+
 			match reason {
-				/*VMX_REASON_VMPTRLD => {
-					info!("Handle VMX_REASON_VMPTRLD");
+				VMX_REASON_VMENTRY_GUEST => {
+					error!("VM-entry failure due to invalid guest state");
 					self.print_registers();
-				},*/
+					return Err(Error::InternalError);
+				},
 				_ => {
-					error!("Unhandled exit: 0x{:x}", reason);
+					error!("Unhandled exit: {}", reason);
 					self.print_registers();
 					return Err(Error::UnhandledExitReason);
+
 				}
-			};
+			}
 		}
 
-		//Ok(())
+		Ok(())
 	}
 
 	fn print_registers(&self)
