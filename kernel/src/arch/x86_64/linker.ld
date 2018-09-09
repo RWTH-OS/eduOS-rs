@@ -14,7 +14,7 @@ SECTIONS {
 		KEEP(*(.kheader))
 	}
 
-	.text ALIGN(4096) : AT(ADDR(.text))
+	.text : AT(ADDR(.text))
 	{
 		*(.text)
 		*(.text.*)
