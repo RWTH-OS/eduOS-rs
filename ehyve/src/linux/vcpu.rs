@@ -76,7 +76,9 @@ impl VirtualCPU for EhyveCPU {
 				return Err(Error::InternalError);
 			}
 
-			match unsafe { (*self.run).exit_reason } {
+			let reason = unsafe { (*self.run).exit_reason };
+
+			match reason {
 				Exit::Io => {
 					//debug!("IO Exit");
 					unsafe {
@@ -92,10 +94,10 @@ impl VirtualCPU for EhyveCPU {
 						debug!("Halt Exit");
 				},
 				_ => {
-					error!("Unknown exit reason: {:?}", unsafe { (*self.run).exit_reason });
+					error!("Unknown exit reason: {:?}", reason );
 					//self.print_registers();
 
-					return Err(Error::UnknownExitReason(unsafe { (*self.run).exit_reason }));
+					return Err(Error::UnknownExitReason(reason));
 				}
 			}
 		}
