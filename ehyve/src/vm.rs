@@ -13,9 +13,6 @@ use linux::error::*;
 use macos::error::*;
 #[cfg(target_os = "linux")]
 pub use linux::ehyve::*;
-
-#[cfg(target_os = "macos")]
-use macos::error::*;
 #[cfg(target_os = "macos")]
 pub use macos::ehyve::*;
 use utils;
@@ -59,14 +56,14 @@ pub trait VirtualCPU {
 	fn io_exit(&self, port: u16, message: String) -> Result<()>
 	{
 		match port {
-		COM_PORT => {
+			COM_PORT => {
 				print!("{}", message);
 				Ok(())
 			},
-		SHUTDOWN_PORT => {
+			SHUTDOWN_PORT => {
 				Err(Error::Shutdown)
 			},
-		_ => {
+			_ => {
 				Err(Error::UnknownIOPort(port))
 			}
 		}

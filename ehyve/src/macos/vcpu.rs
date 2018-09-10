@@ -77,16 +77,16 @@ lazy_static! {
 	static ref CAP_PROCBASED: u64 = {
 		set_ctlreg(&hypervisor::VMXCap::PROCBASED, CPU_BASED_IRQ_WND|CPU_BASED_SECONDARY_CTLS|CPU_BASED_MWAIT|CPU_BASED_MONITOR
 			|CPU_BASED_UNCOND_IO|CPU_BASED_MSR_BITMAPS|CPU_BASED_CR8_LOAD|CPU_BASED_CR8_STORE
-			|CPU_BASED_HLT|CPU_BASED_TSC_OFFSET|CPU_BASED_VIRTUAL_NMI_WND	,
+			|CPU_BASED_HLT|CPU_BASED_TSC_OFFSET|CPU_BASED_VIRTUAL_NMI_WND,
 			CPU_BASED_CR3_LOAD|CPU_BASED_CR3_STORE|CPU_BASED_RDTSC|CPU_BASED_TPR_SHADOW
 			|CPU_BASED_MOV_DR|CPU_BASED_MTF|CPU_BASED_INVLPG|CPU_BASED_PAUSE|CPU_BASED_IO_BITMAPS).unwrap()
 	};
 
 	static ref CAP_PROCBASED2: u64 = {
 		set_ctlreg(&hypervisor::VMXCap::PROCBASED2, CPU_BASED2_VPID
-			|CPU_BASED2_EPT|CPU_BASED2_VIRTUAL_APIC|CPU_BASED2_RDTSCP|CPU_BASED2_UNRESTRICTED,
+			|CPU_BASED2_EPT|CPU_BASED2_RDTSCP|CPU_BASED2_UNRESTRICTED,
 			CPU_BASED2_DESC_TABLE|CPU_BASED2_WBINVD|CPU_BASED2_PAUSE_LOOP|CPU_BASED2_RDRAND
-			|CPU_BASED2_INVPCID|CPU_BASED2_RDSEED).unwrap()
+			|CPU_BASED2_INVPCID|CPU_BASED2_RDSEED|CPU_BASED2_VIRTUAL_APIC).unwrap()
 	};
 
 	static ref CAP_ENTRY: u64 = {
@@ -97,7 +97,8 @@ lazy_static! {
 	};
 
 	static ref CAP_EXIT: u64 = {
-		set_ctlreg(&hypervisor::VMXCap::EXIT, VMEXIT_HOST_IA32E|VMEXIT_LOAD_EFER, VMEXIT_SAVE_VMX_TIMER).unwrap()
+		set_ctlreg(&hypervisor::VMXCap::EXIT, VMEXIT_LOAD_EFER|VMEXIT_HOST_IA32E,
+			VMEXIT_SAVE_VMX_TIMER).unwrap()
 	};
 }
 
@@ -164,6 +165,8 @@ impl EhyveCPU {
 			SegmentSelector::new(GDT_KERNEL_DATA as u16, PrivilegeLevel::Ring0).bits() as u64).or_else(to_error)?;
 		self.vcpu.write_vmcs(VMCS_GUEST_GS,
 			SegmentSelector::new(GDT_KERNEL_DATA as u16, PrivilegeLevel::Ring0).bits() as u64).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_GUEST_TR, 0).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_GUEST_LDTR, 0).or_else(to_error)?;
 
 		Ok(())
 	}
@@ -171,9 +174,9 @@ impl EhyveCPU {
 	fn setup_system_64bit(&mut self) -> Result<()> {
 		debug!("Setup 64bit mode");
 
-		let cr0 = (CR0_PROTECTED_MODE | CR0_ENABLE_PAGING /*| CR0_CACHE_DISABLE*/
-					/*| CR0_NOT_WRITE_THROUGH*/ | CR0_EXTENSION_TYPE).bits() as u64;
-		let cr4 = (CR4_ENABLE_PAE /*| CR4_ENABLE_PPMC*/).bits() as u64;
+		let cr0 = (CR0_PROTECTED_MODE | CR0_ENABLE_PAGING | CR0_CACHE_DISABLE
+				| CR0_NOT_WRITE_THROUGH | CR0_EXTENSION_TYPE).bits() as u64;
+		let cr4 = CR4_ENABLE_PAE.bits() as u64;
 
 		self.vcpu.write_vmcs(VMCS_CTRL_CR0_MASK, (CR0_PROTECTED_MODE | CR0_CACHE_DISABLE
 			| CR0_NOT_WRITE_THROUGH | CR0_EXTENSION_TYPE | CR0_ENABLE_PAGING
@@ -183,12 +186,17 @@ impl EhyveCPU {
 		self.vcpu.write_vmcs(VMCS_CTRL_CR4_SHADOW, cr4).or_else(to_error)?;
 		self.vcpu.write_vmcs(VMCS_GUEST_CR0, cr0).or_else(to_error)?;
 		self.vcpu.write_vmcs(VMCS_GUEST_CR4, cr4).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_ACTIVITY_STATE, 0).or_else(to_error)?;
+		//self.vcpu.write_vmcs(VMCS_GUEST_ACTIVITY_STATE, 0).or_else(to_error)?;
 
 		self.vcpu.write_vmcs(VMCS_GUEST_IA32_EFER, EFER_LME | EFER_LMA).or_else(to_error)?;
 
-		self.vcpu.write_vmcs(VMCS_GUEST_CR3, BOOT_PML4+3 /* for present, read and wrire*/).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_CTRL_CR3_VALUE0, BOOT_PML4).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_GUEST_CR3, BOOT_PML4).or_else(to_error)?;
+		//self.vcpu.write_vmcs(VMCS_CTRL_CR3_COUNT, 1).or_else(to_error)?;
+		//self.vcpu.write_vmcs(VMCS_CTRL_CR3_VALUE0, BOOT_PML4).or_else(to_error)?;
+
+		self.vcpu.write_vmcs(VMCS_GUEST_SYSENTER_ESP, 0).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_GUEST_SYSENTER_EIP, 0).or_else(to_error)?;
+		//self.vcpu.write_vmcs(VMCS_GUEST_LINK_POINTER, !0x0u64).or_else(to_error)?;
 
 		Ok(())
 	}
@@ -227,8 +235,8 @@ impl VirtualCPU for EhyveCPU {
 		self.vcpu.write_vmcs(VMCS_CTRL_VMEXIT_CONTROLS, *CAP_EXIT).or_else(to_error)?;
 		self.vcpu.write_vmcs(VMCS_CTRL_EXC_BITMAP, 0xffffffff).or_else(to_error)?;
 
-		debug!("Setup APIC");
-		self.vcpu.set_apic_addr(APIC_DEFAULT_BASE).or_else(to_error)?;
+		//debug!("Setup APIC");
+		//self.vcpu.set_apic_addr(APIC_DEFAULT_BASE).or_else(to_error)?;
 
 		debug!("Setup instruction pointers");
 		self.vcpu.write_vmcs(VMCS_GUEST_RIP, entry_point).or_else(to_error)?;
@@ -247,15 +255,18 @@ impl VirtualCPU for EhyveCPU {
 			self.vcpu.run().or_else(to_error)?;
 
 			let reason = self.vcpu.read_vmcs(VMCS_RO_EXIT_REASON).unwrap() & 0xffff;
-			let qualification = self.vcpu.read_vmcs(VMCS_RO_EXIT_QUALIFIC).unwrap();
-			let len = self.vcpu.read_vmcs(VMCS_RO_VMEXIT_INSTR_LEN).unwrap();
-			debug!("Qualification 0x{:x}, len {}", qualification, len);
 
 			match reason {
 				VMX_REASON_VMENTRY_GUEST => {
 					error!("VM-entry failure due to invalid guest state");
 					self.print_registers();
 					return Err(Error::InternalError);
+				},
+				VMX_REASON_IO => {
+					let qualification = self.vcpu.read_vmcs(VMCS_RO_EXIT_QUALIFIC).unwrap();
+					//let len = self.vcpu.read_vmcs(VMCS_RO_VMEXIT_INSTR_LEN).unwrap();
+
+					info!("qualification 0x{:x}", qualification);
 				},
 				_ => {
 					error!("Unhandled exit: {}", reason);
@@ -265,8 +276,6 @@ impl VirtualCPU for EhyveCPU {
 				}
 			}
 		}
-
-		Ok(())
 	}
 
 	fn print_registers(&self)
@@ -385,9 +394,12 @@ impl VirtualCPU for EhyveCPU {
 		println!("idt                 {:016x}  {:08x}", idt_base, idt_limit);
 
 		let efer = self.vcpu.read_vmcs(VMCS_GUEST_IA32_EFER).unwrap();
-		print!("\nAPIC:\n");
-		print!("-----\n");
-		print!("efer: {:016x}  apic base: {:016x}\n", efer, APIC_DEFAULT_BASE);
+		println!("\nAPIC:");
+		println!("-----");
+		println!("efer: 0x{:016x}  apic base: 0x{:016x}", efer, APIC_DEFAULT_BASE);
+
+		let link = self.vcpu.read_vmcs(VMCS_GUEST_LINK_POINTER).unwrap();
+		println!("VMCS link pointer: 0x{:x}", link);
 	}
 }
 
