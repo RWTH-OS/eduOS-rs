@@ -196,6 +196,7 @@ impl EhyveCPU {
 
 		self.vcpu.write_vmcs(VMCS_GUEST_SYSENTER_ESP, 0).or_else(to_error)?;
 		self.vcpu.write_vmcs(VMCS_GUEST_SYSENTER_EIP, 0).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_GUEST_IA32_DEBUGCTL, 0).or_else(to_error)?;
 		//self.vcpu.write_vmcs(VMCS_GUEST_LINK_POINTER, !0x0u64).or_else(to_error)?;
 
 		Ok(())
@@ -229,10 +230,20 @@ impl VirtualCPU for EhyveCPU {
 
 		debug!("Setup VMX capabilities");
 		self.vcpu.write_vmcs(VMCS_CTRL_PIN_BASED, *CAP_PINBASED).or_else(to_error)?;
+		debug!("Pin-Based VM-Execution Controls 0x{:x}",
+			self.vcpu.read_vmcs(VMCS_CTRL_PIN_BASED).unwrap());
 		self.vcpu.write_vmcs(VMCS_CTRL_CPU_BASED, *CAP_PROCBASED).or_else(to_error)?;
+		debug!("Primary Processor-Based VM-Execution Controls 0x{:x}",
+			self.vcpu.read_vmcs(VMCS_CTRL_CPU_BASED).unwrap());
 		self.vcpu.write_vmcs(VMCS_CTRL_CPU_BASED2, *CAP_PROCBASED2).or_else(to_error)?;
+		debug!("Secondary Processor-Based VM-Execution Controls 0x{:x}",
+			self.vcpu.read_vmcs(VMCS_CTRL_CPU_BASED2).unwrap());
 		self.vcpu.write_vmcs(VMCS_CTRL_VMENTRY_CONTROLS, *CAP_ENTRY).or_else(to_error)?;
+		debug!("VM-Entry Controls 0x{:x}",
+			self.vcpu.read_vmcs(VMCS_CTRL_VMENTRY_CONTROLS).unwrap());
 		self.vcpu.write_vmcs(VMCS_CTRL_VMEXIT_CONTROLS, *CAP_EXIT).or_else(to_error)?;
+		debug!("VM-Exit Controls 0x{:x}",
+			self.vcpu.read_vmcs(VMCS_CTRL_VMEXIT_CONTROLS).unwrap());
 		self.vcpu.write_vmcs(VMCS_CTRL_EXC_BITMAP, 0xffffffff).or_else(to_error)?;
 
 		//debug!("Setup APIC");
