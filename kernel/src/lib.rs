@@ -48,7 +48,7 @@ mod console;
 
 #[no_mangle]
 pub extern "C" fn rust_main() -> ! {
-    println!("Hello world!");
+	println!("Hello world!");
 
 	#[cfg(target_arch = "x86_64")]
 	println!("CPU frequency {} MHz", arch::x86_64::get_cpufreq());

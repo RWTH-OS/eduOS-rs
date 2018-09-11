@@ -37,15 +37,15 @@ pub enum LogLevel {
 	/// The "warn" level.
 	///
 	/// Designates hazardous situations.
- 	WARNING,
+	WARNING,
 	/// The "info" level.
 	///
 	/// Designates useful information.
- 	INFO,
+	INFO,
 	// The "debug" level.
 	///
 	/// Designates lower priority information.
- 	DEBUG
+	DEBUG
 }
 
 /// Data structures to filter kernel messages
@@ -82,10 +82,10 @@ macro_rules! warn {
 		let current_level = LOGGER.log_level as u8;
 		let cmp_level = LogLevel::WARNING as u8;
 
-        if current_level >= cmp_level {
-            println!(concat!("[WARNING] ", $fmt));
-        }
-    });
+		if current_level >= cmp_level {
+			println!(concat!("[WARNING] ", $fmt));
+		}
+	});
 	($fmt:expr, $($arg:tt)*) => ({
 		let current_level = LOGGER.log_level as u8;
 		let cmp_level = LogLevel::WARNING  as u8;
@@ -102,10 +102,10 @@ macro_rules! error {
 		let current_level = LOGGER.log_level as u8;
 		let cmp_level = LogLevel::ERROR as u8;
 
-        if current_level >= cmp_level {
-            println!(concat!("[ERROR] ", $fmt));
-        }
-    });
+		if current_level >= cmp_level {
+			println!(concat!("[ERROR] ", $fmt));
+		}
+	});
 	($fmt:expr, $($arg:tt)*) => ({
 		let current_level = LOGGER.log_level as u8;
 		let cmp_level = LogLevel::ERROR  as u8;
@@ -122,10 +122,10 @@ macro_rules! debug {
 		let current_level = LOGGER.log_level as u8;
 		let cmp_level = LogLevel::DEBUG as u8;
 
-        if current_level >= cmp_level {
-            println!(concat!("[DEBUG] ", $fmt));
-        }
-    });
+		if current_level >= cmp_level {
+			println!(concat!("[DEBUG] ", $fmt));
+		}
+	});
 	($fmt:expr, $($arg:tt)*) => ({
 		let current_level = LOGGER.log_level as u8;
 		let cmp_level = LogLevel::DEBUG  as u8;
