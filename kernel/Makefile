@@ -27,10 +27,6 @@ endif
 
 linker_script := src/arch/$(arch)/linker.ld
 grub_cfg := src/arch/$(arch)/grub.cfg
-assembly_header_files := $(wildcard src/arch/$(arch)/*.inc)
-assembly_source_files := $(wildcard src/arch/$(arch)/*.asm)
-assembly_object_files := $(patsubst src/arch/$(arch)/%.asm, \
-	build/arch/$(arch)/%.o, $(assembly_source_files))
 
 ld_for_target := $(crossprefix)ld
 objcopy_for_target := $(crossprefix)objcopy
@@ -51,9 +47,9 @@ $(kernel).wasm: xargo
 	@echo WASM_GC
 	@wasm-gc target/$(target)/$(rdir)/eduos_rs.wasm eduos.wasm
 
-$(kernel).elf: xargo build $(assembly_object_files) $(linker_script)
+$(kernel).elf: xargo build $(linker_script)
 	@echo LD $(kernel).elf
-	@$(ld_for_target) -n --gc-sections -T $(linker_script) -o $(kernel).elf $(assembly_object_files) $(rust_os)
+	@$(ld_for_target) -n --gc-sections -T $(linker_script) -o $(kernel).elf $(rust_os)
 
 build:
 	mkdir -p build
@@ -65,8 +61,3 @@ docs:
 xargo:
 	@echo XARGO
 	@RUST_TARGET_PATH=${CURDIR} xargo build $(opt) --target $(target)
-
-build/arch/$(arch)/%.o: src/arch/$(arch)/%.asm $(assembly_header_files)
-	@echo NASM $<
-	@mkdir -p $(shell dirname $@)
-	@nasm -felf64 -Isrc/arch/$(arch)/ $< -o $@

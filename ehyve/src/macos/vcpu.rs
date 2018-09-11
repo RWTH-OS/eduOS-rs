@@ -174,15 +174,14 @@ impl EhyveCPU {
 	fn setup_system_64bit(&mut self) -> Result<()> {
 		debug!("Setup 64bit mode");
 
-		let cr0 = (CR0_PROTECTED_MODE | CR0_ENABLE_PAGING | CR0_CACHE_DISABLE
-				| CR0_NOT_WRITE_THROUGH | CR0_EXTENSION_TYPE).bits() as u64;
+		let cr0 = (CR0_PROTECTED_MODE | CR0_ENABLE_PAGING | CR0_EXTENSION_TYPE | CR0_NUMERIC_ERROR).bits() as u64;
 		let cr4 = CR4_ENABLE_PAE.bits() as u64;
 
 		self.vcpu.write_vmcs(VMCS_CTRL_CR0_MASK, (CR0_PROTECTED_MODE | CR0_CACHE_DISABLE
 			| CR0_NOT_WRITE_THROUGH | CR0_EXTENSION_TYPE | CR0_ENABLE_PAGING
 			| CR0_NUMERIC_ERROR).bits() as u64).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_CTRL_CR4_MASK, CR4_ENABLE_PAE.bits() as u64).or_else(to_error)?;
 		self.vcpu.write_vmcs(VMCS_CTRL_CR0_SHADOW, cr0).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_CTRL_CR4_MASK, (CR4_ENABLE_VMX|CR4_ENABLE_PAE).bits() as u64).or_else(to_error)?;
 		self.vcpu.write_vmcs(VMCS_CTRL_CR4_SHADOW, cr4).or_else(to_error)?;
 		self.vcpu.write_vmcs(VMCS_GUEST_CR0, cr0).or_else(to_error)?;
 		self.vcpu.write_vmcs(VMCS_GUEST_CR4, cr4).or_else(to_error)?;
@@ -191,12 +190,13 @@ impl EhyveCPU {
 		self.vcpu.write_vmcs(VMCS_GUEST_IA32_EFER, EFER_LME | EFER_LMA).or_else(to_error)?;
 
 		self.vcpu.write_vmcs(VMCS_GUEST_CR3, BOOT_PML4).or_else(to_error)?;
-		//self.vcpu.write_vmcs(VMCS_CTRL_CR3_COUNT, 1).or_else(to_error)?;
-		//self.vcpu.write_vmcs(VMCS_CTRL_CR3_VALUE0, BOOT_PML4).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_CTRL_CR3_COUNT, 1).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_CTRL_CR3_VALUE0, BOOT_PML4).or_else(to_error)?;
 
 		self.vcpu.write_vmcs(VMCS_GUEST_SYSENTER_ESP, 0).or_else(to_error)?;
 		self.vcpu.write_vmcs(VMCS_GUEST_SYSENTER_EIP, 0).or_else(to_error)?;
 		self.vcpu.write_vmcs(VMCS_GUEST_IA32_DEBUGCTL, 0).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_GUEST_DR7, 0).or_else(to_error)?;
 		//self.vcpu.write_vmcs(VMCS_GUEST_LINK_POINTER, !0x0u64).or_else(to_error)?;
 
 		Ok(())
@@ -205,7 +205,6 @@ impl EhyveCPU {
 	fn setup_msr(&mut self) -> Result<()> {
 		debug!("Enable MSR registers");
 
-		//self.vcpu.enable_native_msr(IA32_EFER, true).or_else(to_error)?;
 		self.vcpu.enable_native_msr(IA32_FS_BASE, true).or_else(to_error)?;
 		self.vcpu.enable_native_msr(IA32_GS_BASE, true).or_else(to_error)?;
 		self.vcpu.enable_native_msr(IA32_KERNEL_GSBASE, true).or_else(to_error)?;
@@ -251,6 +250,8 @@ impl VirtualCPU for EhyveCPU {
 
 		debug!("Setup instruction pointers");
 		self.vcpu.write_vmcs(VMCS_GUEST_RIP, entry_point).or_else(to_error)?;
+		// create temporary stack to boot the kernel
+		self.vcpu.write_vmcs(VMCS_GUEST_RSP, 0x200000 - 0x1000).or_else(to_error)?;
 		self.vcpu.write_vmcs(VMCS_GUEST_RFLAGS, 0x2).or_else(to_error)?;
 
 		self.setup_system_gdt()?;
@@ -418,5 +419,5 @@ impl Drop for EhyveCPU {
     fn drop(&mut self) {
         debug!("Drop virtual CPU {}", self.id);
 		let _ = self.vcpu.destroy();
-    }
+	}
 }

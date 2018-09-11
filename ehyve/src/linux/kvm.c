@@ -297,8 +297,9 @@ static void setup_system(int vcpufd, uint32_t id)
 
 int kvm_init_vcpu(int vcpufd, int cpuid, uint64_t elf_entry) {
 	struct kvm_regs regs = {
-		.rip = elf_entry,       // entry point to HermitCore
-		.rflags = 0x2,          // POR value required by x86 architecture
+		.rip = elf_entry,		// entry point to HermitCore
+		.rsp = 0x200000 - 0x1000,	// temporary stack to boot the kernel
+		.rflags = 0x2,			// POR value required by x86 architecture
 	};
 	struct kvm_mp_state mp_state = { KVM_MP_STATE_RUNNABLE };
 	struct {
