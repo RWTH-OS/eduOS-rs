@@ -12,6 +12,10 @@ extern crate aligned_alloc;
 extern crate lazy_static;
 #[cfg(target_os = "macos")]
 extern crate hypervisor;
+#[cfg(target_os = "windows")]
+extern crate libwhp;
+#[cfg(target_os = "windows")]
+extern crate kernel32;
 
 #[macro_use]
 extern crate log;
@@ -22,6 +26,8 @@ mod vm;
 mod linux;
 #[cfg(target_os = "macos")]
 mod macos;
+#[cfg(target_os = "windows")]
+mod windows;
 pub mod utils;
 pub mod consts;
 
@@ -33,6 +39,8 @@ use vm::*;
 use linux::error::*;
 #[cfg(target_os = "macos")]
 use macos::error::*;
+#[cfg(target_os = "windows")]
+use windows::error::*;
 
 fn main() {
 	env_logger::init();

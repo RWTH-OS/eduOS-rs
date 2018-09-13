@@ -4,3 +4,6 @@
 [submodule "crates/hypervisor"]
 	path = crates/hypervisor
 	url = https://github.com/RWTH-OS/hypervisor-rs.git
+[submodule "crates/libwhp"]
+	path = crates/libwhp
+	url = https://github.com/RWTH-OS/libwhp.git

@@ -2,6 +2,7 @@ use std;
 use std::env;
 use std::fs::File;
 use std::io::Cursor;
+use std::mem;
 use std::intrinsics::volatile_store;
 use libc;
 use memmap::Mmap;
@@ -11,10 +12,14 @@ use elf::types::{ELFCLASS64, PT_LOAD, ET_EXEC, EM_X86_64};
 use linux::error::*;
 #[cfg(target_os = "macos")]
 use macos::error::*;
+#[cfg(target_os = "windows")]
+use windows::error::*;
 #[cfg(target_os = "linux")]
 pub use linux::ehyve::*;
 #[cfg(target_os = "macos")]
 pub use macos::ehyve::*;
+#[cfg(target_os = "windows")]
+pub use windows::ehyve::*;
 use utils;
 use consts::*;
 
@@ -77,6 +82,45 @@ pub trait Vm {
 	fn get_entry_point(&self) -> u64;
 	fn kernel_path(&self) -> &str;
 	fn create_cpu(&self, id: u32) -> Result<Box<VirtualCPU>>;
+
+	fn init_guest_mem(&self)
+	{
+		debug!("Initialize guest memory");
+
+		let (mem_addr, mem_size) = self.guest_mem();
+
+		let pml4_addr: u64 = BOOT_PML4;
+	    let pdpte_addr: u64 = BOOT_PDPTE;
+	    let pde_addr: u64 = BOOT_PDE;
+	    let pml4: u64 = mem_addr as u64 + pml4_addr;
+	    let pdpte: u64 = mem_addr as u64 + pdpte_addr;
+	    let mut pde: u64 = mem_addr as u64 + pde_addr;
+
+		unsafe {
+			/*
+			 * For simplicity we currently use 2MB pages and only a single
+			 * PML4/PDPTE/PDE.
+			 */
+
+			libc::memset(pml4 as *mut _, 0x00, PAGE_SIZE);
+			libc::memset(pdpte as *mut _, 0x00, PAGE_SIZE);
+			libc::memset(pde as *mut _, 0x00, PAGE_SIZE);
+
+			*(pml4 as *mut u64) = BOOT_PDPTE | (X86_PDPT_P | X86_PDPT_RW);
+			*(pdpte as *mut u64) = BOOT_PDE | (X86_PDPT_P | X86_PDPT_RW);
+
+			let mut paddr = 0;
+			loop {
+				*(pde as *mut u64) = paddr | (X86_PDPT_P | X86_PDPT_RW | X86_PDPT_PS);
+
+				paddr += GUEST_PAGE_SIZE;
+				pde +=  mem::size_of::<*mut u64>() as u64;
+				if paddr >= 0x20000000u64 {
+					break;
+				}
+			}
+	    }
+	}
 
 	fn load_kernel(&mut self) -> Result<()> {
 		debug!("Load kernel from {}", self.kernel_path());

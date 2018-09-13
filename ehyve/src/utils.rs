@@ -2,13 +2,16 @@
 use std::fs::File;
 #[cfg(target_os = "linux")]
 use std::io::Read;
-
 use raw_cpuid::CpuId;
 
 #[cfg(target_os = "macos")]
 use macos::error::*;
 #[cfg(target_os = "linux")]
 use linux::error::*;
+#[cfg(target_os = "windows")]
+use windows::error::*;
+#[cfg(target_os = "windows")]
+use kernel32;
 
 pub fn parse_mem(mem: &str) -> Result<usize> {
     let (num, postfix): (String, String) = mem.chars().partition(|&x| x.is_numeric());
@@ -33,6 +36,17 @@ pub fn cpufreq() -> Result<u32> {
 
     if let Some(freq) = cpuid.get_processor_frequency_info() {
         return Ok(freq.processor_base_frequency() as u32);
+    }
+
+    #[cfg(target_os = "windows")]
+	{
+        let mut freq: i64 = 0;
+
+        unsafe {
+            if kernel32::QueryPerformanceFrequency(&mut freq) != 0 {
+                return Ok((freq / 1000000) as u32);
+            }
+        }
     }
 
 	#[cfg(target_os = "linux")]

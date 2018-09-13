@@ -21,5 +21,8 @@ path = "../crates/x86"
 [target.'cfg(target_os = "macos")'.dependencies.hypervisor]
 path = "../crates/hypervisor"
 
+[target.'cfg(target_os = "windows")'.dependencies.libwhp]
+path = "../crates/libwhp"
+
 [build-dependencies]
 cc = "1.0"
