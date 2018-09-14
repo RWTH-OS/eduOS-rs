@@ -6,162 +6,91 @@ use x86::bits64::segmentation::*;
 use x86::shared::control_regs::*;
 use x86::shared::msr::*;
 use x86::shared::PrivilegeLevel;
+use libwhp::instruction_emulator::*;
+use libwhp::memory::*;
+use libwhp::*;
 
-
-#[derive(Debug)]
 pub struct EhyveCPU
 {
 	id: u32,
-	vcpu: vCPU
+	vcpu: VirtualProcessor
 }
 
 impl EhyveCPU {
-    pub fn new(id: u32) -> EhyveCPU {
+    pub fn new(id: u32, vcpu: VirtualProcessor) -> EhyveCPU {
 		EhyveCPU {
 			id: id,
-			vcpu: vCPU::new().unwrap()
+			vcpu: vcpu
 		}
-	}
-
-	fn setup_system_gdt(&mut self) -> Result<()> {
-		debug!("Setup GDT");
-
-		/*self.vcpu.write_vmcs(VMCS_GUEST_CS_LIMIT, 0x000fffff).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_CS_BASE, 0).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_CS_AR, 	0xA09B).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_SS_LIMIT, 0x000fffff).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_SS_BASE, 0).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_SS_AR, 0xC093).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_DS_LIMIT, 0x000fffff).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_DS_BASE, 0).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_DS_AR, 0xC093).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_ES_LIMIT, 0x000fffff).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_ES_BASE, 0).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_ES_AR, 0xC093).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_FS_LIMIT, 0x000fffff).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_FS_BASE, 0).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_FS_AR, 0xC093).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_GS_LIMIT, 0x000fffff).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_GS_BASE, 0).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_GS_AR, 0xC093).or_else(to_error)?;
-
-		self.vcpu.write_vmcs(VMCS_GUEST_GDTR_BASE, BOOT_GDT).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_GDTR_LIMIT, ((std::mem::size_of::<u64>() * BOOT_GDT_MAX as usize) - 1) as u64).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_IDTR_BASE, 0).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_IDTR_LIMIT, 0xffff).or_else(to_error)?;
-
-		self.vcpu.write_vmcs(VMCS_GUEST_TR_LIMIT, 0xffff).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_TR_AR, 0x8b).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_TR_BASE, 0).or_else(to_error)?;
-
-		self.vcpu.write_vmcs(VMCS_GUEST_LDTR_LIMIT, 0xffff).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_LDTR_AR, 0x82).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_LDTR_BASE, 0).or_else(to_error)?;
-
-		// Reload the segment descriptors
-		self.vcpu.write_vmcs(VMCS_GUEST_CS,
-			SegmentSelector::new(GDT_KERNEL_CODE as u16, PrivilegeLevel::Ring0).bits() as u64).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_DS,
-			SegmentSelector::new(GDT_KERNEL_DATA as u16, PrivilegeLevel::Ring0).bits() as u64).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_ES,
-			SegmentSelector::new(GDT_KERNEL_DATA as u16, PrivilegeLevel::Ring0).bits() as u64).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_SS,
-			SegmentSelector::new(GDT_KERNEL_DATA as u16, PrivilegeLevel::Ring0).bits() as u64).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_FS,
-			SegmentSelector::new(GDT_KERNEL_DATA as u16, PrivilegeLevel::Ring0).bits() as u64).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_GS,
-			SegmentSelector::new(GDT_KERNEL_DATA as u16, PrivilegeLevel::Ring0).bits() as u64).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_TR, 0).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_LDTR, 0).or_else(to_error)?;*/
-
-		Ok(())
-	}
-
-	fn setup_system_64bit(&mut self) -> Result<()> {
-		debug!("Setup 64bit mode");
-
-		/*let cr0 = (CR0_PROTECTED_MODE | CR0_ENABLE_PAGING | CR0_EXTENSION_TYPE | CR0_NUMERIC_ERROR).bits() as u64;
-		let cr4 = CR4_ENABLE_PAE.bits() as u64;
-
-		self.vcpu.write_vmcs(VMCS_CTRL_CR0_MASK, (CR0_PROTECTED_MODE | CR0_CACHE_DISABLE
-			| CR0_NOT_WRITE_THROUGH | CR0_EXTENSION_TYPE | CR0_ENABLE_PAGING
-			| CR0_NUMERIC_ERROR).bits() as u64).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_CTRL_CR0_SHADOW, cr0).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_CTRL_CR4_MASK, (CR4_ENABLE_VMX|CR4_ENABLE_PAE).bits() as u64).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_CTRL_CR4_SHADOW, cr4).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_CR0, cr0).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_CR4, cr4).or_else(to_error)?;
-		//self.vcpu.write_vmcs(VMCS_GUEST_ACTIVITY_STATE, 0).or_else(to_error)?;
-
-		self.vcpu.write_vmcs(VMCS_GUEST_IA32_EFER, EFER_LME | EFER_LMA).or_else(to_error)?;
-
-		self.vcpu.write_vmcs(VMCS_GUEST_CR3, BOOT_PML4).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_CTRL_CR3_COUNT, 1).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_CTRL_CR3_VALUE0, BOOT_PML4).or_else(to_error)?;
-
-		self.vcpu.write_vmcs(VMCS_GUEST_SYSENTER_ESP, 0).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_SYSENTER_EIP, 0).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_IA32_DEBUGCTL, 0).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_DR7, 0).or_else(to_error)?;
-		//self.vcpu.write_vmcs(VMCS_GUEST_LINK_POINTER, !0x0u64).or_else(to_error)?;*/
-
-		Ok(())
-	}
-
-	fn setup_msr(&mut self) -> Result<()> {
-		debug!("Enable MSR registers");
-
-		/*self.vcpu.enable_native_msr(IA32_FS_BASE, true).or_else(to_error)?;
-		self.vcpu.enable_native_msr(IA32_GS_BASE, true).or_else(to_error)?;
-		self.vcpu.enable_native_msr(IA32_KERNEL_GSBASE, true).or_else(to_error)?;
-		self.vcpu.enable_native_msr(IA32_SYSENTER_CS, true).or_else(to_error)?;
-		self.vcpu.enable_native_msr(IA32_SYSENTER_EIP, true).or_else(to_error)?;
-		self.vcpu.enable_native_msr(IA32_SYSENTER_ESP, true).or_else(to_error)?;
-		self.vcpu.enable_native_msr(IA32_STAR, true).or_else(to_error)?;
-		self.vcpu.enable_native_msr(IA32_LSTAR, true).or_else(to_error)?;
-		self.vcpu.enable_native_msr(IA32_CSTAR, true).or_else(to_error)?;
-		self.vcpu.enable_native_msr(IA32_FMASK, true).or_else(to_error)?;
-		self.vcpu.enable_native_msr(TSC, true).or_else(to_error)?;
-		self.vcpu.enable_native_msr(IA32_TSC_AUX, true).or_else(to_error)?;*/
-
-		Ok(())
 	}
 }
 
 impl VirtualCPU for EhyveCPU {
 	fn init(&mut self, entry_point: u64) -> Result<()>
 	{
-		/*self.setup_msr()?;
+	    const NUM_REGS: UINT32 = 13;
+	    let mut reg_names: [WHV_REGISTER_NAME; NUM_REGS as usize] = unsafe { std::mem::zeroed() };
+	    let mut reg_values: [WHV_REGISTER_VALUE; NUM_REGS as usize] = unsafe { std::mem::zeroed() };
 
-		debug!("Setup VMX capabilities");
-		self.vcpu.write_vmcs(VMCS_CTRL_PIN_BASED, *CAP_PINBASED).or_else(to_error)?;
-		debug!("Pin-Based VM-Execution Controls 0x{:x}",
-			self.vcpu.read_vmcs(VMCS_CTRL_PIN_BASED).unwrap());
-		self.vcpu.write_vmcs(VMCS_CTRL_CPU_BASED, *CAP_PROCBASED).or_else(to_error)?;
-		debug!("Primary Processor-Based VM-Execution Controls 0x{:x}",
-			self.vcpu.read_vmcs(VMCS_CTRL_CPU_BASED).unwrap());
-		self.vcpu.write_vmcs(VMCS_CTRL_CPU_BASED2, *CAP_PROCBASED2).or_else(to_error)?;
-		debug!("Secondary Processor-Based VM-Execution Controls 0x{:x}",
-			self.vcpu.read_vmcs(VMCS_CTRL_CPU_BASED2).unwrap());
-		self.vcpu.write_vmcs(VMCS_CTRL_VMENTRY_CONTROLS, *CAP_ENTRY).or_else(to_error)?;
-		debug!("VM-Entry Controls 0x{:x}",
-			self.vcpu.read_vmcs(VMCS_CTRL_VMENTRY_CONTROLS).unwrap());
-		self.vcpu.write_vmcs(VMCS_CTRL_VMEXIT_CONTROLS, *CAP_EXIT).or_else(to_error)?;
-		debug!("VM-Exit Controls 0x{:x}",
-			self.vcpu.read_vmcs(VMCS_CTRL_VMEXIT_CONTROLS).unwrap());
-		self.vcpu.write_vmcs(VMCS_CTRL_EXC_BITMAP, 0xffffffff).or_else(to_error)?;
+	    // Setup paging
+	    reg_names[0] = WHV_REGISTER_NAME::WHvX64RegisterCr3;
+	    reg_values[0].Reg64 = BOOT_PML4;
+	    reg_names[1] = WHV_REGISTER_NAME::WHvX64RegisterCr4;
+	    reg_values[1].Reg64 = CR4_ENABLE_PAE.bits() as u64;
+	    reg_names[2] = WHV_REGISTER_NAME::WHvX64RegisterCr0;
+	    reg_values[2].Reg64 = (CR0_PROTECTED_MODE | CR0_ENABLE_PAGING | CR0_EXTENSION_TYPE | CR0_NUMERIC_ERROR).bits() as u64;
+	    reg_names[3] = WHV_REGISTER_NAME::WHvX64RegisterEfer;
+	    reg_values[3].Reg64 = EFER_LME | EFER_LMA;
 
-		//debug!("Setup APIC");
-		//self.vcpu.set_apic_addr(APIC_DEFAULT_BASE).or_else(to_error)?;
+	    reg_names[4] = WHV_REGISTER_NAME::WHvX64RegisterCs;
+	    unsafe {
+	        let segment = &mut reg_values[4].Segment;
+	        segment.Base = 0;
+	        segment.Limit = 0xffffffff;
+	        segment.Selector = 1 << 3;
+	        segment.set_SegmentType(11);
+	        segment.set_NonSystemSegment(1);
+	        segment.set_Present(1);
+	        segment.set_Long(1);
+			segment.set_Default(0);
+	        segment.set_Granularity(1);
+	    }
 
-		debug!("Setup instruction pointers");
-		self.vcpu.write_vmcs(VMCS_GUEST_RIP, entry_point).or_else(to_error)?;
-		// create temporary stack to boot the kernel
-		self.vcpu.write_vmcs(VMCS_GUEST_RSP, 0x200000 - 0x1000).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_RFLAGS, 0x2).or_else(to_error)?;
+	    reg_names[5] = WHV_REGISTER_NAME::WHvX64RegisterDs;
+	    unsafe {
+	        let segment = &mut reg_values[5].Segment;
+	        segment.Base = 0;
+	        segment.Limit = 0xffffffff;
+	        segment.Selector = 2 << 3;
+	        segment.set_SegmentType(3);
+	        segment.set_NonSystemSegment(1);
+	        segment.set_Present(1);
+	        segment.set_Long(0);
+			segment.set_Default(1);
+	        segment.set_Granularity(1);
+	    }
 
-		self.setup_system_gdt()?;
-		self.setup_system_64bit()?;*/
+	    reg_names[6] = WHV_REGISTER_NAME::WHvX64RegisterEs;
+	    reg_values[6] = reg_values[5];
+
+	    reg_names[7] = WHV_REGISTER_NAME::WHvX64RegisterFs;
+	    reg_values[7] = reg_values[5];
+
+	    reg_names[8] = WHV_REGISTER_NAME::WHvX64RegisterGs;
+	    reg_values[8] = reg_values[5];
+
+	    reg_names[9] = WHV_REGISTER_NAME::WHvX64RegisterSs;
+	    reg_values[9] = reg_values[5];
+
+	    reg_names[10] = WHV_REGISTER_NAME::WHvX64RegisterRflags;
+	    reg_values[10].Reg64 = 0x2;
+	    reg_names[11] = WHV_REGISTER_NAME::WHvX64RegisterRip;
+	    reg_values[11].Reg64 = entry_point;
+	    // Create stack
+	    reg_names[12] = WHV_REGISTER_NAME::WHvX64RegisterRsp;
+	    reg_values[12].Reg64 = 0x200000 - 0x1000;
+
+	    self.vcpu.set_registers(&reg_names, &reg_values).unwrap();
 
 		Ok(())
 	}
@@ -169,163 +98,231 @@ impl VirtualCPU for EhyveCPU {
 	fn run(&mut self) -> Result<()>
 	{
 		debug!("Run vCPU {}", self.id);
-		/*loop {
-			self.vcpu.run().or_else(to_error)?;
+		loop {
+			let exit_context = self.vcpu.run().unwrap();
 
-			let reason = self.vcpu.read_vmcs(VMCS_RO_EXIT_REASON).unwrap() & 0xffff;
+			match exit_context.ExitReason {
+				WHV_RUN_VP_EXIT_REASON::WHvRunVpExitReasonX64IoPortAccess => {
+					let mut e = Emulator::new(self).unwrap();
+					let io_port_access_ctx = unsafe { &exit_context.anon_union.IoPortAccess };
 
-			match reason {
-				VMX_REASON_VMENTRY_GUEST => {
-					error!("VM-entry failure due to invalid guest state");
-					self.print_registers();
-					return Err(Error::InternalError);
-				},
-				VMX_REASON_IO => {
-					let qualification = self.vcpu.read_vmcs(VMCS_RO_EXIT_QUALIFIC).unwrap();
-					//let len = self.vcpu.read_vmcs(VMCS_RO_VMEXIT_INSTR_LEN).unwrap();
+					if io_port_access_ctx.PortNumber == SHUTDOWN_PORT {
+						return Ok(());
+					}
 
-					info!("qualification 0x{:x}", qualification);
+					let _status = e.try_io_emulation(
+				        std::ptr::null_mut(),
+				        &exit_context.VpContext,
+				        io_port_access_ctx,
+				    ).unwrap();
 				},
 				_ => {
-					error!("Unhandled exit: {}", reason);
+					error!("Unhandled exit reason: {:?}", exit_context.ExitReason);
 					self.print_registers();
 					return Err(Error::UnhandledExitReason);
-
 				}
 			}
-		}*/
-
-		Ok(())
+		}
 	}
 
 	fn print_registers(&self)
 	{
-		/*print!("\nDump state of CPU {}\n", self.id);
+		print!("\nDump state of CPU {}\n", self.id);
 		print!("\nRegisters:\n");
 		print!("----------\n");
 
-		let rip = self.vcpu.read_register(&x86Reg::RIP).unwrap();
-		let rflags = self.vcpu.read_register(&x86Reg::RFLAGS).unwrap();
-		let rsp = self.vcpu.read_register(&x86Reg::RSP).unwrap();
-		let rbp = self.vcpu.read_register(&x86Reg::RBP).unwrap();
-		let rax = self.vcpu.read_register(&x86Reg::RAX).unwrap();
-		let rbx = self.vcpu.read_register(&x86Reg::RBX).unwrap();
-		let rcx = self.vcpu.read_register(&x86Reg::RCX).unwrap();
-		let rdx = self.vcpu.read_register(&x86Reg::RDX).unwrap();
-		let rsi = self.vcpu.read_register(&x86Reg::RSI).unwrap();
-		let rdi = self.vcpu.read_register(&x86Reg::RDI).unwrap();
-		let r8 = self.vcpu.read_register(&x86Reg::R8).unwrap();
-		let r9 = self.vcpu.read_register(&x86Reg::R9).unwrap();
-		let r10 = self.vcpu.read_register(&x86Reg::R10).unwrap();
-		let r11 = self.vcpu.read_register(&x86Reg::R11).unwrap();
-		let r12 = self.vcpu.read_register(&x86Reg::R12).unwrap();
-		let r13 = self.vcpu.read_register(&x86Reg::R13).unwrap();
-		let r14 = self.vcpu.read_register(&x86Reg::R14).unwrap();
-		let r15 = self.vcpu.read_register(&x86Reg::R15).unwrap();
+		const NUM_REGS: UINT32 = 34;
+	    let mut reg_names: [WHV_REGISTER_NAME; NUM_REGS as usize] = unsafe { std::mem::zeroed() };
+	    let mut reg_values: [WHV_REGISTER_VALUE; NUM_REGS as usize] = unsafe { std::mem::zeroed() };
 
-		print!("rip: {:016x}   rsp: {:016x} flags: {:016x}\n\
-			rax: {:016x}   rbx: {:016x}   rcx: {:016x}\n\
-			rdx: {:016x}   rsi: {:016x}   rdi: {:016x}\n\
-			rbp: {:016x}    r8: {:016x}    r9: {:016x}\n\
-			r10: {:016x}   r11: {:016x}   r12: {:016x}\n\
-			r13: {:016x}   r14: {:016x}   r15: {:016x}\n",
-			rip, rsp, rflags,
-			rax, rbx, rcx,
-			rdx, rsi, rdi,
-			rbp, r8,  r9,
-			r10, r11, r12,
-			r13, r14, r15);
+		reg_names[0] = WHV_REGISTER_NAME::WHvX64RegisterRip;
+		reg_names[1] = WHV_REGISTER_NAME::WHvX64RegisterRsp;
+		reg_names[2] = WHV_REGISTER_NAME::WHvX64RegisterRflags;
+		reg_names[3] = WHV_REGISTER_NAME::WHvX64RegisterRax;
+		reg_names[4] = WHV_REGISTER_NAME::WHvX64RegisterRbx;
+		reg_names[5] = WHV_REGISTER_NAME::WHvX64RegisterRcx;
+		reg_names[6] = WHV_REGISTER_NAME::WHvX64RegisterRdx;
+		reg_names[7] = WHV_REGISTER_NAME::WHvX64RegisterRsi;
+		reg_names[8] = WHV_REGISTER_NAME::WHvX64RegisterRdi;
+		reg_names[9] = WHV_REGISTER_NAME::WHvX64RegisterRbp;
+		reg_names[10] = WHV_REGISTER_NAME::WHvX64RegisterR8;
+		reg_names[11] = WHV_REGISTER_NAME::WHvX64RegisterR9;
+		reg_names[12] = WHV_REGISTER_NAME::WHvX64RegisterR10;
+		reg_names[13] = WHV_REGISTER_NAME::WHvX64RegisterR11;
+		reg_names[14] = WHV_REGISTER_NAME::WHvX64RegisterR12;
+		reg_names[15] = WHV_REGISTER_NAME::WHvX64RegisterR13;
+		reg_names[16] = WHV_REGISTER_NAME::WHvX64RegisterR14;
+		reg_names[17] = WHV_REGISTER_NAME::WHvX64RegisterR15;
+		reg_names[18] = WHV_REGISTER_NAME::WHvX64RegisterCr0;
+		reg_names[19] = WHV_REGISTER_NAME::WHvX64RegisterCr2;
+		reg_names[20] = WHV_REGISTER_NAME::WHvX64RegisterCr3;
+		reg_names[21] = WHV_REGISTER_NAME::WHvX64RegisterCr4;
+		reg_names[22] = WHV_REGISTER_NAME::WHvX64RegisterCs;
+		reg_names[23] = WHV_REGISTER_NAME::WHvX64RegisterDs;
+		reg_names[24] = WHV_REGISTER_NAME::WHvX64RegisterEs;
+		reg_names[25] = WHV_REGISTER_NAME::WHvX64RegisterSs;
+		reg_names[26] = WHV_REGISTER_NAME::WHvX64RegisterFs;
+		reg_names[27] = WHV_REGISTER_NAME::WHvX64RegisterGs;
+		reg_names[28] = WHV_REGISTER_NAME::WHvX64RegisterTr;
+		reg_names[29] = WHV_REGISTER_NAME::WHvX64RegisterLdtr;
+		reg_names[30] = WHV_REGISTER_NAME::WHvX64RegisterGdtr;
+		reg_names[31] = WHV_REGISTER_NAME::WHvX64RegisterIdtr;
+		reg_names[32] = WHV_REGISTER_NAME::WHvX64RegisterEfer;
+		reg_names[33] = WHV_REGISTER_NAME::WHvX64RegisterApicBase;
 
-		let cr0 = self.vcpu.read_register(&x86Reg::CR0).unwrap();
-		//let cr1 = self.vcpu.read_register(&x86Reg::CR1).unwrap();
-		let cr2 = self.vcpu.read_register(&x86Reg::CR2).unwrap();
-		let cr3 = self.vcpu.read_register(&x86Reg::CR3).unwrap();
-		let cr4 = self.vcpu.read_register(&x86Reg::CR4).unwrap();
-		print!("cr0: {:016x}   cr2: {:016x}   cr3: {:016x}\ncr4: {:016x}\n",
-			cr0, cr2, cr3, cr4);
+		self.vcpu.get_registers(&reg_names, &mut reg_values).unwrap();
 
-		print!("\nSegment registers:\n");
-		print!("------------------\n");
-		print!("register  selector  base              limit     type  p dpl db s l g avl\n");
+		unsafe {
+			print!("rip: {:016x}   rsp: {:016x} flags: {:016x}\n\
+				rax: {:016x}   rbx: {:016x}   rcx: {:016x}\n\
+				rdx: {:016x}   rsi: {:016x}   rdi: {:016x}\n\
+				rbp: {:016x}    r8: {:016x}    r9: {:016x}\n\
+				r10: {:016x}   r11: {:016x}   r12: {:016x}\n\
+				r13: {:016x}   r14: {:016x}   r15: {:016x}\n",
+				reg_values[0].Reg64, reg_values[1].Reg64, reg_values[2].Reg64,
+				reg_values[3].Reg64, reg_values[4].Reg64, reg_values[5].Reg64,
+				reg_values[6].Reg64, reg_values[7].Reg64, reg_values[8].Reg64,
+				reg_values[9].Reg64, reg_values[10].Reg64, reg_values[11].Reg64,
+				reg_values[12].Reg64, reg_values[13].Reg64, reg_values[14].Reg64,
+				reg_values[15].Reg64, reg_values[16].Reg64, reg_values[17].Reg64);
 
-		let cs = self.vcpu.read_register(&x86Reg::CS).unwrap();
-		let ds = self.vcpu.read_register(&x86Reg::DS).unwrap();
-		let es = self.vcpu.read_register(&x86Reg::ES).unwrap();
-		let ss = self.vcpu.read_register(&x86Reg::SS).unwrap();
-		let fs = self.vcpu.read_register(&x86Reg::FS).unwrap();
-		let gs = self.vcpu.read_register(&x86Reg::GS).unwrap();
-		let tr = self.vcpu.read_register(&x86Reg::TR).unwrap();
-		let ldtr = self.vcpu.read_register(&x86Reg::LDTR).unwrap();
-		let cs_limit = self.vcpu.read_vmcs(VMCS_GUEST_CS_LIMIT).unwrap();
-		let cs_base = self.vcpu.read_vmcs(VMCS_GUEST_CS_BASE).unwrap();
-		let cs_ar = self.vcpu.read_vmcs(VMCS_GUEST_CS_AR).unwrap();
-		let ss_limit = self.vcpu.read_vmcs(VMCS_GUEST_SS_LIMIT).unwrap();
-		let ss_base = self.vcpu.read_vmcs(VMCS_GUEST_SS_BASE).unwrap();
-		let ss_ar = self.vcpu.read_vmcs(VMCS_GUEST_SS_AR).unwrap();
-		let ds_limit = self.vcpu.read_vmcs(VMCS_GUEST_DS_LIMIT).unwrap();
-		let ds_base = self.vcpu.read_vmcs(VMCS_GUEST_DS_BASE).unwrap();
-		let ds_ar = self.vcpu.read_vmcs(VMCS_GUEST_DS_AR).unwrap();
-		let es_limit = self.vcpu.read_vmcs(VMCS_GUEST_ES_LIMIT).unwrap();
-		let es_base = self.vcpu.read_vmcs(VMCS_GUEST_ES_BASE).unwrap();
-		let es_ar = self.vcpu.read_vmcs(VMCS_GUEST_ES_AR).unwrap();
-		let fs_limit = self.vcpu.read_vmcs(VMCS_GUEST_FS_LIMIT).unwrap();
-		let fs_base = self.vcpu.read_vmcs(VMCS_GUEST_FS_BASE).unwrap();
-		let fs_ar = self.vcpu.read_vmcs(VMCS_GUEST_FS_AR).unwrap();
-		let gs_limit = self.vcpu.read_vmcs(VMCS_GUEST_GS_LIMIT).unwrap();
-		let gs_base = self.vcpu.read_vmcs(VMCS_GUEST_GS_BASE).unwrap();
-		let gs_ar = self.vcpu.read_vmcs(VMCS_GUEST_GS_AR).unwrap();
-		let tr_limit = self.vcpu.read_vmcs(VMCS_GUEST_TR_LIMIT).unwrap();
-		let tr_base = self.vcpu.read_vmcs(VMCS_GUEST_TR_BASE).unwrap();
-		let tr_ar = self.vcpu.read_vmcs(VMCS_GUEST_TR_AR).unwrap();
-		let ldtr_limit = self.vcpu.read_vmcs(VMCS_GUEST_LDTR_LIMIT).unwrap();
-		let ldtr_base = self.vcpu.read_vmcs(VMCS_GUEST_LDTR_BASE).unwrap();
-		let ldtr_ar = self.vcpu.read_vmcs(VMCS_GUEST_LDTR_AR).unwrap();
+			print!("cr0: {:016x}   cr2: {:016x}   cr3: {:016x}\ncr4: {:016x}\n",
+				reg_values[18].Reg64, reg_values[19].Reg64, reg_values[20].Reg64, reg_values[21].Reg64);
 
-		println!("cs        {:04x}      {:016x}  {:08x}  {:02x}    {:x} {:x}   {:x}  {:x} {:x} {:x} {:x}",
-			cs, cs_base, cs_limit, (cs_ar) & 0xf, (cs_ar >> 7) & 0x1, (cs_ar >> 5) & 0x3, (cs_ar >> 14) & 0x1,
-			(cs_ar >> 4) & 0x1, (cs_ar >> 13) & 0x1, (cs_ar >> 15) & 0x1, (cs_ar >> 12) & 1);
-		println!("ss        {:04x}      {:016x}  {:08x}  {:02x}    {:x} {:x}   {:x}  {:x} {:x} {:x} {:x}",
-			ss, ss_base, ss_limit, (ss_ar) & 0xf, (ss_ar >> 7) & 0x1, (ss_ar >> 5) & 0x3, (ss_ar >> 14) & 0x1,
-			(ss_ar >> 4) & 0x1, (ss_ar >> 13) & 0x1, (ss_ar >> 15) & 0x1, (ss_ar >> 12) & 1);
-		println!("ds        {:04x}      {:016x}  {:08x}  {:02x}    {:x} {:x}   {:x}  {:x} {:x} {:x} {:x}",
-			ds, ds_base, ds_limit, (ds_ar) & 0xf, (ds_ar >> 7) & 0x1, (ds_ar >> 5) & 0x3, (ds_ar >> 14) & 0x1,
-			(ds_ar >> 4) & 0x1, (ds_ar >> 13) & 0x1, (ds_ar >> 15) & 0x1, (ds_ar >> 12) & 1);
-		println!("es        {:04x}      {:016x}  {:08x}  {:02x}    {:x} {:x}   {:x}  {:x} {:x} {:x} {:x}",
-			es, es_base, es_limit, (es_ar) & 0xf, (es_ar >> 7) & 0x1, (es_ar >> 5) & 0x3, (es_ar >> 14) & 0x1,
-			(es_ar >> 4) & 0x1, (es_ar >> 13) & 0x1, (es_ar >> 15) & 0x1, (es_ar >> 12) & 1);
-		println!("fs        {:04x}      {:016x}  {:08x}  {:02x}    {:x} {:x}   {:x}  {:x} {:x} {:x} {:x}",
-			fs, fs_base, fs_limit, (fs_ar) & 0xf, (fs_ar >> 7) & 0x1, (fs_ar >> 5) & 0x3, (fs_ar >> 14) & 0x1,
-			(fs_ar >> 4) & 0x1, (fs_ar >> 13) & 0x1, (fs_ar >> 15) & 0x1, (fs_ar >> 12) & 1);
-		println!("gs        {:04x}      {:016x}  {:08x}  {:02x}    {:x} {:x}   {:x}  {:x} {:x} {:x} {:x}",
-			gs, gs_base, gs_limit, (gs_ar) & 0xf, (gs_ar >> 7) & 0x1, (gs_ar >> 5) & 0x3, (gs_ar >> 14) & 0x1,
-			(gs_ar >> 4) & 0x1, (gs_ar >> 13) & 0x1, (gs_ar >> 15) & 0x1, (gs_ar >> 12) & 1);
-		println!("tr        {:04x}      {:016x}  {:08x}  {:02x}    {:x} {:x}   {:x}  {:x} {:x} {:x} {:x}",
-			tr, tr_base, tr_limit, (tr_ar) & 0xf, (tr_ar >> 7) & 0x1, (tr_ar >> 5) & 0x3, (tr_ar >> 14) & 0x1,
-			(tr_ar >> 4) & 0x1, (tr_ar >> 13) & 0x1, (tr_ar >> 15) & 0x1, (tr_ar >> 12) & 1);
-		println!("ldt       {:04x}      {:016x}  {:08x}  {:02x}    {:x} {:x}   {:x}  {:x} {:x} {:x} {:x}",
-			ldtr, ldtr_base, ldtr_limit, (ldtr_ar) & 0xf, (ldtr_ar >> 7) & 0x1, (ldtr_ar >> 5) & 0x3, (ldtr_ar >> 14) & 0x1,
-			(ldtr_ar >> 4) & 0x1, (ldtr_ar >> 13) & 0x1, (ldtr_ar >> 15) & 0x1, (ldtr_ar >> 12) & 1);
+			print!("\nSegment registers:\n");
+			print!("------------------\n");
+			print!("register  selector  base              limit     type  p dpl db s l g avl\n");
 
-		let gdt_base = self.vcpu.read_vmcs(VMCS_GUEST_GDTR_BASE).unwrap();
-		let gdt_limit = self.vcpu.read_vmcs(VMCS_GUEST_GDTR_LIMIT).unwrap();
-		println!("gdt                 {:016x}  {:08x}", gdt_base, gdt_limit);
-		let idt_base = self.vcpu.read_vmcs(VMCS_GUEST_IDTR_BASE).unwrap();
-		let idt_limit = self.vcpu.read_vmcs(VMCS_GUEST_IDTR_LIMIT).unwrap();
-		println!("idt                 {:016x}  {:08x}", idt_base, idt_limit);
+			let segment = &reg_values[22].Segment;
+			println!("cs        {:04x}      {:016x}  {:08x}  {:02x}    {:x} {:x}   {:x}  {:x} {:x} {:x} {:x}",
+				segment.Selector, segment.Base, segment.Limit, segment.SegmentType(), segment.Present(), segment.DescriptorPrivilegeLevel(), segment.Default(),
+				segment.NonSystemSegment(), segment.Long(), segment.Granularity(), segment.Available());
+			let segment = &reg_values[23].Segment;
+			println!("ds        {:04x}      {:016x}  {:08x}  {:02x}    {:x} {:x}   {:x}  {:x} {:x} {:x} {:x}",
+					segment.Selector, segment.Base, segment.Limit, segment.SegmentType(), segment.Present(), segment.DescriptorPrivilegeLevel(), segment.Default(),
+					segment.NonSystemSegment(), segment.Long(), segment.Granularity(), segment.Available());
+			let segment = &reg_values[24].Segment;
+			println!("es        {:04x}      {:016x}  {:08x}  {:02x}    {:x} {:x}   {:x}  {:x} {:x} {:x} {:x}",
+				segment.Selector, segment.Base, segment.Limit, segment.SegmentType(), segment.Present(), segment.DescriptorPrivilegeLevel(), segment.Default(),
+				segment.NonSystemSegment(), segment.Long(), segment.Granularity(), segment.Available());
+			let segment = &reg_values[25].Segment;
+			println!("ss        {:04x}      {:016x}  {:08x}  {:02x}    {:x} {:x}   {:x}  {:x} {:x} {:x} {:x}",
+				segment.Selector, segment.Base, segment.Limit, segment.SegmentType(), segment.Present(), segment.DescriptorPrivilegeLevel(), segment.Default(),
+				segment.NonSystemSegment(), segment.Long(), segment.Granularity(), segment.Available());
+			let segment = &reg_values[26].Segment;
+			println!("fs        {:04x}      {:016x}  {:08x}  {:02x}    {:x} {:x}   {:x}  {:x} {:x} {:x} {:x}",
+				segment.Selector, segment.Base, segment.Limit, segment.SegmentType(), segment.Present(), segment.DescriptorPrivilegeLevel(), segment.Default(),
+				segment.NonSystemSegment(), segment.Long(), segment.Granularity(), segment.Available());
+			let segment = &reg_values[27].Segment;
+			println!("gs        {:04x}      {:016x}  {:08x}  {:02x}    {:x} {:x}   {:x}  {:x} {:x} {:x} {:x}",
+				segment.Selector, segment.Base, segment.Limit, segment.SegmentType(), segment.Present(), segment.DescriptorPrivilegeLevel(), segment.Default(),
+				segment.NonSystemSegment(), segment.Long(), segment.Granularity(), segment.Available());
+			let segment = &reg_values[28].Segment;
+			println!("tr        {:04x}      {:016x}  {:08x}  {:02x}    {:x} {:x}   {:x}  {:x} {:x} {:x} {:x}",
+				segment.Selector, segment.Base, segment.Limit, segment.SegmentType(), segment.Present(), segment.DescriptorPrivilegeLevel(), segment.Default(),
+				segment.NonSystemSegment(), segment.Long(), segment.Granularity(), segment.Available());
+			let segment = &reg_values[29].Segment;
+			println!("ldtr      {:04x}      {:016x}  {:08x}  {:02x}    {:x} {:x}   {:x}  {:x} {:x} {:x} {:x}",
+				segment.Selector, segment.Base, segment.Limit, segment.SegmentType(), segment.Present(), segment.DescriptorPrivilegeLevel(), segment.Default(),
+				segment.NonSystemSegment(), segment.Long(), segment.Granularity(), segment.Available());
+			let table = &reg_values[30].Table;
+			println!("gdt                 {:016x}  {:08x}", table.Base, table.Limit);
+			let table = &reg_values[31].Table;
+			println!("idt                 {:016x}  {:08x}", table.Base, table.Limit);
 
-		let efer = self.vcpu.read_vmcs(VMCS_GUEST_IA32_EFER).unwrap();
-		println!("\nAPIC:");
-		println!("-----");
-		println!("efer: 0x{:016x}  apic base: 0x{:016x}", efer, APIC_DEFAULT_BASE);
-
-		let link = self.vcpu.read_vmcs(VMCS_GUEST_LINK_POINTER).unwrap();
-		println!("VMCS link pointer: 0x{:x}", link);*/
+			println!("\nAPIC:");
+			println!("-----");
+			println!("efer: 0x{:016x}  apic base: 0x{:016x}", reg_values[32].Reg64, reg_values[33].Reg64);
+		}
 	}
 }
 
 impl Drop for EhyveCPU {
     fn drop(&mut self) {
         debug!("Drop virtual CPU {}", self.id);
-		//let _ = self.vcpu.destroy();
 	}
+}
+
+impl EmulatorCallbacks for EhyveCPU {
+    fn io_port(
+        &mut self,
+        _context: *mut VOID,
+        io_access: &mut WHV_EMULATOR_IO_ACCESS_INFO,
+    ) -> HRESULT {
+		let cstr = unsafe {
+			std::str::from_utf8(std::slice::from_raw_parts(&io_access.Data as *const _ as *const u8,
+			io_access.AccessSize as usize)).unwrap()
+		};
+
+		self.io_exit(io_access.Port, cstr.to_string()).unwrap();
+
+        S_OK
+    }
+
+    fn memory(
+        &mut self,
+        _context: *mut VOID,
+        _memory_access: &mut WHV_EMULATOR_MEMORY_ACCESS_INFO,
+    ) -> HRESULT {
+        /*match memory_access.AccessSize {
+            8 => match memory_access.Direction {
+                0 => {
+                    let data = &memory_access.Data as *const _ as *mut u64;
+                    unsafe {
+                        *data = 0x1000;
+                        println!("MMIO read: 0x{:x}", *data);
+                    }
+                }
+                _ => {
+                    let value = unsafe { *(&memory_access.Data as *const _ as *const u64) };
+                    println!("MMIO write: 0x{:x}", value);
+                }
+            },
+            _ => println!("Unsupported MMIO access size: {}", memory_access.AccessSize),
+        }*/
+		panic!("memory() ist currently unsupported");
+
+        S_OK
+    }
+
+    fn get_virtual_processor_registers(
+        &mut self,
+        _context: *mut VOID,
+        register_names: &[WHV_REGISTER_NAME],
+        register_values: &mut [WHV_REGISTER_VALUE],
+    ) -> HRESULT {
+        self.vcpu.get_registers(register_names, register_values).unwrap();
+
+        S_OK
+    }
+
+    fn set_virtual_processor_registers(
+        &mut self,
+        _context: *mut VOID,
+        register_names: &[WHV_REGISTER_NAME],
+        register_values: &[WHV_REGISTER_VALUE],
+    ) -> HRESULT {
+        self.vcpu.set_registers(register_names, register_values).unwrap();
+
+        S_OK
+    }
+
+    fn translate_gva_page(
+        &mut self,
+        _context: *mut VOID,
+        gva: WHV_GUEST_VIRTUAL_ADDRESS,
+        translate_flags: WHV_TRANSLATE_GVA_FLAGS,
+        translation_result: &mut WHV_TRANSLATE_GVA_RESULT_CODE,
+        gpa: &mut WHV_GUEST_PHYSICAL_ADDRESS,
+    ) -> HRESULT {
+        /*let (translation_result1, gpa1) = self.vp_ref_cell
+            .borrow()
+            .translate_gva(gva, translate_flags)
+            .unwrap();
+        *translation_result = translation_result1.ResultCode;
+        *gpa = gpa1;*/
+		panic!("translate_gva_page() is currently unsupported");
+
+        S_OK
+    }
 }
