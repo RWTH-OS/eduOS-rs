@@ -24,5 +24,8 @@ path = "../crates/hypervisor"
 [target.'cfg(target_os = "windows")'.dependencies.libwhp]
 path = "../crates/libwhp"
 
+[target.'cfg(target_os = "windows")'.dependencies.kernel32-sys]
+version = "*"
+
 [build-dependencies]
 cc = "1.0"
