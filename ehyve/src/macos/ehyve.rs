@@ -1,11 +1,9 @@
 use std;
 use std::mem;
-use libc::c_void;
 use vm::{Vm, VirtualCPU};
 use consts::*;
 use error::*;
 use macos::vcpu::*;
-use macos::setup_guest_mem;
 use hypervisor::{create_vm,map_mem,unmap_mem,MemPerm};
 use aligned_alloc::*;
 
@@ -43,10 +41,9 @@ impl Ehyve {
 		unsafe {
 			map_mem(std::slice::from_raw_parts(self.guest_mem as *const u8,
 				mem::size_of::<&[u8]>()), 0, &MemPerm::ExecAndWrite).or_else(to_error)?;
-
-			let ret = setup_guest_mem(self.guest_mem as *mut c_void);
-			debug!("Initialized guest memory - return value {}", ret);
 		}
+
+		self.init_guest_mem();
 
 		Ok(())
 	}

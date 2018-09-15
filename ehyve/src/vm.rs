@@ -82,7 +82,7 @@ pub trait Vm {
 	{
 		debug!("Initialize guest memory");
 
-		let (mem_addr, mem_size) = self.guest_mem();
+		let (mem_addr, _) = self.guest_mem();
 
 		let pml4_addr: u64 = BOOT_PML4;
 	    let pdpte_addr: u64 = BOOT_PDPTE;

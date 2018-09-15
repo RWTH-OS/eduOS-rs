@@ -1,4 +1,3 @@
-use std;
 use consts::*;
 use vm::VirtualCPU;
 use error::*;
@@ -139,10 +138,10 @@ impl EhyveCPU {
 		self.vcpu.write_vmcs(VMCS_GUEST_GS_BASE, 0).or_else(to_error)?;
 		self.vcpu.write_vmcs(VMCS_GUEST_GS_AR, 0xC093).or_else(to_error)?;
 
-		self.vcpu.write_vmcs(VMCS_GUEST_GDTR_BASE, BOOT_GDT).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_GDTR_LIMIT, ((std::mem::size_of::<u64>() * BOOT_GDT_MAX as usize) - 1) as u64).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_IDTR_BASE, 0).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_IDTR_LIMIT, 0xffff).or_else(to_error)?;
+		//self.vcpu.write_vmcs(VMCS_GUEST_GDTR_BASE, BOOT_GDT).or_else(to_error)?;
+		//self.vcpu.write_vmcs(VMCS_GUEST_GDTR_LIMIT, ((std::mem::size_of::<u64>() * BOOT_GDT_MAX as usize) - 1) as u64).or_else(to_error)?;
+		//self.vcpu.write_vmcs(VMCS_GUEST_IDTR_BASE, 0).or_else(to_error)?;
+		//self.vcpu.write_vmcs(VMCS_GUEST_IDTR_LIMIT, 0xffff).or_else(to_error)?;
 
 		self.vcpu.write_vmcs(VMCS_GUEST_TR_LIMIT, 0xffff).or_else(to_error)?;
 		self.vcpu.write_vmcs(VMCS_GUEST_TR_AR, 0x8b).or_else(to_error)?;
