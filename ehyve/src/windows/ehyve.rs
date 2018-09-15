@@ -1,5 +1,6 @@
 use std;
 use std::mem;
+use std::rc::Rc;
 use libc::c_void;
 use vm::{Vm, VirtualCPU};
 use consts::*;
@@ -21,9 +22,9 @@ fn check_hypervisor() {
 pub struct Ehyve {
 	entry_point: u64,
 	mem_size: usize,
-	partition: Partition,
-	guest_mem: VirtualMemory,
-    gpa_mapping : GPARangeMapping,
+	partition: Rc<Partition>,
+	guest_mem: Rc<VirtualMemory>,
+    gpa_mapping : Rc<GPARangeMapping>,
 	num_cpus: u32,
 	path: String
 }
@@ -51,9 +52,9 @@ impl Ehyve {
 		let hyve = Ehyve {
 			entry_point: 0,
 			mem_size: mem_size,
-			partition: p,
-			guest_mem: payload_mem,
-            gpa_mapping: mapping,
+			partition: Rc::new(p),
+			guest_mem: Rc::new(payload_mem),
+            gpa_mapping: Rc::new(mapping),
 			num_cpus: num_cpus,
 			path: path
         };
