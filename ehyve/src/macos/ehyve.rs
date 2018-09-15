@@ -3,7 +3,7 @@ use std::mem;
 use libc::c_void;
 use vm::{Vm, VirtualCPU};
 use consts::*;
-use macos::error::*;
+use error::*;
 use macos::vcpu::*;
 use macos::setup_guest_mem;
 use hypervisor::{create_vm,map_mem,unmap_mem,MemPerm};

@@ -1,7 +1,7 @@
 use std;
 use libc::{c_int,size_t,close,munmap,c_void};
 use vm::VirtualCPU;
-use linux::error::*;
+use error::*;
 use linux::{kvm_create_vcpu, kvm_map_run, kvm_run, kvm_init_vcpu};
 use linux::{kvm_get_regs, kvm_get_sregs, Regs, Sregs, KVMFD};
 use linux::utils;
@@ -94,7 +94,7 @@ impl VirtualCPU for EhyveCPU {
 						debug!("Halt Exit");
 				},
 				_ => {
-					error!("Unknown exit reason: {:?}", reason );
+					error!("Unknown exit reason: {:?}", reason);
 					//self.print_registers();
 
 					return Err(Error::UnknownExitReason(reason));

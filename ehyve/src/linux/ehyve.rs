@@ -3,7 +3,7 @@
 
 use libc::{c_int,close,c_void,munmap};
 use vm::{Vm, VirtualCPU};
-use linux::error::*;
+use error::*;
 use linux::vcpu::*;
 use linux::{KVMFD, kvm_create_vm, kvm_init, kvm_init_vm};
 use x86::bits64::segmentation::*;

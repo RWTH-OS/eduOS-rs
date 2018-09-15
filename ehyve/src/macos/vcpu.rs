@@ -1,7 +1,7 @@
 use std;
 use consts::*;
 use vm::VirtualCPU;
-use macos::error::*;
+use error::*;
 use hypervisor::{vCPU, x86Reg,read_vmx_cap,VMXCap};
 use hypervisor::consts::vmcs::*;
 use hypervisor::consts::vmx_cap::*;

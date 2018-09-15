@@ -3,7 +3,7 @@ use std::mem;
 use libc::c_void;
 use vm::{Vm, VirtualCPU};
 use consts::*;
-use windows::error::*;
+use error::*;
 use windows::vcpu::*;
 use aligned_alloc::*;
 use libwhp::*;

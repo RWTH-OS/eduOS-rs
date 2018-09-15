@@ -1,7 +1,7 @@
 use std;
 use consts::*;
 use vm::VirtualCPU;
-use windows::error::*;
+use error::*;
 use x86::bits64::segmentation::*;
 use x86::shared::control_regs::*;
 use x86::shared::msr::*;

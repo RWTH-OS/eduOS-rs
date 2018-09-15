@@ -30,17 +30,13 @@ mod macos;
 mod windows;
 pub mod utils;
 pub mod consts;
+pub mod error;
 
 use std::env;
 use std::thread;
 use std::sync::Arc;
 use vm::*;
-#[cfg(target_os = "linux")]
-use linux::error::*;
-#[cfg(target_os = "macos")]
-use macos::error::*;
-#[cfg(target_os = "windows")]
-use windows::error::*;
+use error::*;
 
 fn main() {
 	env_logger::init();

@@ -8,12 +8,7 @@ use libc;
 use memmap::Mmap;
 use elf;
 use elf::types::{ELFCLASS64, PT_LOAD, ET_EXEC, EM_X86_64};
-#[cfg(target_os = "linux")]
-use linux::error::*;
-#[cfg(target_os = "macos")]
-use macos::error::*;
-#[cfg(target_os = "windows")]
-use windows::error::*;
+use error::*;
 #[cfg(target_os = "linux")]
 pub use linux::ehyve::*;
 #[cfg(target_os = "macos")]

@@ -3,13 +3,7 @@ use std::fs::File;
 #[cfg(target_os = "linux")]
 use std::io::Read;
 use raw_cpuid::CpuId;
-
-#[cfg(target_os = "macos")]
-use macos::error::*;
-#[cfg(target_os = "linux")]
-use linux::error::*;
-#[cfg(target_os = "windows")]
-use windows::error::*;
+use error::*;
 #[cfg(target_os = "windows")]
 use kernel32;
 
