@@ -8,6 +8,12 @@ opt := --release
 rdir := release
 endif
 
+ifdef COMSPEC
+RM ?= del
+else
+RM ?= rm -rf
+endif
+
 .PHONY: all clean docs
 
 all:
@@ -18,7 +24,7 @@ run:
 	@./target/$(rdir)/ehyve ../kernel/build/kernel-x86_64.elf
 
 clean:
-	rm -rf build target
+	$(RM) build target
 
 docs:
 	@echo DOC

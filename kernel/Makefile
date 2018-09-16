@@ -15,6 +15,12 @@ ifeq ($(arch), wasm32)
 build_wasm := eduos.wasm
 endif
 
+ifdef COMSPEC
+RM ?= del
+else
+RM ?= rm -rf
+endif
+
 .PHONY: all fmt clean run debug cargo docs
 
 all: cargo $(build_wasm)
@@ -23,7 +29,7 @@ fmt:
 	rustfmt --write-mode overwrite src/lib.rs
 
 clean:
-	rm -rf target
+	$(RM) target
 
 eduos.wasm: cargo
 	@echo WASM_GC
