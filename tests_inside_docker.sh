@@ -24,5 +24,5 @@ fi
 curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
 export PATH=$PATH:~/.cargo/bin
 cargo install cargo-xbuild
-#rustup component add rust-src
+rustup component add rust-src
 make
