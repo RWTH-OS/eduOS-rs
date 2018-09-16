@@ -2,6 +2,7 @@
 name = "ehyve"
 version = "0.0.1"
 authors = ["Stefan Lankes <slankes@eonerc.rwth-aachen>"]
+license = "MIT"
 build = "build.rs"
 
 [dependencies]
