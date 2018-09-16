@@ -5,6 +5,7 @@
 ## Introduction
 
 eduOS-rs is a Unix-like computer operating system based on a monolithic architecture for educational purposes, which is developed for the course [Operating Systems][acsos] at the RWTH Aachen University.
+eduOS-rs comes with a specialist hypervisor to simplify the boot process and to increase intelligibility..
 It is derived from following tutorials and software distributions.
 
 1. Philipp Oppermann's [excellent series of blog posts][opp].
@@ -40,16 +41,17 @@ $ apt-get install -y curl wget nasm make autotools-dev gcc g++ build-essential
 
 At this point, the build process is (nearly) identical between Linux, macOS and Windows.
 It is required to install the Rust toolchain.
-Please visit the [Rust website](https://www.rust-lang.org/) and follow the installation instructions for your operating system. It is important that the *nightly channel* is installed.
+Please visit the [Rust website](https://www.rust-lang.org/) and follow the installation instructions for your operating system. It is important that the *nightly channel* is used to install the toolchain.
 This is queried during installation and should be answered accordingly.
 
-Afterwards the installation of *cargo-xbuild* is required to build the kernel.
+Afterwards the installation of *cargo-xbuild* and source code of Rust runtime are required to build the kernel.
 
 ```sh
 $ cargo install cargo-xbuild
+$ rustup component add rust-src
 ```
 
-Finally, a copy of the repository must be created and the kernel must be built.
+The final step is to create a copy of the repository and to build the kernel.
 
 ```sh
 $ # Get our source code.
