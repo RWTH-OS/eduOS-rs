@@ -8,10 +8,11 @@ opt := --release
 rdir := release
 endif
 
+RM :=
 ifdef COMSPEC
-RM ?= del
+RM := del
 else
-RM ?= rm -rf
+RM := rm -rf
 endif
 
 .PHONY: all clean docs
@@ -20,11 +21,8 @@ all:
 	@echo CARGO
 	@cargo build $(opt)
 
-run:
-	@./target/$(rdir)/ehyve ../kernel/build/kernel-x86_64.elf
-
 clean:
-	$(RM) build target
+	$(RM) target
 
 docs:
 	@echo DOC

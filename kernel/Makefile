@@ -15,10 +15,11 @@ ifeq ($(arch), wasm32)
 build_wasm := eduos.wasm
 endif
 
+RN :=
 ifdef COMSPEC
-RM ?= del
+RM := del
 else
-RM ?= rm -rf
+RM := rm -rf
 endif
 
 .PHONY: all fmt clean run debug cargo docs
@@ -27,6 +28,9 @@ all: cargo $(build_wasm)
 
 fmt:
 	rustfmt --write-mode overwrite src/lib.rs
+
+run:
+	@../ehyve/target/$(rdir)/ehyve target/$(arch)-eduos/$(rdir)/eduos-rs
 
 clean:
 	$(RM) target
