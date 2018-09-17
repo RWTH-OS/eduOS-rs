@@ -4,8 +4,8 @@
 
 ## Introduction
 
-eduOS-rs is a Unix-like computer operating system based on a monolithic architecture for educational purposes, which is developed for the course [Operating Systems][acsos] at the RWTH Aachen Univeristy.
-It is derived from following tutorials and software distributions.
+eduOS-rs is a Unix-like computer operating system based on a monolithic architecture for educational purposes.
+The operating system is developed for the course [Operating Systems][acsos] at RWTH Aachen Univeristy and has been derived from the following tutorials and software distributions:
 
 1. Philipp Oppermann's [excellent series of blog posts][opp].
 2. Erik Kidd's [toyos-rs][kidd], which is an extension of Philipp Opermann's kernel.
@@ -19,15 +19,15 @@ It is derived from following tutorials and software distributions.
 
 ## Building
 
-Compiling eduOS-rs is tested under Linux and macOS.
-For macOS, it is required that Apple's *Command Line Tools* and the package manager like [Homebrew](https://brew.sh) or [MacPorts](https://www.macports.org) are installed.
-*Homebrew* users have to install the required tools *wget*, *nasm* and *qemu* with following command.
+Compiling eduOS-rs has been tested under Linux and macOS.
+For macOS, it is required that Apple's *Command Line Tools* and a package manager such as [Homebrew](https://brew.sh) or [MacPorts](https://www.macports.org) are installed.
+*Homebrew* users have to install the required tools *wget*, *nasm*, and *qemu* with following command:
 
 ```sh
 $ brew install wget qemu nasm
 ```
 
-In addition, you have to install [binutils](https://www.gnu.org/software/binutils/) to support the *Executable and Linkable Format* (ELF), which is the link format of our kernel.
+Additionally, you have to install [binutils](https://www.gnu.org/software/binutils/) to support the *Executable and Linkable Format* (ELF), which is the link format of our kernel.
 Install these tools as follows:
 
 ```sh
@@ -47,7 +47,7 @@ $ sudo port install qemu nasm x86_64-elf-binutils
 ```
 
 At this point, the build process is identical between Linux and macOS.
-It is required to install the Rust toolchain, to check out the sources and to rebuild the Rust runtime using a
+It is required to install the Rust toolchain, to check out the sources, and to rebuild the Rust runtime using a
 bare-metal target without hardware floating point support.
 You have to use the nightly release channel, so please uninstall the previous Rust compiler, if you have one.
 
