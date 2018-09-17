@@ -1,3 +1,9 @@
+---
+layout: page
+title : Building eduOS-rs
+sidebar_link: true
+---
+
 ## Requirements to build eduOS-rs
 eduOS-rs is tested under Linux, macOS and Windows.
 
