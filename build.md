@@ -1,60 +1,69 @@
----
-layout: page
-title : Building eduOS-rs
-sidebar_link: true
----
+## Requirements to build eduOS-rs
+eduOS-rs is tested under Linux, macOS and Windows.
 
-eduos-rs' build process is test under Linux and macOS.
-For macOS, it is required that Apple's *Command Line Tools* and the package manager [Homebrew](https://brew.sh) are installed.
-After installing *Homebrew*, install the required tools *wget*, *nasm* and *qemu* with following command.
+### macOS
+Apple's *Command Line Tools* must be installed.
+The Command Line Tool package gives macOS terminal users many commonly used tools, and compilers, that are usually found in default Linux installations.
+Following terminal command installs these tools without Apple's IDE Xcode:
 
 ```sh
-$ brew install wget qemu nasm
+$ xcode-select --install
 ```
 
-In addition, you have to install [binutils](https://www.gnu.org/software/binutils/) to support the *Executable and Linkable Format* (ELF), which is the link format of our kernel.
-Install these tools as follows:
+In addition, the included hypervisor based on the [Hypervisor Framework](https://developer.apple.com/documentation/hypervisor), which depends on OS X Yosemite (10.10), or newer.
+Please activate this feature as *root* with following command on your system:
 
 ```sh
-$ wget http://ftp.gnu.org/gnu/binutils/binutils-2.29.tar.gz
-$ tar xzvf binutils-2.29.tar.gz
-$ mkdir build
-$ cd build/
-$  ../binutils-2.29/configure --prefix=/opt/local/ --target=x86_64-elf --disable-multilib --disable-nls --disable-werror
-$ make
-$ sudo make install
+$ sysctl kern.hv_support=1
 ```
 
-At this point, the build process is identical between Linux and macOS.
-It is required to install the Rust toolchain, to check out the sources and to rebuild the Rust runtime using a
-bare-metal target without hardware floating point support.
+### Windows
+To build eduOS-rs you must install a linker, [make](http://gnuwin32.sourceforge.net/packages/make.htm) and a [git client](https://git-scm.com/downloads). We tested the eduOS-rs with the linker from Visual Studio.
+Consequently, we suggest you to install Visual Studio in addition to [make](http://gnuwin32.sourceforge.net/packages/make.htm) and [git](https://git-scm.com/downloads).
+
+In addition, the included hypervisor based on the [Windows Hypervisor Platform](https://docs.microsoft.com/en-us/virtualization/api/), which depends on Windows 10 (build 17134 or above) or Windows Server (1803 or above).
+Please activate this feature as *root* with following command on your system:
 
 ```sh
-$ # Uninstall previous Rust installation (if you already use rust)
-$ rustup self uninstall
-$ # Set up a Rust compiler.
-$ # Please choose "2) Customize installation" at the beginning of the
-$ # installation dialog to be able to choose the nightly release channel.
-$ curl https://sh.rustup.rs -sSf | sh
+Dism /Online /Enable-Feature /FeatureName:HypervisorPlatform
+```
 
-$ # At the end of the installation you should see something like
-$ # nightly installed - rustc 1.22.0-nightly (4c053db23 2017-10-22)
+### Linux
+Linux users should install typical developer tools.
+For instance, on Ubuntu 18.04 following command is used to install the required tools.
 
+```sh
+$ apt-get install -y curl wget nasm make autotools-dev gcc g++ build-essential
+```
+
+### Common for macOS, Windows and Linux
+It is required to install the Rust toolchain.
+Please visit the [Rust website](https://www.rust-lang.org/) and follow the installation instructions for your operating system. It is important that the *nightly channel* is used to install the toolchain.
+This is queried during installation and should be answered accordingly.
+
+Afterwards the installation of *cargo-xbuild* and source code of Rust runtime are required to build the kernel.
+
+```sh
+$ cargo install cargo-xbuild
+$ rustup component add rust-src
+```
+
+## Building
+The final step is to create a copy of the repository and to build the kernel.
+
+```sh
 $ # Get our source code.
-$ git clone git@github.com:RWTH-OS/eduOS-rs.git
+$ git clone -b stage0 git@github.com:RWTH-OS/eduOS-rs.git
 $ cd eduOS-rs
 
 $ # Get a copy of the Rust source code so we can rebuild core
 $ # for a bare-metal target.
 $ git submodule update --init
-$ make runtime
+$ make
 ```
 
-From here, we should be able to build a kernel and run it within QEMU:
+From here, we should be able to run the kernel in eHyve, which is the hypervisor for eduOS-rs and part of this repository.
 
 ```sh
-$ make
 $ make run
 ```
-
-**Note:** Windows users should take a look at [https://youtu.be/5aX5jIAfrk8](https://youtu.be/5aX5jIAfrk8) to build edusOS-rs on their system.
