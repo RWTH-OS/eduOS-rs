@@ -73,7 +73,7 @@ The final step is to create a copy of the repository and to build the kernel.
 
 ```sh
 $ # Get our source code.
-$ git clone -b stage0 git@github.com:RWTH-OS/eduOS-rs.git
+$ git clone git@github.com:RWTH-OS/eduOS-rs.git
 $ cd eduOS-rs
 
 $ # Get a copy of the Rust source code so we can rebuild core
