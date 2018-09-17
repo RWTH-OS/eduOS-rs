@@ -31,7 +31,7 @@ $ xcode-select --install
 ```
 
 In addition, the included hypervisor based on the [Hypervisor Framework](https://developer.apple.com/documentation/hypervisor), which depends on OS X Yosemite (10.10), or newer.
-Please activate this feature with following command on your system:
+Please activate this feature as *root* with following command on your system:
 
 ```sh
 $ sysctl kern.hv_support=1
@@ -42,7 +42,7 @@ To build eduOS-rs you must install a linker, [make](http://gnuwin32.sourceforge.
 Consequently, we suggest you to install Visual Studio in addition to [make](http://gnuwin32.sourceforge.net/packages/make.htm) and [git](https://git-scm.com/downloads).
 
 In addition, the included hypervisor based on the [Windows Hypervisor Platform](https://docs.microsoft.com/en-us/virtualization/api/), which depends on Windows 10 (build 17134 or above) or Windows Server (1803 or above).
-Please activate this feature with following command on your system:
+Please activate this feature as *root* with following command on your system:
 
 ```sh
 Dism /Online /Enable-Feature /FeatureName:HypervisorPlatform
