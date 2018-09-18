@@ -137,34 +137,6 @@ int kvm_create_vm(int fd, int flags) {
 	return vmfd;
 }
 
-static void setup_guest_mem(uint8_t *mem)
-{
-	uint64_t *gdt = (uint64_t *) (mem + BOOT_GDT);
-	uint64_t *pml4 = (uint64_t *) (mem + BOOT_PML4);
-	uint64_t *pdpte = (uint64_t *) (mem + BOOT_PDPTE);
-	uint64_t *pde = (uint64_t *) (mem + BOOT_PDE);
-	uint64_t paddr;
-
-	/*
-	 * For simplicity we currently use 2MB pages and only a single
-	 * PML4/PDPTE/PDE.
-	 */
-
-	memset(pml4, 0x00, 4096);
-	memset(pdpte, 0x00, 4096);
-	memset(pde, 0x00, 4096);
-
-	*pml4 = BOOT_PDPTE | (X86_PDPT_P | X86_PDPT_RW);
-	*pdpte = BOOT_PDE | (X86_PDPT_P | X86_PDPT_RW);
-	for (paddr = 0; paddr < 0x20000000ULL; paddr += GUEST_PAGE_SIZE, pde++)
-		*pde = paddr | (X86_PDPT_P | X86_PDPT_RW | X86_PDPT_PS);
-
-	/* flags, base, limit */
-	gdt[BOOT_GDT_NULL] = GDT_ENTRY(0, 0, 0);
-	gdt[BOOT_GDT_CODE] = GDT_ENTRY(0xA09B, 0, 0xFFFFF);
-	gdt[BOOT_GDT_DATA] = GDT_ENTRY(0xC093, 0, 0xFFFFF);
-}
-
 uint8_t* kvm_init_vm(int vmfd, size_t guest_size) {
 	uint8_t* guest_mem = NULL;
 	uint64_t identity_base = 0xfffbc000;
@@ -220,8 +192,6 @@ uint8_t* kvm_init_vm(int vmfd, size_t guest_size) {
                 kvm_region.memory_size = guest_size - KVM_32BIT_GAP_SIZE - KVM_32BIT_GAP_START + GUEST_OFFSET;
                 kvm_ioctl(vmfd, KVM_SET_USER_MEMORY_REGION, &kvm_region);
         }
-
-	setup_guest_mem(guest_mem);
 
 	return guest_mem;
 }

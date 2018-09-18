@@ -9,6 +9,7 @@ use memmap::Mmap;
 use elf;
 use elf::types::{ELFCLASS64, PT_LOAD, ET_EXEC, EM_X86_64};
 use error::*;
+
 #[cfg(target_os = "linux")]
 pub use linux::ehyve::*;
 #[cfg(target_os = "macos")]
@@ -178,7 +179,7 @@ pub trait Vm {
 
 			unsafe {
 				libc::memset(vm_mem.offset(vm_end as isize) as *mut libc::c_void, 0x00,
-				(header.memsz - header.filesz) as usize);
+					(header.memsz - header.filesz) as usize);
 			}
 
 			unsafe {

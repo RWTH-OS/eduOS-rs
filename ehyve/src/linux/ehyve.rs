@@ -60,6 +60,8 @@ impl Ehyve {
 			return Err(Error::NotEnoughMemory);
 		}
 
+		self.init_guest_mem();
+
 		Ok(())
 	}
 }
