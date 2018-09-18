@@ -1,51 +1,45 @@
 //! This file contains the entry point to the Hypervisor. The ehyve utilizes KVM to
 //! create a Virtual Machine and load the kernel.
 
-use libc::{c_int,close,c_void,munmap};
+use std;
+use libc;
 use vm::{Vm, VirtualCPU};
 use error::*;
+use linux::KVM;
 use linux::vcpu::*;
-use linux::{KVMFD, kvm_create_vm, kvm_init, kvm_init_vm};
-use x86::bits64::segmentation::*;
+use libkvm::vm::VirtualMachine;
+use libkvm::mem::MemorySlot;
 
-struct Gdt {
-	entries: [SegmentDescriptor; 3]
-}
-
-#[derive(Debug)]
 pub struct Ehyve {
-	vmfd: c_int,
+	vm: VirtualMachine,
 	entry_point: u64,
-	guest_size: usize,
-	guest_mem: *mut c_void,
+	mem: MmapMemorySlot,
 	num_cpus: u32,
 	path: String
 }
 
 impl Ehyve {
     pub fn new(path: String, mem_size: usize, num_cpus: u32) -> Result<Ehyve> {
-		unsafe {
-			if KVMFD < 0 {
-				KVMFD = kvm_init();
+		let api = KVM.api_version().unwrap();
+		debug!("KVM API version {}", api);
 
-				if KVMFD < 0 {
-					return Err(Error::KVMInitFailed);
-				}
-			}
+		let vm = KVM.create_vm().unwrap();
+
+		if KVM.check_cap_set_tss_address().unwrap() > 0 {
+			debug!("Setting TSS address");
+			vm.set_tss_address(0xfffbd000).unwrap();
 		}
 
+		let mem = MmapMemorySlot::new(mem_size, 0);
+		vm.set_user_memory_region(&mem).unwrap();
+
 		let mut hyve = Ehyve {
-			vmfd: unsafe { kvm_create_vm(KVMFD, 0) },
+			vm: vm,
 			entry_point: 0,
-			guest_size: mem_size,
-			guest_mem: 0 as *mut c_void,
+			mem: mem,
 			num_cpus: num_cpus,
 			path: path
 		};
-
-		if hyve.vmfd < 0 {
-				return Err(Error::KVMUnableToCreateVM);
-		}
 
 		hyve.init()?;
 
@@ -53,13 +47,6 @@ impl Ehyve {
     }
 
 	fn init(&mut self) -> Result<()> {
-		debug!("Map guest menory...");
-		self.guest_mem = unsafe { kvm_init_vm(self.vmfd, self.guest_size) };
-
-		if self.guest_mem == 0 as *mut c_void {
-			return Err(Error::NotEnoughMemory);
-		}
-
 		self.init_guest_mem();
 
 		Ok(())
@@ -82,7 +69,7 @@ impl Vm for Ehyve {
 	}
 
 	fn guest_mem(&self) -> (*mut u8, usize) {
-		(self.guest_mem as *mut u8, self.guest_size)
+		(self.mem.host_address() as *mut u8, self.mem.memory_size())
 	}
 
 	fn kernel_path(&self) -> &str {
@@ -90,23 +77,85 @@ impl Vm for Ehyve {
 	}
 
 	fn create_cpu(&self, id: u32) -> Result<Box<VirtualCPU>> {
-		Ok(Box::new(EhyveCPU::new(id, self.vmfd)))
+		Ok(Box::new(EhyveCPU::new(id, self.vm.create_vcpu().unwrap())))
 	}
 }
 
 impl Drop for Ehyve {
     fn drop(&mut self) {
         debug!("Drop virtual machine");
-
-		if self.vmfd >= 0 {
-			unsafe { close(self.vmfd) };
-		}
-
-		if self.guest_mem > 0 as *mut c_void {
-			unsafe { munmap(self.guest_mem, self.guest_size) };
-		}
     }
 }
 
 unsafe impl Send for Ehyve {}
 unsafe impl Sync for Ehyve {}
+
+struct MmapMemorySlot {
+    memory_size: usize,
+    guest_address: u64,
+    host_address: *mut libc::c_void,
+}
+
+impl MmapMemorySlot {
+    pub fn new(memory_size: usize, guest_address: u64) -> MmapMemorySlot {
+        let host_address = unsafe {
+            libc::mmap(
+                std::ptr::null_mut(),
+                memory_size,
+                libc::PROT_READ | libc::PROT_WRITE,
+                libc::MAP_PRIVATE | libc::MAP_ANONYMOUS | libc::MAP_NORESERVE,
+                -1,
+                0,
+            )
+        };
+
+        if host_address == libc::MAP_FAILED {
+            panic!("mmapp failed with: {}", unsafe {
+                *libc::__errno_location()
+            });
+        }
+
+        MmapMemorySlot {
+            memory_size: memory_size,
+            guest_address: guest_address,
+            host_address,
+        }
+    }
+
+    fn as_slice_mut(&mut self) -> &mut [u8] {
+        unsafe { std::slice::from_raw_parts_mut(self.host_address as *mut u8, self.memory_size) }
+    }
+}
+
+impl MemorySlot for MmapMemorySlot {
+    fn slot_id(&self) -> u32 {
+        0
+    }
+
+    fn flags(&self) -> u32 {
+        0
+    }
+
+    fn memory_size(&self) -> usize {
+        self.memory_size
+    }
+
+    fn guest_address(&self) -> u64 {
+        self.guest_address
+    }
+
+    fn host_address(&self) -> u64 {
+        self.host_address as u64
+    }
+}
+
+impl Drop for MmapMemorySlot {
+    fn drop(&mut self) {
+        let result = unsafe { libc::munmap(self.host_address, self.memory_size) };
+        if result != 0 {
+            panic!("munmap failed with: {}", unsafe {
+                *libc::__errno_location()
+            });
+        }
+    }
+}

@@ -14,6 +14,8 @@ extern crate lazy_static;
 extern crate hypervisor;
 #[cfg(target_os = "windows")]
 extern crate libwhp;
+#[cfg(target_os = "linux")]
+extern crate libkvm;
 #[cfg(target_os = "windows")]
 extern crate kernel32;
 

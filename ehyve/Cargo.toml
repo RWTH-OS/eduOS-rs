@@ -3,7 +3,6 @@ name = "ehyve"
 version = "0.0.1"
 authors = ["Stefan Lankes <slankes@eonerc.rwth-aachen>"]
 license = "MIT"
-build = "build.rs"
 
 [dependencies]
 raw-cpuid = "5.0.0"
@@ -25,8 +24,8 @@ path = "../crates/hypervisor"
 [target.'cfg(target_os = "windows")'.dependencies.libwhp]
 path = "../crates/libwhp"
 
+[target.'cfg(target_os = "linux")'.dependencies.libkvm]
+path = "../crates/libkvm"
+
 [target.'cfg(target_os = "windows")'.dependencies.kernel32-sys]
 version = "*"
-
-[build-dependencies]
-cc = "1.0"

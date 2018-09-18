@@ -13,10 +13,7 @@ pub enum Error {
 	MissingFrequency,
 	#[cfg(target_os = "macos")]
 	Hypervisor(hypervisor::Error),
-	#[cfg(any(target_os = "macos", target_os = "windows"))]
 	UnknownExitReason(u32),
-	#[cfg(target_os = "linux")]
-	UnknownExitReason(::linux::kvm::Exit),
 	UnknownIOPort(u16),
 	KVMInitFailed,
 	KVMUnableToCreateVM,

@@ -251,7 +251,7 @@ impl EmulatorCallbacks for EhyveCPU {
     ) -> HRESULT {
 		let cstr = unsafe {
 			std::str::from_utf8(std::slice::from_raw_parts(&io_access.Data as *const _ as *const u8,
-			io_access.AccessSize as usize)).unwrap()
+				io_access.AccessSize as usize)).unwrap()
 		};
 
 		self.io_exit(io_access.Port, cstr.to_string()).unwrap();

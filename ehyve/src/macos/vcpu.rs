@@ -191,7 +191,7 @@ impl EhyveCPU {
 		self.vcpu.write_register(&x86Reg::CR0, cr0).or_else(to_error)?;
 		self.vcpu.write_register(&x86Reg::CR4, cr4).or_else(to_error)?;
 		self.vcpu.write_register(&x86Reg::CR3, BOOT_PML4).or_else(to_error)?;
-		self.vcpu.write_register(&x86Reg::DR7, 00).or_else(to_error)?;
+		self.vcpu.write_register(&x86Reg::DR7, 0).or_else(to_error)?;
 
 		self.vcpu.write_vmcs(VMCS_GUEST_SYSENTER_ESP, 0).or_else(to_error)?;
 		self.vcpu.write_vmcs(VMCS_GUEST_SYSENTER_EIP, 0).or_else(to_error)?;
