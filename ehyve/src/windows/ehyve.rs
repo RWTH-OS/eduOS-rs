@@ -18,7 +18,6 @@ fn check_hypervisor() {
     }
 }
 
-#[derive(Clone)]
 pub struct Ehyve {
 	entry_point: u64,
 	mem_size: usize,

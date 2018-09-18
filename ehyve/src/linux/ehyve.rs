@@ -12,7 +12,7 @@ struct Gdt {
 	entries: [SegmentDescriptor; 3]
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Ehyve {
 	vmfd: c_int,
 	entry_point: u64,

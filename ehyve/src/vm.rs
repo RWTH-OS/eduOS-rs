@@ -143,8 +143,7 @@ pub trait Vm {
 		let file_elf = {
 			let mut data = Cursor::new(file.as_ref());
 
-			elf::File::open_stream(&mut data)
-			.map_err(|_| Error::InvalidFile(self.kernel_path().into()))
+			elf::File::open_stream(&mut data).map_err(|_| Error::InvalidFile(self.kernel_path().into()))
 		}?;
 
 		if file_elf.ehdr.class != ELFCLASS64 || file_elf.ehdr.elftype != ET_EXEC || file_elf.ehdr.machine != EM_X86_64 {

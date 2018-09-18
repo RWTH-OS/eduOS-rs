@@ -6,7 +6,7 @@ use error::*;
 use macos::vcpu::*;
 use hypervisor::{create_vm,map_mem,unmap_mem,MemPerm};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Ehyve {
 	entry_point: u64,
 	mem_size: usize,
