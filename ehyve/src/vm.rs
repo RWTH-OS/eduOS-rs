@@ -70,6 +70,15 @@ pub trait VirtualCPU {
 	}
 }
 
+// Constructor for a conventional segment GDT (or LDT) entry
+fn create_gdt_entry(flags: u64, base: u64, limit: u64) -> u64 {
+    (((base  & 0xff000000u64) << (56-24)) |
+     ((flags & 0x0000f0ffu64) << 40) |
+     ((limit & 0x000f0000u64) << (48-16)) |
+     ((base  & 0x00ffffffu64) << 16) |
+     ((limit & 0x0000ffffu64)))
+ }
+
 pub trait Vm {
 	fn num_cpus(&self) -> u32;
 	fn guest_mem(&self) -> (*mut u8, usize);
@@ -90,15 +99,13 @@ pub trait Vm {
 		let pml4: u64 = mem_addr as u64 + pml4_addr;
 		let pdpte: u64 = mem_addr as u64 + pdpte_addr;
 		let mut pde: u64 = mem_addr as u64 + pde_addr;
-		let mut gdt_entry: u64 = mem_addr as u64 + BOOT_GDT;
+		let gdt_entry: u64 = mem_addr as u64 + BOOT_GDT;
 
 		unsafe {
 			// initialize GDT
-			*(gdt_entry as *mut u64) = 0;
-			gdt_entry +=  mem::size_of::<*mut u64>() as u64;
-			*(gdt_entry as *mut u64) = 0x00a09b000000ffffu64; /* code */
-			gdt_entry +=  mem::size_of::<*mut u64>() as u64;
-			*(gdt_entry as *mut u64) = 0x00c093000000ffffu64; /* data */
+			*((gdt_entry+0*mem::size_of::<*mut u64>() as u64) as *mut u64) = create_gdt_entry(0,0,0);
+			*((gdt_entry+1*mem::size_of::<*mut u64>() as u64) as *mut u64) = create_gdt_entry(0xA09B, 0, 0xFFFFF); /* code */
+			*((gdt_entry+2*mem::size_of::<*mut u64>() as u64) as *mut u64) = create_gdt_entry(0xC093, 0, 0xFFFFF); /* data */
 
 			/*
 			* For simplicity we currently use 2MB pages and only a single
