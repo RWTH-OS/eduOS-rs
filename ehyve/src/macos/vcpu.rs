@@ -1,3 +1,4 @@
+use std;
 use consts::*;
 use vm::VirtualCPU;
 use error::*;
@@ -138,34 +139,35 @@ impl EhyveCPU {
 		self.vcpu.write_vmcs(VMCS_GUEST_GS_BASE, 0).or_else(to_error)?;
 		self.vcpu.write_vmcs(VMCS_GUEST_GS_AR, 0xC093).or_else(to_error)?;
 
-		//self.vcpu.write_vmcs(VMCS_GUEST_GDTR_BASE, BOOT_GDT).or_else(to_error)?;
-		//self.vcpu.write_vmcs(VMCS_GUEST_GDTR_LIMIT, ((std::mem::size_of::<u64>() * BOOT_GDT_MAX as usize) - 1) as u64).or_else(to_error)?;
-		//self.vcpu.write_vmcs(VMCS_GUEST_IDTR_BASE, 0).or_else(to_error)?;
-		//self.vcpu.write_vmcs(VMCS_GUEST_IDTR_LIMIT, 0xffff).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_GUEST_GDTR_BASE, BOOT_GDT).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_GUEST_GDTR_LIMIT,
+			((std::mem::size_of::<u64>() * BOOT_GDT_MAX as usize) - 1) as u64).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_GUEST_IDTR_BASE, 0).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_GUEST_IDTR_LIMIT, 0xffff).or_else(to_error)?;
 
+		self.vcpu.write_vmcs(VMCS_GUEST_TR, 0).or_else(to_error)?;
 		self.vcpu.write_vmcs(VMCS_GUEST_TR_LIMIT, 0xffff).or_else(to_error)?;
 		self.vcpu.write_vmcs(VMCS_GUEST_TR_AR, 0x8b).or_else(to_error)?;
 		self.vcpu.write_vmcs(VMCS_GUEST_TR_BASE, 0).or_else(to_error)?;
 
+		self.vcpu.write_vmcs(VMCS_GUEST_LDTR, 0).or_else(to_error)?;
 		self.vcpu.write_vmcs(VMCS_GUEST_LDTR_LIMIT, 0xffff).or_else(to_error)?;
 		self.vcpu.write_vmcs(VMCS_GUEST_LDTR_AR, 0x82).or_else(to_error)?;
 		self.vcpu.write_vmcs(VMCS_GUEST_LDTR_BASE, 0).or_else(to_error)?;
 
 		// Reload the segment descriptors
-		self.vcpu.write_vmcs(VMCS_GUEST_CS,
+		self.vcpu.write_register(&x86Reg::CS,
 			SegmentSelector::new(GDT_KERNEL_CODE as u16, PrivilegeLevel::Ring0).bits() as u64).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_DS,
+		self.vcpu.write_register(&x86Reg::DS,
 			SegmentSelector::new(GDT_KERNEL_DATA as u16, PrivilegeLevel::Ring0).bits() as u64).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_ES,
+		self.vcpu.write_register(&x86Reg::ES,
 			SegmentSelector::new(GDT_KERNEL_DATA as u16, PrivilegeLevel::Ring0).bits() as u64).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_SS,
+		self.vcpu.write_register(&x86Reg::SS,
 			SegmentSelector::new(GDT_KERNEL_DATA as u16, PrivilegeLevel::Ring0).bits() as u64).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_FS,
+		self.vcpu.write_register(&x86Reg::FS,
 			SegmentSelector::new(GDT_KERNEL_DATA as u16, PrivilegeLevel::Ring0).bits() as u64).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_GS,
+		self.vcpu.write_register(&x86Reg::GS,
 			SegmentSelector::new(GDT_KERNEL_DATA as u16, PrivilegeLevel::Ring0).bits() as u64).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_TR, 0).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_LDTR, 0).or_else(to_error)?;
 
 		Ok(())
 	}
@@ -176,27 +178,24 @@ impl EhyveCPU {
 		let cr0 = (CR0_PROTECTED_MODE | CR0_ENABLE_PAGING | CR0_EXTENSION_TYPE | CR0_NUMERIC_ERROR).bits() as u64;
 		let cr4 = CR4_ENABLE_PAE.bits() as u64;
 
-		self.vcpu.write_vmcs(VMCS_CTRL_CR0_MASK, (CR0_PROTECTED_MODE | CR0_CACHE_DISABLE
-			| CR0_NOT_WRITE_THROUGH | CR0_EXTENSION_TYPE | CR0_ENABLE_PAGING
-			| CR0_NUMERIC_ERROR).bits() as u64).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_CTRL_CR0_SHADOW, cr0).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_CTRL_CR4_MASK, (CR4_ENABLE_VMX|CR4_ENABLE_PAE).bits() as u64).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_CTRL_CR4_SHADOW, cr4).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_CR0, cr0).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_CR4, cr4).or_else(to_error)?;
-		//self.vcpu.write_vmcs(VMCS_GUEST_ACTIVITY_STATE, 0).or_else(to_error)?;
-
 		self.vcpu.write_vmcs(VMCS_GUEST_IA32_EFER, EFER_LME | EFER_LMA).or_else(to_error)?;
 
-		self.vcpu.write_vmcs(VMCS_GUEST_CR3, BOOT_PML4).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_CTRL_CR3_COUNT, 1).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_CTRL_CR3_VALUE0, BOOT_PML4).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_CTRL_CR0_MASK, (CR0_PROTECTED_MODE | CR0_ENABLE_PAGING).bits() as u64).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_CTRL_CR0_SHADOW,
+			(CR0_PROTECTED_MODE | CR0_ENABLE_PAGING).bits() as u64).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_CTRL_CR4_MASK,
+			(CR4_ENABLE_VMX|CR4_ENABLE_PAE).bits() as u64).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_CTRL_CR4_SHADOW,
+			CR4_ENABLE_PAE.bits() as u64).or_else(to_error)?;
+
+		self.vcpu.write_register(&x86Reg::CR0, cr0).or_else(to_error)?;
+		self.vcpu.write_register(&x86Reg::CR4, cr4).or_else(to_error)?;
+		self.vcpu.write_register(&x86Reg::CR3, BOOT_PML4).or_else(to_error)?;
+		self.vcpu.write_register(&x86Reg::DR7, 00).or_else(to_error)?;
 
 		self.vcpu.write_vmcs(VMCS_GUEST_SYSENTER_ESP, 0).or_else(to_error)?;
 		self.vcpu.write_vmcs(VMCS_GUEST_SYSENTER_EIP, 0).or_else(to_error)?;
 		self.vcpu.write_vmcs(VMCS_GUEST_IA32_DEBUGCTL, 0).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_DR7, 0).or_else(to_error)?;
-		//self.vcpu.write_vmcs(VMCS_GUEST_LINK_POINTER, !0x0u64).or_else(to_error)?;
 
 		Ok(())
 	}
@@ -247,11 +246,26 @@ impl VirtualCPU for EhyveCPU {
 		//debug!("Setup APIC");
 		//self.vcpu.set_apic_addr(APIC_DEFAULT_BASE).or_else(to_error)?;
 
-		debug!("Setup instruction pointers");
-		self.vcpu.write_vmcs(VMCS_GUEST_RIP, entry_point).or_else(to_error)?;
+		debug!("Setup general purpose registers");
+		self.vcpu.write_register(&x86Reg::RIP, entry_point).or_else(to_error)?;
+		self.vcpu.write_register(&x86Reg::RFLAGS, 0x2).or_else(to_error)?;
 		// create temporary stack to boot the kernel
-		self.vcpu.write_vmcs(VMCS_GUEST_RSP, 0x200000 - 0x1000).or_else(to_error)?;
-		self.vcpu.write_vmcs(VMCS_GUEST_RFLAGS, 0x2).or_else(to_error)?;
+		self.vcpu.write_register(&x86Reg::RSP, 0x200000 - 0x1000).or_else(to_error)?;
+		self.vcpu.write_register(&x86Reg::RBP, 0).or_else(to_error)?;
+		self.vcpu.write_register(&x86Reg::RAX, 0).or_else(to_error)?;
+		self.vcpu.write_register(&x86Reg::RBX, 0).or_else(to_error)?;
+		self.vcpu.write_register(&x86Reg::RCX, 0).or_else(to_error)?;
+		self.vcpu.write_register(&x86Reg::RDX, 0).or_else(to_error)?;
+		self.vcpu.write_register(&x86Reg::RSI, 0).or_else(to_error)?;
+		self.vcpu.write_register(&x86Reg::RDI, 0).or_else(to_error)?;
+		self.vcpu.write_register(&x86Reg::R8, 0).or_else(to_error)?;
+		self.vcpu.write_register(&x86Reg::R9, 0).or_else(to_error)?;
+		self.vcpu.write_register(&x86Reg::R10, 0).or_else(to_error)?;
+		self.vcpu.write_register(&x86Reg::R11, 0).or_else(to_error)?;
+		self.vcpu.write_register(&x86Reg::R12, 0).or_else(to_error)?;
+		self.vcpu.write_register(&x86Reg::R13, 0).or_else(to_error)?;
+		self.vcpu.write_register(&x86Reg::R14, 0).or_else(to_error)?;
+		self.vcpu.write_register(&x86Reg::R15, 0).or_else(to_error)?;
 
 		self.setup_system_gdt()?;
 		self.setup_system_64bit()?;
@@ -269,7 +283,7 @@ impl VirtualCPU for EhyveCPU {
 
 			match reason {
 				VMX_REASON_VMENTRY_GUEST => {
-					error!("VM-entry failure due to invalid guest state");
+					error!("Exit reason {} - VM-entry failure due to invalid guest state", reason);
 					self.print_registers();
 					return Err(Error::InternalError);
 				},
@@ -332,8 +346,10 @@ impl VirtualCPU for EhyveCPU {
 		let cr2 = self.vcpu.read_register(&x86Reg::CR2).unwrap();
 		let cr3 = self.vcpu.read_register(&x86Reg::CR3).unwrap();
 		let cr4 = self.vcpu.read_register(&x86Reg::CR4).unwrap();
-		print!("cr0: {:016x}   cr2: {:016x}   cr3: {:016x}\ncr4: {:016x}\n",
-			cr0, cr2, cr3, cr4);
+		let efer = self.vcpu.read_vmcs(VMCS_GUEST_IA32_EFER).unwrap();
+
+		print!("cr0: {:016x}   cr2: {:016x}   cr3: {:016x}\ncr4: {:016x}  efer: {:016x}\n",
+			cr0, cr2, cr3, cr4, efer);
 
 		print!("\nSegment registers:\n");
 		print!("------------------\n");
@@ -403,14 +419,6 @@ impl VirtualCPU for EhyveCPU {
 		let idt_base = self.vcpu.read_vmcs(VMCS_GUEST_IDTR_BASE).unwrap();
 		let idt_limit = self.vcpu.read_vmcs(VMCS_GUEST_IDTR_LIMIT).unwrap();
 		println!("idt                 {:016x}  {:08x}", idt_base, idt_limit);
-
-		let efer = self.vcpu.read_vmcs(VMCS_GUEST_IA32_EFER).unwrap();
-		println!("\nAPIC:");
-		println!("-----");
-		println!("efer: 0x{:016x}  apic base: 0x{:016x}", efer, APIC_DEFAULT_BASE);
-
-		let link = self.vcpu.read_vmcs(VMCS_GUEST_LINK_POINTER).unwrap();
-		println!("VMCS link pointer: 0x{:x}", link);
 	}
 }
 

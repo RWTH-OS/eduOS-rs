@@ -1,24 +1,39 @@
 use std;
-use std::mem;
+use libc;
+use libc::c_void;
 use vm::{Vm, VirtualCPU};
-use consts::*;
 use error::*;
 use macos::vcpu::*;
 use hypervisor::{create_vm,map_mem,unmap_mem,MemPerm};
-use aligned_alloc::*;
 
 #[derive(Debug, Clone)]
 pub struct Ehyve {
 	entry_point: u64,
 	mem_size: usize,
-	guest_mem: *mut (),
+	guest_mem: *mut c_void,
 	num_cpus: u32,
 	path: String
 }
 
 impl Ehyve {
-    pub fn new(path: String, mem_size: usize, num_cpus: u32) -> Result<Ehyve> {
-		let mem = aligned_alloc(mem_size, PAGE_SIZE);
+	pub fn new(path: String, mem_size: usize, num_cpus: u32) -> Result<Ehyve> {
+		let mem = unsafe {
+			libc::mmap(
+				std::ptr::null_mut(),
+				mem_size,
+				libc::PROT_READ | libc::PROT_WRITE,
+				libc::MAP_PRIVATE | libc::MAP_ANON | libc::MAP_NORESERVE,
+				-1,
+				0,
+			)
+		};
+
+		if mem == libc::MAP_FAILED {
+			error!("mmap failed with");
+			return Err(Error::NotEnoughMemory);
+		}
+
+		debug!("Allocate memory for the guest at 0x{:x}", mem as usize);
 
 		let mut hyve = Ehyve {
 			entry_point: 0,
@@ -26,7 +41,7 @@ impl Ehyve {
 			guest_mem: mem,
 			num_cpus: num_cpus,
 			path: path
-        };
+		};
 
 		hyve.init()?;
 
@@ -37,10 +52,10 @@ impl Ehyve {
 		debug!("Create VM...");
 		create_vm().or_else(to_error)?;
 
-		debug!("Map guest menory...");
+		debug!("Map guest memory...");
 		unsafe {
-			map_mem(std::slice::from_raw_parts(self.guest_mem as *const u8,
-				mem::size_of::<&[u8]>()), 0, &MemPerm::ExecAndWrite).or_else(to_error)?;
+			map_mem(std::slice::from_raw_parts(self.guest_mem as *mut u8, self.mem_size),
+			0, &MemPerm::ExecAndWrite).or_else(to_error)?;
 		}
 
 		self.init_guest_mem();
@@ -69,7 +84,7 @@ impl Vm for Ehyve {
 	}
 
 	fn kernel_path(&self) -> &str {
-			&self.path
+		&self.path
 	}
 
 	fn create_cpu(&self, id: u32) -> Result<Box<VirtualCPU>> {
@@ -78,13 +93,13 @@ impl Vm for Ehyve {
 }
 
 impl Drop for Ehyve {
-    fn drop(&mut self) {
-        debug!("Drop virtual machine");
+	fn drop(&mut self) {
+		debug!("Drop virtual machine");
 
 		unmap_mem(0, self.mem_size).unwrap();
 
-		unsafe { aligned_free(self.guest_mem); }
-    }
+		unsafe { libc::munmap(self.guest_mem, self.mem_size); }
+	}
 }
 
 unsafe impl Send for Ehyve {}
