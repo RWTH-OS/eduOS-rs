@@ -9,4 +9,4 @@
 	url = https://github.com/RWTH-OS/libwhp.git
 [submodule "crates/libkvm"]
 	path = crates/libkvm
-	url = git@github.com:RWTH-OS/eduOS-rs.git
+	url = https://github.com/RWTH-OS/libkvm.git
