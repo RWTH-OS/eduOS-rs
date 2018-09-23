@@ -84,9 +84,9 @@ lazy_static! {
 
 	static ref CAP_PROCBASED2: u64 = {
 		set_ctlreg(&hypervisor::VMXCap::PROCBASED2, CPU_BASED2_VPID
-			|CPU_BASED2_EPT|CPU_BASED2_RDTSCP|CPU_BASED2_UNRESTRICTED,
+			|CPU_BASED2_EPT|CPU_BASED2_RDTSCP|CPU_BASED2_INVPCID|CPU_BASED2_UNRESTRICTED,
 			CPU_BASED2_DESC_TABLE|CPU_BASED2_WBINVD|CPU_BASED2_PAUSE_LOOP|CPU_BASED2_RDRAND
-			|CPU_BASED2_INVPCID|CPU_BASED2_RDSEED|CPU_BASED2_VIRTUAL_APIC).unwrap()
+			|CPU_BASED2_RDSEED|CPU_BASED2_VIRTUAL_APIC).unwrap()
 	};
 
 	static ref CAP_ENTRY: u64 = {
@@ -218,14 +218,10 @@ impl EhyveCPU {
 
 		Ok(())
 	}
-}
 
-impl VirtualCPU for EhyveCPU {
-	fn init(&mut self, entry_point: u64) -> Result<()>
-	{
-		self.setup_msr()?;
-
+	fn setup_capabilities(&mut self) -> Result<()> {
 		debug!("Setup VMX capabilities");
+
 		self.vcpu.write_vmcs(VMCS_CTRL_PIN_BASED, *CAP_PINBASED).or_else(to_error)?;
 		debug!("Pin-Based VM-Execution Controls 0x{:x}",
 			self.vcpu.read_vmcs(VMCS_CTRL_PIN_BASED).unwrap());
@@ -241,7 +237,21 @@ impl VirtualCPU for EhyveCPU {
 		self.vcpu.write_vmcs(VMCS_CTRL_VMEXIT_CONTROLS, *CAP_EXIT).or_else(to_error)?;
 		debug!("VM-Exit Controls 0x{:x}",
 			self.vcpu.read_vmcs(VMCS_CTRL_VMEXIT_CONTROLS).unwrap());
+
+		Ok(())
+	}
+}
+
+impl VirtualCPU for EhyveCPU {
+	fn init(&mut self, entry_point: u64) -> Result<()>
+	{
+		self.setup_msr()?;
+		self.setup_capabilities()?;
+
 		self.vcpu.write_vmcs(VMCS_CTRL_EXC_BITMAP, 0xffffffff).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_VPID, self.id as u64).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_GUEST_LINK_POINTER, !0x0u64).or_else(to_error)?;
+		self.vcpu.write_vmcs(VMCS_GUEST_IGNORE_IRQ, 0).or_else(to_error)?;
 
 		//debug!("Setup APIC");
 		//self.vcpu.set_apic_addr(APIC_DEFAULT_BASE).or_else(to_error)?;
@@ -419,6 +429,7 @@ impl VirtualCPU for EhyveCPU {
 		let idt_base = self.vcpu.read_vmcs(VMCS_GUEST_IDTR_BASE).unwrap();
 		let idt_limit = self.vcpu.read_vmcs(VMCS_GUEST_IDTR_LIMIT).unwrap();
 		println!("idt                 {:016x}  {:08x}", idt_base, idt_limit);
+		println!("VMCS link pointer 0x{:x}", self.vcpu.read_vmcs(VMCS_GUEST_LINK_POINTER).unwrap())
 	}
 }
 

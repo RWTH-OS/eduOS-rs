@@ -11,10 +11,10 @@ pub const BOOT_GDT_MAX: u64 	= 3;
 pub const BOOT_PML4: u64 		= 0x10000;
 pub const BOOT_PDPTE: u64       = 0x11000;
 pub const BOOT_PDE: u64         = 0x12000;
-pub const _EFER_LMA: u64		= 10; /* Long mode active (read-only) */
-pub const EFER_LMA: u64			= (1 << _EFER_LMA);
-pub const _EFER_LME: u64		= 8;  /* Long mode enable */
-pub const EFER_LME: u64			= (1 << _EFER_LME);
+pub const EFER_SCE: u64			= (1 << 0);		/* System Call Extensions */
+pub const EFER_LME: u64			= (1 << 8);		/* Long mode enable */
+pub const EFER_LMA: u64			= (1 << 10);	/* Long mode active (read-only) */
+pub const EFER_NXE: u64			= (1 << 11);	/* PTE No-Execute bit enable */
 pub const COM_PORT: u16			= 0x3f8;
 pub const SHUTDOWN_PORT: u16	= 0xf4;
 
