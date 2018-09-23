@@ -285,6 +285,8 @@ impl VirtualCPU for EhyveCPU {
 
 	fn run(&mut self) -> Result<()>
 	{
+		//self.print_registers();
+
 		debug!("Run vCPU {}", self.id);
 		loop {
 			self.vcpu.run().or_else(to_error)?;
@@ -429,7 +431,7 @@ impl VirtualCPU for EhyveCPU {
 		let idt_base = self.vcpu.read_vmcs(VMCS_GUEST_IDTR_BASE).unwrap();
 		let idt_limit = self.vcpu.read_vmcs(VMCS_GUEST_IDTR_LIMIT).unwrap();
 		println!("idt                 {:016x}  {:08x}", idt_base, idt_limit);
-		println!("VMCS link pointer 0x{:x}", self.vcpu.read_vmcs(VMCS_GUEST_LINK_POINTER).unwrap())
+		//println!("VMCS link pointer 0x{:x}", self.vcpu.read_vmcs(VMCS_GUEST_LINK_POINTER).unwrap())
 	}
 }
 
