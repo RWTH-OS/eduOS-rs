@@ -30,31 +30,17 @@ Following terminal command installs these tools without Apple's IDE Xcode:
 $ xcode-select --install
 ```
 
-Additionally, the included hypervisor bases on the [Hypervisor Framework](https://developer.apple.com/documentation/hypervisor) depending on OS X Yosemite (10.10) or newer.
-Please activate this feature as *root* by using the following command on your system:
-
-```sh
-$ sysctl kern.hv_support=1
-```
-
 ### Windows
 To build eduOS-rs you have to install a linker, [make](http://gnuwin32.sourceforge.net/packages/make.htm) and a [git client](https://git-scm.com/downloads).
 We tested the eduOS-rs with the linker from Visual Studio.
 Consequently, we suggest installing Visual Studio in addition to [make](http://gnuwin32.sourceforge.net/packages/make.htm) and [git](https://git-scm.com/downloads).
-
-Furthermore, the included hypervisor bases on the [Windows Hypervisor Platform](https://docs.microsoft.com/en-us/virtualization/api/) depending on Windows 10 (build 17134 or above) or Windows Server (1803 or above).
-Please activate this feature as *root* by using the following command on your system:
-
-```sh
-Dism /Online /Enable-Feature /FeatureName:HypervisorPlatform
-```
 
 ### Linux
 Linux users should install common developer tools.
 For instance, on Ubuntu 18.04 the following command installs the required tools:
 
 ```sh
-$ apt-get install -y curl wget nasm make autotools-dev gcc g++ build-essential
+$ apt-get install -y curl wget qemu-system-x86 nasm make autotools-dev gcc g++ build-essential
 ```
 
 ### Common for macOS, Windows and Linux
@@ -70,6 +56,16 @@ $ cargo install cargo-xbuild
 $ rustup component add rust-src
 ```
 
+eduOS-rs is able to run within [QEMU](https://www.qemu.org/), which is a open source machine emulator, or within [ehyve](https://github.com/RWTH-OS/ehyve), which a specialized hypervisor for eduOS-rs.
+It is recommended to install [ehyve](https://github.com/RWTH-OS/ehyve) and [bootimage](https://github.com/rust-osdev/bootimage) to support both virtualization techniques.
+
+```sh
+$ cargo install bootimage
+$ cargo install --git https://github.com/RWTH-OS/ehyve.git
+```
+
+If ehyve is to be used, please check ehyve's [system requirements](https://github.com/RWTH-OS/ehyve).
+
 ## Building
 The final step is to create a copy of the repository and to build the kernel:
 
@@ -84,10 +80,16 @@ $ git submodule update --init
 $ make
 ```
 
-From here, we should be able to run the kernel in eHyve, which is the hypervisor for eduOS-rs and part of this repository:
+From here, we should be able to run the kernel in ehyve, which is the hypervisor for eduOS-rs:
 
 ```sh
 $ make run
+```
+
+In case of QEMU as hypervisor, please run the kernel as follows:
+
+```sh
+$ make qemu
 ```
 
 ## Overview of all branches
