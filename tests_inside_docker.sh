@@ -23,6 +23,7 @@ fi
 
 curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
 export PATH=$PATH:~/.cargo/bin
-cargo install cargo-xbuild
+cargo install cargo-xbuild bootimage
 rustup component add rust-src
 make
+make qemu
