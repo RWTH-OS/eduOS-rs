@@ -6,6 +6,7 @@ authors = ["Stefan Lankes <slankes@eonerc.rwth-aachen.de>"]
 
 [dependencies]
 spin = "0.4.9"	# Spinlocks.
+bootloader = "0.2.0-alpha"
 
 [target.'cfg(target_arch = "x86_64")'.dependencies.cpuio]
 version = "0.2.0"
@@ -19,6 +20,18 @@ default-features = false
 
 [package.metadata.cargo-xbuild]
 memcpy = true
+
+[package.metadata.bootimage]
+default-target = "x86_64-eduos.json" # This target is used if no `--target` is passed
+output = "bootimage.bin"    # The output file name
+minimum-image-size = 0      # The minimum output file size (in MiB)
+# The command invoked on `bootimage run`
+# (the "{}" will be replaced with the path to the bootable disk image)
+run-command = ["qemu-system-x86_64", "-drive", "format=raw,file={}"]
+
+[package.metadata.bootimage.bootloader]
+name = "bootloader"                 # The bootloader crate name
+target = "x86_64-bootloader.json"   # Target triple for compiling the bootloader
 
 # The development profile, used for `cargo build`.
 [profile.dev]
