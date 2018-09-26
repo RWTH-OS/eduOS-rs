@@ -1,12 +1,3 @@
 [submodule "crates/x86"]
 	path = crates/x86
 	url = https://github.com/rwth-os/rust-x86.git
-[submodule "crates/hypervisor"]
-	path = crates/hypervisor
-	url = https://github.com/RWTH-OS/hypervisor-rs.git
-[submodule "crates/libwhp"]
-	path = crates/libwhp
-	url = https://github.com/RWTH-OS/libwhp.git
-[submodule "crates/libkvm"]
-	path = crates/libkvm
-	url = https://github.com/RWTH-OS/libkvm.git
