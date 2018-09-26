@@ -14,7 +14,7 @@ version = "0.2.0"
 #version = "3.0.0"
 
 [target.'cfg(target_arch = "x86_64")'.dependencies.x86]
-path = "../crates/x86"
+path = "crates/x86"
 default-features = false
 
 [package.metadata.cargo-xbuild]
