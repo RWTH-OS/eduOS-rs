@@ -10,8 +10,6 @@ extern crate eduos_rs;
 
 use core::panic::PanicInfo;
 use eduos_rs::arch::processor::shutdown;
-#[cfg(target_arch = "x86_64")]
-use eduos_rs::arch::x86_64::get_cpufreq;
 
 /// This function is the entry point, since the linker looks for a function
 /// named `_start` by default.
@@ -19,9 +17,6 @@ use eduos_rs::arch::x86_64::get_cpufreq;
 #[no_mangle] // don't mangle the name of this function
 pub extern "C" fn _start() -> ! {
 	println!("Hello world!");
-
-	#[cfg(target_arch = "x86_64")]
-	println!("CPU frequency {} MHz", get_cpufreq());
 
 	// shutdown system
 	shutdown();
