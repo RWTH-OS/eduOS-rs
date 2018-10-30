@@ -26,7 +26,7 @@
 //! Configuration parameter of the kernel eduOS-rs
 
 /// Define the size of the kernel stack
-pub const STACK_SIZE : usize = 2048;
+pub const STACK_SIZE : usize = 0x2000;
 
 /// Size of a cache line
 pub const CACHE_LINE : usize = 64;

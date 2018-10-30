@@ -1,6 +1,6 @@
 arch ?= x86_64
 target ?= $(arch)-eduos
-release ?= 1
+release ?= 0
 
 opt :=
 rdir := debug
