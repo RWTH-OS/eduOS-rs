@@ -18,3 +18,11 @@ macro_rules! println {
 	($fmt:expr) => (print!(concat!($fmt, "\n")));
 	($fmt:expr, $($arg:tt)*) => (print!(concat!($fmt, "\n"), $($arg)*));
 }
+
+macro_rules! align_down {
+        ($value:expr, $alignment:expr) => ($value & !($alignment - 1))
+}
+
+macro_rules! align_up {
+        ($value:expr, $alignment:expr) => (align_down!($value + ($alignment - 1), $alignment))
+}
