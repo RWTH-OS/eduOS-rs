@@ -1,0 +1,31 @@
+jobs:
+- job: Linux
+  pool:
+    vmImage: 'ubuntu-16.04'
+  steps:
+  - script: |
+      sudo apt-get -qq update
+      sudo apt-get install -y curl wget nasm make gcc g++ build-essential
+      curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
+      export PATH=$PATH:~/.cargo/bin
+      cargo install cargo-xbuild
+      rustup component add rust-src
+      make
+    displayName: 'Test eduOS-rs on Ubuntu 16.04'
+- job: macOS
+  pool:
+    vmImage: 'macOS-10.13'
+  steps:
+  - script: |
+      curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
+      export PATH=$PATH:$HOME/.cargo/bin
+      rustup default nightly
+      cargo install cargo-xbuild
+      rustup component add rust-src
+      make
+    displayName: 'Test eduOS-rs on macOS'
+- job: Windows
+  pool:
+    vmImage: 'vs2017-win2016'
+  steps:
+  - script: echo hello from Windows
