@@ -56,11 +56,10 @@ $ cargo install cargo-xbuild
 $ rustup component add rust-src
 ```
 
-eduOS-rs is able to run within [QEMU](https://www.qemu.org/), which is a open source machine emulator, or within [ehyve](https://github.com/RWTH-OS/ehyve), which a specialized hypervisor for eduOS-rs.
-It is recommended to install [ehyve](https://github.com/RWTH-OS/ehyve) and [bootimage](https://github.com/rust-osdev/bootimage) to support both virtualization techniques.
+eduOS-rs is able to run within [ehyve](https://github.com/RWTH-OS/ehyve), which a specialized hypervisor for eduOS-rs.
+It is recommended to install [ehyve](https://github.com/RWTH-OS/ehyve).
 
 ```sh
-$ cargo install bootimage
 $ cargo install --git https://github.com/RWTH-OS/ehyve.git
 ```
 
@@ -84,12 +83,6 @@ From here, we should be able to run the kernel in ehyve, which is the hypervisor
 
 ```sh
 $ make run
-```
-
-In case of QEMU as hypervisor, please run the kernel as follows:
-
-```sh
-$ make qemu
 ```
 
 ## Overview of all branches
