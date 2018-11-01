@@ -11,6 +11,7 @@ jobs:
       cargo install cargo-xbuild
       rustup component add rust-src
       make
+      lscpu
     displayName: 'Test eduOS-rs on Ubuntu 16.04'
 - job: macOS
   pool:
@@ -32,7 +33,6 @@ jobs:
       ./rustup-init.exe -y --default-toolchain nightly | Out-Null
       Remove-Item -Path "rustup-init.exe"
       $env:Path += ";" + $env:UserProfile + "\.cargo\bin"
-      Write-Host $env:Path
       cargo install cargo-xbuild
       rustup component add rust-src
       cargo xbuild --target x86_64-eduos.json
