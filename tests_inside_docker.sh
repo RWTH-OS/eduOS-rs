@@ -1,5 +1,4 @@
 #!/bin/bash
-
 OS_NAME=$1
 OS_VERSION=$2
 
@@ -20,8 +19,7 @@ curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
 export PATH=$PATH:~/.cargo/bin
 cargo install cargo-xbuild bootimage
 rustup component add rust-src
-make bootimage.bin
-#qemu-kvm -display none -smp 1 -device isa-debug-exit,iobase=0xf4,iosize=0x04 -serial stdio -drive format=raw,file=bootimage.bin
+make
 
 elif [ "$OS_NAME" = "ubuntu" ]; then
 
@@ -32,7 +30,6 @@ curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
 export PATH=$PATH:~/.cargo/bin
 cargo install cargo-xbuild bootimage
 rustup component add rust-src
-make bootimage.bin
-#make qemu
+make
 
 fi
