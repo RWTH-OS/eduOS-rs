@@ -40,7 +40,7 @@ Linux users should install common developer tools.
 For instance, on Ubuntu 18.04 the following command installs the required tools:
 
 ```sh
-$ apt-get install -y curl wget qemu-system-x86 nasm make autotools-dev gcc g++ build-essential
+$ apt-get install -y curl wget nasm make autotools-dev gcc g++ build-essential
 ```
 
 ### Common for macOS, Windows and Linux
@@ -57,13 +57,13 @@ $ rustup component add rust-src
 ```
 
 eduOS-rs is able to run within [ehyve](https://github.com/RWTH-OS/ehyve), which a specialized hypervisor for eduOS-rs.
-It is recommended to install [ehyve](https://github.com/RWTH-OS/ehyve).
+Therefore [ehyve](https://github.com/RWTH-OS/ehyve) must be installed.
 
 ```sh
 $ cargo install --git https://github.com/RWTH-OS/ehyve.git
 ```
 
-If ehyve is to be used, please check ehyve's [system requirements](https://github.com/RWTH-OS/ehyve).
+Please check if your system fullfil ehyve's [system requirements](https://github.com/RWTH-OS/ehyve).
 
 ## Building
 The final step is to create a copy of the repository and to build the kernel:
