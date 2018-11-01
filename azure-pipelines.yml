@@ -19,7 +19,6 @@ jobs:
   - script: |
       curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
       export PATH=$PATH:$HOME/.cargo/bin
-      rustup default nightly
       cargo install cargo-xbuild
       rustup component add rust-src
       make
@@ -28,4 +27,13 @@ jobs:
   pool:
     vmImage: 'vs2017-win2016'
   steps:
-  - script: echo hello from Windows
+  - powershell: |
+      Invoke-WebRequest -OutFile rustup-init.exe https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe
+      ./rustup-init.exe -y --default-toolchain nightly | Out-Null
+      Remove-Item -Path "rustup-init.exe"
+      $env:Path += ";" + $env:UserProfile + "\.cargo\bin"
+      Write-Host $env:Path
+      cargo install cargo-xbuild
+      rustup component add rust-src
+      cargo xbuild --target x86_64-eduos.json
+    displayName: 'Test eduOS-rs on Windows'
