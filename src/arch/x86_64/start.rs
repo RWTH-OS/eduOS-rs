@@ -22,49 +22,22 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+use scheduler::task::Stack;
+
+extern {
+	pub fn main();
+}
+
+static BOOT_STACK: Stack = Stack::new();
+
+#[cfg(not(test))]
 #[no_mangle]
 #[naked]
-unsafe extern "C" fn switch() {
-	// rdi = old_rsp => the address to store the old rsp
-	// rsi = new_rsp => stack pointer of the new task
+pub unsafe extern "C" fn _start() {
+	// be sure that rsp is a valid stack pointer
+	asm!("mov $0, %rsp" :: "r"(BOOT_STACK.top()) :: "volatile");
 
-	asm!(
-		// store context
-		"pushfq\n\t\
-		push %rax\n\t\
-		push %rcx\n\t\
-		push %rdx\n\t\
-		push %rbx\n\t\
-		sub  $$8, %rsp	// ignore rsp\n\t\
-		push %rbp\n\t\
-		push %rsi\n\t\
-		push %rdi\n\t\
-		push %r8\n\t\
-		push %r9\n\t\
-		push %r10\n\t\
-		push %r11\n\t\
-		push %r12\n\t\
-		push %r13\n\t\
-		push %r14\n\t\
-		push %r15\n\t\
-		mov %rsp, (%rdi)\n\t\
-		mov %rsi, %rsp\n\t\
-		// restore context \n\t\
-		pop %r15\n\t\
-		pop %r14\n\t\
-		pop %r13\n\t\
-		pop %r12\n\t\
-		pop %r11\n\t\
-		pop %r10\n\t\
-		pop %r9\n\t\
-		pop %r8\n\t\
-		pop %rdi\n\t\
-		pop %rsi\n\t\
-		pop %rbp\n\t\
-		add $$8, %rsp\n\t\
-		pop %rbx\n\t\
-		pop %rdx\n\t\
-		pop %rcx\n\t\
-		pop %rax\n\t\
-		popfq" :::: "volatile");
+	main();
+
+	loop {}
 }
