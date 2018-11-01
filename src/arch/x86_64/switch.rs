@@ -22,49 +22,51 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#[no_mangle]
-#[naked]
-unsafe extern "C" fn switch() {
-	// rdi = old_rsp => the address to store the old rsp
-	// rsi = new_rsp => stack pointer of the new task
+.section .text
+.globl switch
+switch:
+	// rdi => the address to store the old rsp
+	// rsi => stack pointer of the new task
 
-	asm!(
-		// store context
-		"pushfq\n\t\
-		push %rax\n\t\
-		push %rcx\n\t\
-		push %rdx\n\t\
-		push %rbx\n\t\
-		sub  8, %rsp	// ignore rsp\n\t\
-		push %rbp\n\t\
-		push %rsi\n\t\
-		push %rdi\n\t\
-		push %r8\n\t\
-		push %r9\n\t\
-		push %r10\n\t\
-		push %r11\n\t\
-		push %r12\n\t\
-		push %r13\n\t\
-		push %r14\n\t\
-		push %r15\n\t\
-		mov %rsp, (%rdi)\n\t\
-		mov %rsi, %rsp\n\t\
-		// restore context \n\t\
-		pop %r15\n\t\
-		pop %r14\n\t\
-		pop %r13\n\t\
-		pop %r12\n\t\
-		pop %r11\n\t\
-		pop %r10\n\t\
-		pop %r9\n\t\
-		pop %r8\n\t\
-		pop %rdi\n\t\
-		pop %rsi\n\t\
-		pop %rbp\n\t\
-		add 8, %rsp\n\t\
-		pop %rbx\n\t\
-		pop %rdx\n\t\
-		pop %rcx\n\t\
-		pop %rax\n\t\
-		popfq" :::: "volatile");
-}
+	// save context
+	pushfq		// push controll register
+	push %rax
+	push %rcx
+	push %rdx
+	push %rbx
+	sub  $8, %rsp	// ignore rsp
+	push %rbp
+	push %rsi
+	push %rdi
+	push %r8
+	push %r9
+	push %r10
+	push %r11
+	push %r12
+	push %r13
+	push %r14
+	push %r15
+
+	mov %rsp, (%rdi)	// store old rsp
+	mov %rsi, %rsp
+
+	// restore context
+	pop %r15
+	pop %r14
+	pop %r13
+	pop %r12
+	pop %r11
+	pop %r10
+	pop %r9
+	pop %r8
+	pop %rdi
+	pop %rsi
+	pop %rbp
+	add $8, %rsp
+	pop %rbx
+	pop %rdx
+	pop %rcx
+	pop %rax
+	popfq
+
+	ret

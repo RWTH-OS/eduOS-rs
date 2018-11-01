@@ -3,7 +3,6 @@
 #![feature(allocator_api)]
 #![feature(integer_atomics)]
 #![feature(compiler_builtins_lib)]
-#![feature(naked_functions)]
 #![no_std]
 
 extern crate spin;
