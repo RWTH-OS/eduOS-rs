@@ -9,7 +9,7 @@
 extern crate eduos_rs;
 
 use core::panic::PanicInfo;
-use eduos_rs::arch::processor::shutdown;
+use eduos_rs::arch::processor::{shutdown,halt};
 use eduos_rs::scheduler;
 
 extern "C" fn foo() {
@@ -42,8 +42,7 @@ pub extern "C" fn _start() -> ! {
 
 /// This function is called on panic.
 #[cfg(not(test))]
-#[panic_implementation]
-#[no_mangle]
+#[panic_handler]
 pub fn panic(info: &PanicInfo) -> ! {
 	print!("[!!!PANIC!!!] ");
 
@@ -57,5 +56,7 @@ pub fn panic(info: &PanicInfo) -> ! {
 
 	print!("\n");
 
-	loop {}
+	loop {
+		halt();
+	}
 }
