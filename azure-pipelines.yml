@@ -9,6 +9,7 @@ jobs:
       curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
       export PATH=$PATH:~/.cargo/bin
       cargo install cargo-xbuild
+      cargo install --git https://github.com/RWTH-OS/ehyve.git
       rustup component add rust-src
       make
       lscpu
@@ -21,6 +22,7 @@ jobs:
       curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
       export PATH=$PATH:$HOME/.cargo/bin
       cargo install cargo-xbuild
+      cargo install --git https://github.com/RWTH-OS/ehyve.git
       rustup component add rust-src
       make
     displayName: 'Test eduOS-rs on macOS'
@@ -34,6 +36,7 @@ jobs:
       Remove-Item -Path "rustup-init.exe"
       $env:Path += ";" + $env:UserProfile + "\.cargo\bin"
       cargo install cargo-xbuild
+      cargo install --git https://github.com/RWTH-OS/ehyve.git
       rustup component add rust-src
       cargo xbuild --target x86_64-eduos.json
     displayName: 'Test eduOS-rs on Windows'
