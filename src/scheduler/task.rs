@@ -90,6 +90,8 @@ impl Stack {
 	}
 }
 
+pub static mut BOOT_STACK: Stack = Stack::new();
+
 pub struct TaskQueue {
 	queue: DoublyLinkedList<Rc<RefCell<Task>>>
 }
@@ -143,13 +145,11 @@ pub struct Task {
 
 impl Task {
 	pub fn new_idle(id: TaskId) -> Task {
-		let stack = unsafe { alloc(Layout::new::<Stack>()) as *mut Stack };
-
 		Task {
 			id: id,
 			status: TaskStatus::TaskIdle,
 			last_stack_pointer: 0,
-			stack: stack
+			stack: unsafe { &mut BOOT_STACK }
 		}
 	}
 
@@ -174,9 +174,11 @@ pub trait TaskFrame {
 
 impl Drop for Task {
 	fn drop(&mut self) {
-		debug!("Deallocate stack of task {} (stack at 0x{:x})", self.id, self.stack as usize);
+		if unsafe { self.stack != &mut BOOT_STACK } {
+			debug!("Deallocate stack of task {} (stack at 0x{:x})", self.id, self.stack as usize);
 
-		// deallocate stack
-		unsafe { dealloc(self.stack as *mut u8, Layout::new::<Stack>()); }
+			// deallocate stack
+			unsafe { dealloc(self.stack as *mut u8, Layout::new::<Stack>()); }
+		}
 	}
 }

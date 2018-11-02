@@ -22,13 +22,11 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-use scheduler::task::Stack;
+use scheduler::task::BOOT_STACK;
 
 extern {
 	pub fn main();
 }
-
-static BOOT_STACK: Stack = Stack::new();
 
 #[cfg(not(test))]
 #[no_mangle]
