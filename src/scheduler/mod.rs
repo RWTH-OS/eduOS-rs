@@ -29,6 +29,9 @@
 pub mod task;
 mod scheduler;
 
+use errno::*;
+use scheduler::task::TaskPriority;
+
 static mut SCHEDULER: Option<scheduler::Scheduler> = None;
 
 /// Initialite module, must be called once, and only once
@@ -39,9 +42,9 @@ pub fn init() {
 }
 
 /// Create a new kernel task
-pub fn spawn(func: extern fn()) -> task::TaskId {
+pub fn spawn(func: extern fn(), prio: TaskPriority) -> Result<task::TaskId> {
 	unsafe {
-		SCHEDULER.as_mut().unwrap().spawn(func)
+		SCHEDULER.as_mut().unwrap().spawn(func, prio)
 	}
 }
 

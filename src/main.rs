@@ -11,6 +11,7 @@ extern crate eduos_rs;
 use core::panic::PanicInfo;
 use eduos_rs::arch::processor::{shutdown,halt};
 use eduos_rs::scheduler;
+use eduos_rs::scheduler::task::{NORMAL_PRIORITY,HIGH_PRIORITY};
 
 extern "C" fn foo() {
 	for _i in 0..5 {
@@ -29,8 +30,9 @@ pub extern "C" fn main() -> ! {
 	println!("Hello from eduOS-rs!");
 
 	for _i in 0..2 {
-		scheduler::spawn(foo);
+		scheduler::spawn(foo, NORMAL_PRIORITY).unwrap();
 	}
+	scheduler::spawn(foo, HIGH_PRIORITY).unwrap();
 
 	scheduler::reschedule();
 

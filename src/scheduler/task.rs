@@ -67,6 +67,31 @@ impl alloc::fmt::Display for TaskId {
 	}
 }
 
+/// Priority of a task
+#[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone, Copy)]
+pub struct TaskPriority(u8);
+
+impl TaskPriority {
+	pub const fn into(self) -> u8 {
+		self.0
+	}
+
+	pub const fn from(x: u8) -> Self {
+		TaskPriority(x)
+	}
+}
+
+impl alloc::fmt::Display for TaskPriority {
+	fn fmt(&self, f: &mut alloc::fmt::Formatter) -> alloc::fmt::Result {
+		write!(f, "{}", self.0)
+	}
+}
+
+pub const REALTIME_PRIORITY: TaskPriority = TaskPriority::from(0);
+pub const HIGH_PRIORITY: TaskPriority = TaskPriority::from(0);
+pub const NORMAL_PRIORITY: TaskPriority = TaskPriority::from(24);
+pub const LOW_PRIORITY: TaskPriority = TaskPriority::from(NO_PRIORITIES as u8 - 1);
+
 #[derive(Copy, Clone)]
 #[repr(align(64))]
 #[repr(C)]
@@ -118,6 +143,11 @@ impl TaskQueue {
 		})
 	}
 
+	#[inline(always)]
+	pub fn is_empty(&self) -> bool {
+		self.queue.is_empty()
+	}
+
 	/// Remove a specific task from the priority queue.
 	pub fn remove(&mut self, task: Rc<RefCell<Task>>) {
 		for node in self.queue.iter() {
@@ -130,11 +160,18 @@ impl TaskQueue {
 	}
 }
 
+impl Default for TaskQueue {
+	fn default() -> Self {
+		Self { queue: Default::default() }
+	}
+}
 /// A task control block, which identifies either a process or a thread
 #[repr(align(64))]
 pub struct Task {
 	/// The ID of this context
 	pub id: TaskId,
+	/// Task Priority
+	pub prio: TaskPriority,
 	/// Status of a task, e.g. if the task is ready or blocked
 	pub status: TaskStatus,
 	/// Last stack pointer before a context switch to another task
@@ -147,19 +184,21 @@ impl Task {
 	pub fn new_idle(id: TaskId) -> Task {
 		Task {
 			id: id,
+			prio: LOW_PRIORITY,
 			status: TaskStatus::TaskIdle,
 			last_stack_pointer: 0,
 			stack: unsafe { &mut BOOT_STACK }
 		}
 	}
 
-	pub fn new(id: TaskId, status: TaskStatus) -> Task {
+	pub fn new(id: TaskId, status: TaskStatus, prio: TaskPriority) -> Task {
 		let stack = unsafe { alloc(Layout::new::<Stack>()) as *mut Stack };
 
 		debug!("Allocate stack for task {} at 0x{:x}", id, stack as usize);
 
 		Task {
 			id: id,
+			prio: prio,
 			status: status,
 			last_stack_pointer: 0,
 			stack: stack

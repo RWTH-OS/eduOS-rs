@@ -99,6 +99,9 @@ Currently, following stages of development are available:
 
    Introduction into a simple form of multitasking, where no interrupts are required.
 
+2. stage2 - Priority-based cooperative/non-preemptive multitasking
+
+   Introduction into a simple form of priority-based multitasking, where no interrupts are required.
 
 ## Useful Links
 

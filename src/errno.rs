@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Stefan Lankes, RWTH Aachen University
+// Copyright (c) 2017-2018 Stefan Lankes, RWTH Aachen University
 //
 // MIT License
 //
@@ -19,21 +19,21 @@
 // NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
 // LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE
 
-#![allow(dead_code)]
+use core::{result, fmt};
 
-//! Configuration parameter of the kernel eduOS-rs
+pub type Result<T> = result::Result<T, Error>;
 
-/// Define the size of the kernel stack
-pub const STACK_SIZE : usize = 0x2000;
+#[derive(Debug,Clone)]
+pub enum Error {
+	BadPriority
+}
 
-/// Size of a cache line
-pub const CACHE_LINE : usize = 64;
-
-/// Size of a page frame on a x86_64 processor
-#[cfg(target_arch="x86_64")]
-pub const PAGE_SIZE : usize = 4096;
-
-/// Maximum number of priorities
-pub const NO_PRIORITIES: usize = 32;
+impl fmt::Display for Error {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		match *self {
+			Error::BadPriority => write!(f, "Invalid priority number")
+		}
+	}
+}

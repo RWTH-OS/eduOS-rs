@@ -26,7 +26,10 @@ use alloc::collections::{BTreeMap, VecDeque};
 use core::cell::RefCell;
 use core::sync::atomic::{AtomicU32, Ordering};
 use scheduler::task::*;
+use arch::processor::lsb;
 use logging::*;
+use consts::*;
+use errno::*;
 
 static NO_TASKS: AtomicU32 = AtomicU32::new(0);
 static TID_COUNTER: AtomicU32 = AtomicU32::new(0);
@@ -41,7 +44,9 @@ pub struct Scheduler {
 	/// task id of the idle task
 	idle_task:  Rc<RefCell<Task>>,
 	/// queue of tasks, which are ready
-	ready_queue: TaskQueue,
+	ready_queues: [TaskQueue; NO_PRIORITIES],
+	/// Bitmap to show, which queue is uesed
+	prio_bitmap: u64,
 	/// queue of tasks, which are finished and can be released
 	finished_tasks: VecDeque<TaskId>,
 	// map between task id and task controll block
@@ -59,7 +64,8 @@ impl Scheduler {
 		Scheduler {
 			current_task: idle_task.clone(),
 			idle_task: idle_task.clone(),
-			ready_queue: TaskQueue::new(),
+			ready_queues: Default::default(),
+			prio_bitmap: 0,
 			finished_tasks: VecDeque::<TaskId>::new(),
 			tasks: tasks
 		}
@@ -75,21 +81,28 @@ impl Scheduler {
 		}
 	}
 
-	pub fn spawn(&mut self, func: extern fn()) -> TaskId {
+	pub fn spawn(&mut self, func: extern fn(), prio: TaskPriority) -> Result<TaskId> {
+		let prio_number = prio.into() as usize;
+
+		if prio_number >= NO_PRIORITIES {
+			return Err(Error::BadPriority);
+		}
+
 		// Create the new task.
 		let tid = self.get_tid();
-		let task = Rc::new(RefCell::new(Task::new(tid, TaskStatus::TaskReady)));
+		let task = Rc::new(RefCell::new(Task::new(tid, TaskStatus::TaskReady, prio)));
 
 		task.borrow_mut().create_stack_frame(func);
 
 		// Add it to the task lists.
-		self.ready_queue.push(task.clone());
+		self.ready_queues[prio_number].push(task.clone());
+		self.prio_bitmap |= 1 << prio_number;
 		self.tasks.insert(tid, task);
 		NO_TASKS.fetch_add(1, Ordering::SeqCst);
 
 		info!("Creating task {}", tid);
 
-		tid
+		Ok(tid)
 	}
 
 	pub fn exit(&mut self) {
@@ -107,6 +120,23 @@ impl Scheduler {
 		self.current_task.borrow().id
 	}
 
+	// determine the next task, which is ready and priority is a greater than or equal to prio
+	fn get_next_task(&mut self, prio: TaskPriority) -> Option<Rc<RefCell<Task>>> {
+		let i = lsb(self.prio_bitmap);
+		let mut task = None;
+
+		if i <= prio.into() as u64 {
+			task = self.ready_queues[i as usize].pop();
+
+			// clear bitmap entry for the priority i if the queus is empty
+			if self.ready_queues[i as usize].is_empty() == true {
+				self.prio_bitmap &= !(1 << i);
+			}
+		}
+
+		task
+	}
+
 	pub fn schedule(&mut self) {
 		// do we have finished tasks? => drop tasks => deallocate implicitly the stack
 		match self.finished_tasks.pop_front() {
@@ -119,13 +149,19 @@ impl Scheduler {
 		}
 
 		// Get information about the current task.
-		let (old_id, old_stack_pointer, current_status) = {
+		let (current_id, current_stack_pointer, current_prio, current_status) = {
 			let mut borrowed = self.current_task.borrow_mut();
-			(borrowed.id, &mut borrowed.last_stack_pointer as *mut usize, borrowed.status)
+			(borrowed.id, &mut borrowed.last_stack_pointer as *mut usize, borrowed.prio, borrowed.status)
 		};
 
 		// do we have a task, which is ready?
-		let mut next_task = self.ready_queue.pop();
+		let mut next_task;
+		if current_status == TaskStatus::TaskRunning {
+			next_task = self.get_next_task(current_prio);
+		} else {
+			next_task = self.get_next_task(LOW_PRIORITY);
+		}
+
 		if next_task.is_none() == true {
 			if current_status != TaskStatus::TaskRunning && current_status != TaskStatus::TaskIdle {
 				debug!("Switch to idle task");
@@ -144,24 +180,25 @@ impl Scheduler {
 				};
 
 				if current_status == TaskStatus::TaskRunning {
-					debug!("Add task {} to ready queue", old_id);
+					debug!("Add task {} to ready queue", current_id);
 					self.current_task.borrow_mut().status = TaskStatus::TaskReady;
-					self.ready_queue.push(self.current_task.clone());
+					self.ready_queues[current_prio.into() as usize].push(self.current_task.clone());
+					self.prio_bitmap |= 1 << current_prio.into() as usize;
 				} else if current_status == TaskStatus::TaskFinished {
-					debug!("Task {} finished", old_id);
+					debug!("Task {} finished", current_id);
 					self.current_task.borrow_mut().status = TaskStatus::TaskInvalid;
 					// release the task later, because the stack is required
 					// to call the function "switch"
 					// => push id to a queue and release the task later
-					self.finished_tasks.push_back(old_id);
+					self.finished_tasks.push_back(current_id);
 				}
 
-				debug!("Switching task from {} to {} (stack {:#X} => {:#X})", old_id, new_id,
-					unsafe { *old_stack_pointer }, new_stack_pointer);
+				debug!("Switching task from {} to {} (stack {:#X} => {:#X})", current_id, new_id,
+					unsafe { *current_stack_pointer }, new_stack_pointer);
 
 				self.current_task = new_task;
 
-				unsafe { switch(old_stack_pointer, new_stack_pointer); }
+				unsafe { switch(current_stack_pointer, new_stack_pointer); }
 			},
 			_ => {}
 		}

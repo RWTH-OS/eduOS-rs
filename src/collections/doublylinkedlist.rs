@@ -171,6 +171,11 @@ impl<T> DoublyLinkedList<T> {
 		};
 	}
 
+	#[inline(always)]
+	pub fn is_empty(&self) -> bool {
+		self.head.is_none()
+	}
+
 	pub fn iter(&self) -> Iter<T> {
 		Iter::<T> { current: self.head.as_ref().map(|node| node.clone()) }
 	}

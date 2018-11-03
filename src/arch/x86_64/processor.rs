@@ -3,6 +3,20 @@
 use cpuio;
 use x86::shared::control_regs::*;
 
+/// Search the least significant bit
+#[inline(always)]
+pub fn lsb(i: u64) -> u64 {
+	let ret: u64;
+
+	if i == 0 {
+		ret = !0u64;
+	} else {
+		unsafe { asm!("bsf $1, $0" : "=r"(ret) : "r"(i) : "cc" : "volatile"); }
+	}
+
+	ret
+}
+
 pub fn halt() {
 	unsafe {
 		asm!("hlt" :::: "volatile");
