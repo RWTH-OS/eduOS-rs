@@ -1,4 +1,3 @@
-#![feature(panic_implementation)] // required for defining the panic handler
 #![feature(panic_info_message)]
 #![feature(abi_x86_interrupt)]
 #![no_std] // don't link the Rust standard library
