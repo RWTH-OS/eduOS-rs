@@ -26,7 +26,6 @@ use alloc::collections::{BTreeMap, VecDeque};
 use core::cell::RefCell;
 use core::sync::atomic::{AtomicU32, Ordering};
 use scheduler::task::*;
-use arch::processor::lsb;
 use logging::*;
 use consts::*;
 use errno::*;
@@ -44,9 +43,7 @@ pub struct Scheduler {
 	/// task id of the idle task
 	idle_task:  Rc<RefCell<Task>>,
 	/// queue of tasks, which are ready
-	ready_queues: [TaskQueue; NO_PRIORITIES],
-	/// Bitmap to show, which queue is uesed
-	prio_bitmap: u64,
+	ready_queue: PriorityTaskQueue,
 	/// queue of tasks, which are finished and can be released
 	finished_tasks: VecDeque<TaskId>,
 	// map between task id and task controll block
@@ -64,8 +61,7 @@ impl Scheduler {
 		Scheduler {
 			current_task: idle_task.clone(),
 			idle_task: idle_task.clone(),
-			ready_queues: Default::default(),
-			prio_bitmap: 0,
+			ready_queue: PriorityTaskQueue::new(),
 			finished_tasks: VecDeque::<TaskId>::new(),
 			tasks: tasks
 		}
@@ -95,8 +91,7 @@ impl Scheduler {
 		task.borrow_mut().create_stack_frame(func);
 
 		// Add it to the task lists.
-		self.ready_queues[prio_number].push(task.clone());
-		self.prio_bitmap |= 1 << prio_number;
+		self.ready_queue.push(task.clone());
 		self.tasks.insert(tid, task);
 		NO_TASKS.fetch_add(1, Ordering::SeqCst);
 
@@ -120,23 +115,6 @@ impl Scheduler {
 		self.current_task.borrow().id
 	}
 
-	// determine the next task, which is ready and priority is a greater than or equal to prio
-	fn get_next_task(&mut self, prio: TaskPriority) -> Option<Rc<RefCell<Task>>> {
-		let i = lsb(self.prio_bitmap);
-		let mut task = None;
-
-		if i <= prio.into() as u64 {
-			task = self.ready_queues[i as usize].pop();
-
-			// clear bitmap entry for the priority i if the queus is empty
-			if self.ready_queues[i as usize].is_empty() == true {
-				self.prio_bitmap &= !(1 << i);
-			}
-		}
-
-		task
-	}
-
 	pub fn schedule(&mut self) {
 		// do we have finished tasks? => drop tasks => deallocate implicitly the stack
 		match self.finished_tasks.pop_front() {
@@ -157,9 +135,9 @@ impl Scheduler {
 		// do we have a task, which is ready?
 		let mut next_task;
 		if current_status == TaskStatus::TaskRunning {
-			next_task = self.get_next_task(current_prio);
+			next_task = self.ready_queue.pop_with_prio(current_prio);
 		} else {
-			next_task = self.get_next_task(LOW_PRIORITY);
+			next_task = self.ready_queue.pop();
 		}
 
 		if next_task.is_none() == true {
@@ -182,8 +160,7 @@ impl Scheduler {
 				if current_status == TaskStatus::TaskRunning {
 					debug!("Add task {} to ready queue", current_id);
 					self.current_task.borrow_mut().status = TaskStatus::TaskReady;
-					self.ready_queues[current_prio.into() as usize].push(self.current_task.clone());
-					self.prio_bitmap |= 1 << current_prio.into() as usize;
+					self.ready_queue.push(self.current_task.clone());
 				} else if current_status == TaskStatus::TaskFinished {
 					debug!("Task {} finished", current_id);
 					self.current_task.borrow_mut().status = TaskStatus::TaskInvalid;

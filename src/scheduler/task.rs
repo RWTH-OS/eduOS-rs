@@ -29,6 +29,7 @@ use core::cell::RefCell;
 use core::fmt;
 use alloc::alloc::{alloc, dealloc, Layout};
 use collections::{DoublyLinkedList, Node};
+use arch::processor::msb;
 use logging::*;
 use consts::*;
 
@@ -91,6 +92,82 @@ pub const REALTIME_PRIORITY: TaskPriority = TaskPriority::from(0);
 pub const HIGH_PRIORITY: TaskPriority = TaskPriority::from(0);
 pub const NORMAL_PRIORITY: TaskPriority = TaskPriority::from(24);
 pub const LOW_PRIORITY: TaskPriority = TaskPriority::from(NO_PRIORITIES as u8 - 1);
+
+/// Realize a priority queue for tasks
+pub struct PriorityTaskQueue {
+	queues: [DoublyLinkedList<Rc<RefCell<Task>>>; NO_PRIORITIES],
+	prio_bitmap: u64
+}
+
+impl PriorityTaskQueue {
+	/// Creates an empty priority queue for tasks
+	pub fn new() -> PriorityTaskQueue {
+		PriorityTaskQueue {
+			queues: Default::default(),
+			prio_bitmap: 0
+		}
+	}
+
+	/// Add a task by its priority to the queue
+	pub fn push(&mut self, task: Rc<RefCell<Task>>) {
+		let i = task.borrow().prio.into() as usize;
+		assert!(i < NO_PRIORITIES, "Priority {} is too high", i);
+
+		self.prio_bitmap |= 1 << i;
+		self.queues[i].push(Node::new(task));
+	}
+
+	fn pop_from_queue(&mut self, queue_index: usize) -> Option<Rc<RefCell<Task>>> {
+		let first_task = self.queues[queue_index].head();
+		first_task.map(|task| {
+			self.queues[queue_index].remove(task.clone());
+
+			if self.queues[queue_index].head().is_none() {
+				self.prio_bitmap &= !(1 << queue_index as u64);
+			}
+
+			task.borrow().value.clone()
+		})
+	}
+
+	/// Pop the task with the highest priority from the queue
+	pub fn pop(&mut self) -> Option<Rc<RefCell<Task>>> {
+		if let Some(i) = msb(self.prio_bitmap) {
+			return self.pop_from_queue(i as usize);
+		}
+
+		None
+	}
+
+	/// Pop the next task, which has a higher or the same priority as `prio`
+	pub fn pop_with_prio(&mut self, prio: TaskPriority) -> Option<Rc<RefCell<Task>>> {
+		if let Some(i) = msb(self.prio_bitmap) {
+			if i >= prio.into() as u64 {
+				return self.pop_from_queue(i as usize);
+			}
+		}
+
+		None
+	}
+
+	/// Remove a specific task from the priority queue.
+	pub fn remove(&mut self, task: Rc<RefCell<Task>>) {
+		let i = task.borrow().prio.into() as usize;
+		assert!(i < NO_PRIORITIES, "Priority {} is too high", i);
+
+		for node in self.queues[i].iter() {
+			if Rc::ptr_eq(&node.borrow().value, &task) {
+				self.queues[i].remove(node.clone());
+
+				if self.queues[i].head().is_none() {
+					self.prio_bitmap &= !(1 << i as u64);
+				}
+
+				break;
+			}
+		}
+	}
+}
 
 #[derive(Copy, Clone)]
 #[repr(align(64))]
