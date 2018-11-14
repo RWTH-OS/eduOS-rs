@@ -103,6 +103,10 @@ Currently, following stages of development are available:
 
    Introduction into a simple form of priority-based multitasking, where no interrupts are required.
 
+3. stage3 - Synchronization primitives
+
+   Introduce basic synchronization primitives
+
 ## Useful Links
 
 1. [http://www.gnu.org/software/grub/manual/multiboot/](http://www.gnu.org/software/grub/manual/multiboot/)

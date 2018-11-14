@@ -6,15 +6,26 @@
 
 #[macro_use]
 extern crate eduos_rs;
+#[macro_use]
+extern crate lazy_static;
 
 use core::panic::PanicInfo;
 use eduos_rs::arch::processor::{shutdown,halt};
 use eduos_rs::scheduler;
+use eduos_rs::synch::mutex::Mutex;
 use eduos_rs::scheduler::task::{NORMAL_PRIORITY,HIGH_PRIORITY};
 
+lazy_static! {
+	static ref COUNTER: Mutex<u64> = Mutex::new(0);
+}
+
 extern "C" fn foo() {
+	let mut guard = COUNTER.lock();
+
 	for _i in 0..5 {
-		println!("hello from task {}", scheduler::get_current_taskid());
+		*guard += 1;
+
+		println!("hello from task {}, counter {}", scheduler::get_current_taskid(), *guard);
 		scheduler::reschedule();
 	}
 }

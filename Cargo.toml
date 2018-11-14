@@ -5,8 +5,12 @@ license = "MIT"
 authors = ["Stefan Lankes <slankes@eonerc.rwth-aachen.de>"]
 
 [dependencies]
-spin = "0.4.9"	# Spinlocks.
+spin = "0.4.10"	# Spinlocks.
 bootloader = "0.3.4"
+
+[dependencies.lazy_static]
+version = "1.2.0"
+features = ["spin_no_std"]
 
 [target.'cfg(target_arch = "x86_64")'.dependencies.cpuio]
 version = "0.2.0"

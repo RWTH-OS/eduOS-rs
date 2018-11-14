@@ -33,6 +33,12 @@ pub fn halt() {
 	}
 }
 
+pub fn pause() {
+	unsafe {
+		asm!("pause" :::: "volatile");
+	}
+}
+
 #[no_mangle]
 pub extern "C" fn shutdown() -> ! {
 	// shutdown, works like Qemu's shutdown command

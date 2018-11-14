@@ -30,7 +30,9 @@ pub mod task;
 mod scheduler;
 
 use errno::*;
-use scheduler::task::TaskPriority;
+use alloc::rc::Rc;
+use core::cell::RefCell;
+use scheduler::task::{TaskPriority, Task};
 
 static mut SCHEDULER: Option<scheduler::Scheduler> = None;
 
@@ -59,6 +61,18 @@ pub fn reschedule() {
 pub fn do_exit() {
 	unsafe {
 		SCHEDULER.as_mut().unwrap().exit();
+	}
+}
+
+pub fn block_current_task() -> Rc<RefCell<Task>> {
+	unsafe {
+		SCHEDULER.as_mut().unwrap().block_current_task()
+	}
+}
+
+pub fn wakeup_task(task: Rc<RefCell<Task>>) {
+	unsafe {
+		SCHEDULER.as_mut().unwrap().wakeup_task(task)
 	}
 }
 

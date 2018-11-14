@@ -111,6 +111,26 @@ impl Scheduler {
 		self.reschedule();
 	}
 
+	pub fn block_current_task(&mut self) -> Rc<RefCell<Task>> {
+		if self.current_task.borrow().status == TaskStatus::TaskRunning {
+			debug!("block task {}", self.current_task.borrow().id);
+
+			self.current_task.borrow_mut().status = TaskStatus::TaskBlocked;
+			self.current_task.clone()
+		} else {
+			panic!("unable to block task {}", self.current_task.borrow().id);
+		}
+	}
+
+	pub fn wakeup_task(&mut self, task: Rc<RefCell<Task>>) {
+		if task.borrow().status == TaskStatus::TaskBlocked {
+			debug!("wakeup task {}", task.borrow().id);
+
+			task.borrow_mut().status = TaskStatus::TaskReady;
+			self.ready_queue.push(task.clone());
+		}
+	}
+
 	pub fn get_current_taskid(&self) -> TaskId {
 		self.current_task.borrow().id
 	}

@@ -21,17 +21,47 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-// Export our platform-specific modules.
-#[cfg(target_arch="x86_64")]
-pub use self::x86_64::{serial,processor,irq};
+/// Enable Interrupts
+pub fn irq_enable() {
+    unsafe { asm!("sti" ::: "memory" : "volatile") };
+}
 
-#[cfg(target_arch="wasm32")]
-pub use self::wasm32::{serial};
+/// Disable Interrupts
+pub fn irq_disable() {
+    unsafe { asm!("cli" ::: "memory" : "volatile") };
+}
 
-// Implementations for x86_64.
-#[cfg(target_arch="x86_64")]
-pub mod x86_64;
+/// Determines, if the interrupt flags (IF) is set
+pub fn is_irq_enabled() -> bool
+{
+	let rflags: u64;
 
-// Implementations for wasm32.
-#[cfg(target_arch="wasm32")]
-pub mod wasm32;
+	unsafe { asm!("pushf; pop $0": "=r"(rflags) :: "memory" : "volatile") };
+	if (rflags & (1u64 << 9)) !=  0 {
+		return true;
+	}
+
+	false
+}
+
+/// Disable IRQs (nested)
+///
+/// Disable IRQs when unsure if IRQs were enabled at all.
+/// This function together with irq_nested_enable can be used
+/// in situations when interrupts shouldn't be activated if they
+/// were not activated before calling this function.
+pub fn irq_nested_disable() -> bool {
+	let was_enabled = is_irq_enabled();
+	irq_disable();
+	was_enabled
+}
+
+/// Enable IRQs (nested)
+///
+/// Can be used in conjunction with irq_nested_disable() to only enable
+/// interrupts again if they were enabled before.
+pub fn irq_nested_enable(was_enabled: bool) {
+	if was_enabled == true {
+		irq_enable();
+	}
+}

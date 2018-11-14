@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Stefan Lankes, RWTH Aachen University
+// Copyright (c) 2017-2018 Stefan Lankes, RWTH Aachen University
 //
 // MIT License
 //
@@ -21,17 +21,8 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-// Export our platform-specific modules.
-#[cfg(target_arch="x86_64")]
-pub use self::x86_64::{serial,processor,irq};
 
-#[cfg(target_arch="wasm32")]
-pub use self::wasm32::{serial};
+//! Synchronization primitives
 
-// Implementations for x86_64.
-#[cfg(target_arch="x86_64")]
-pub mod x86_64;
-
-// Implementations for wasm32.
-#[cfg(target_arch="wasm32")]
-pub mod wasm32;
+pub mod spinlock;
+pub mod mutex;

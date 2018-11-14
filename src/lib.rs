@@ -29,6 +29,7 @@ pub mod mm;
 pub mod collections;
 pub mod scheduler;
 pub mod errno;
+pub mod synch;
 
 #[global_allocator]
 static ALLOCATOR: &'static mm::allocator::Allocator = &mm::allocator::Allocator;
