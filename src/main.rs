@@ -6,8 +6,6 @@
 
 #[macro_use]
 extern crate eduos_rs;
-#[macro_use]
-extern crate lazy_static;
 
 use core::panic::PanicInfo;
 use eduos_rs::arch::processor::{shutdown,halt};
@@ -15,12 +13,13 @@ use eduos_rs::scheduler;
 use eduos_rs::synch::mutex::Mutex;
 use eduos_rs::scheduler::task::{NORMAL_PRIORITY,HIGH_PRIORITY};
 
-lazy_static! {
-	static ref COUNTER: Mutex<u64> = Mutex::new(0);
-}
+static mut COUNTER: Option<Mutex<u64>> = None;
 
 extern "C" fn foo() {
-	let mut guard = COUNTER.lock();
+	let mut guard = unsafe { match COUNTER {
+		Some(ref mut c) => { c.lock() },
+		None => { panic!("Mutex isn't initialized"); }
+	} };
 
 	for _i in 0..5 {
 		*guard += 1;
@@ -38,6 +37,8 @@ pub extern "C" fn main() -> ! {
 	scheduler::init();
 
 	println!("Hello from eduOS-rs!");
+
+	unsafe { COUNTER = Some(Mutex::new(0)); }
 
 	for _i in 0..2 {
 		scheduler::spawn(foo, NORMAL_PRIORITY).unwrap();
