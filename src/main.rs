@@ -25,7 +25,7 @@ extern "C" fn foo() {
 	for _i in 0..5 {
 		*guard += 1;
 
-		println!("hello from task {}, counter {}", scheduler::get_current_taskid(), *guard);
+		println!("hello from task {}, counter {}", scheduler::get_current_taskid(), 0); //*guard);
 		scheduler::reschedule();
 	}
 }
