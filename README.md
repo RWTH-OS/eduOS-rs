@@ -4,7 +4,7 @@
 
 |   | Build & Test |
 |---|:-----:|
-|**all OSs**|[![Build & Test](https://dev.azure.com/RWTH-OS/eduOS-rs/_apis/build/status/RWTH-OS.eduOS-rs)](https://dev.azure.com/RWTH-OS/eduOS-rs/_build?definitionId=1)| 
+|**all OS'**|[![Build & Test](https://dev.azure.com/RWTH-OS/eduOS-rs/_apis/build/status/RWTH-OS.eduOS-rs)](https://dev.azure.com/RWTH-OS/eduOS-rs/_build?definitionId=1)|
 |**Linux only**|[![Build & Test](https://travis-ci.org/RWTH-OS/eduOS-rs.svg?branch=master)](https://travis-ci.org/RWTH-OS/eduOS-rs)|
 
 ## Introduction
@@ -111,6 +111,10 @@ Currently, following stages of development are available:
 3. stage3 - Synchronization primitives
 
    Introduce basic synchronization primitives
+
+4. stage 4 - Preemptive multitasking
+
+   Introduction into preemptive multitasking and interrupt handling
 
 ## Useful Links
 

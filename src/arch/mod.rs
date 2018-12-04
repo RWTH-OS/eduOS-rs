@@ -23,7 +23,7 @@
 
 // Export our platform-specific modules.
 #[cfg(target_arch="x86_64")]
-pub use self::x86_64::{serial,processor,irq};
+pub use self::x86_64::{serial,processor,irq,init};
 
 #[cfg(target_arch="wasm32")]
 pub use self::wasm32::{serial};

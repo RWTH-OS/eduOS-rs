@@ -25,8 +25,10 @@ use alloc::rc::Rc;
 use alloc::collections::{BTreeMap, VecDeque};
 use core::cell::RefCell;
 use core::sync::atomic::{AtomicU32, Ordering};
+use arch::irq::{irq_nested_enable,irq_nested_disable};
 use scheduler::task::*;
 use logging::*;
+use synch::spinlock::*;
 use consts::*;
 use errno::*;
 
@@ -43,26 +45,26 @@ pub struct Scheduler {
 	/// task id of the idle task
 	idle_task:  Rc<RefCell<Task>>,
 	/// queue of tasks, which are ready
-	ready_queue: PriorityTaskQueue,
+	ready_queue: SpinlockIrqSave<PriorityTaskQueue>,
 	/// queue of tasks, which are finished and can be released
-	finished_tasks: VecDeque<TaskId>,
+	finished_tasks: SpinlockIrqSave<VecDeque<TaskId>>,
 	// map between task id and task controll block
-	tasks: BTreeMap<TaskId, Rc<RefCell<Task>>>
+	tasks: SpinlockIrqSave<BTreeMap<TaskId, Rc<RefCell<Task>>>>
 }
 
 impl Scheduler {
 	pub fn new() -> Scheduler {
 		let tid = TaskId::from(TID_COUNTER.fetch_add(1, Ordering::SeqCst));
 		let idle_task = Rc::new(RefCell::new(Task::new_idle(tid)));
-		let mut tasks = BTreeMap::new();
+		let tasks = SpinlockIrqSave::new(BTreeMap::new());
 
-		tasks.insert(tid, idle_task.clone());
+		tasks.lock().insert(tid, idle_task.clone());
 
 		Scheduler {
 			current_task: idle_task.clone(),
 			idle_task: idle_task.clone(),
-			ready_queue: PriorityTaskQueue::new(),
-			finished_tasks: VecDeque::<TaskId>::new(),
+			ready_queue: SpinlockIrqSave::new(PriorityTaskQueue::new()),
+			finished_tasks: SpinlockIrqSave::new(VecDeque::<TaskId>::new()),
 			tasks: tasks
 		}
 	}
@@ -71,7 +73,7 @@ impl Scheduler {
 		loop {
 			let id = TaskId::from(TID_COUNTER.fetch_add(1, Ordering::SeqCst));
 
-			if self.tasks.contains_key(&id) == false {
+			if self.tasks.lock().contains_key(&id) == false {
 				return id;
 			}
 		}
@@ -91,8 +93,8 @@ impl Scheduler {
 		task.borrow_mut().create_stack_frame(func);
 
 		// Add it to the task lists.
-		self.ready_queue.push(task.clone());
-		self.tasks.insert(tid, task);
+		self.ready_queue.lock().push(task.clone());
+		self.tasks.lock().insert(tid, task);
 		NO_TASKS.fetch_add(1, Ordering::SeqCst);
 
 		info!("Creating task {}", tid);
@@ -100,15 +102,36 @@ impl Scheduler {
 		Ok(tid)
 	}
 
-	pub fn exit(&mut self) {
+	pub fn exit(&mut self) -> ! {
 		if self.current_task.borrow().status != TaskStatus::TaskIdle {
 			info!("finish task with id {}", self.current_task.borrow().id);
 			self.current_task.borrow_mut().status = TaskStatus::TaskFinished;
+			// update the number of tasks
+			NO_TASKS.fetch_sub(1, Ordering::SeqCst);
 		} else {
 			panic!("unable to terminate idle task");
 		}
 
 		self.reschedule();
+
+		// we should never reach this point
+		panic!("exit failed!");
+	}
+
+	pub fn abort(&mut self) -> ! {
+			if self.current_task.borrow().status != TaskStatus::TaskIdle {
+				info!("abort task with id {}", self.current_task.borrow().id);
+				self.current_task.borrow_mut().status = TaskStatus::TaskFinished;
+				// update the number of tasks
+				NO_TASKS.fetch_sub(1, Ordering::SeqCst);
+			} else {
+				panic!("unable to terminate idle task");
+			}
+
+			self.reschedule();
+
+			// we should never reach this point
+			panic!("abort failed!");
 	}
 
 	pub fn block_current_task(&mut self) -> Rc<RefCell<Task>> {
@@ -127,7 +150,7 @@ impl Scheduler {
 			debug!("wakeup task {}", task.borrow().id);
 
 			task.borrow_mut().status = TaskStatus::TaskReady;
-			self.ready_queue.push(task.clone());
+			self.ready_queue.lock().push(task.clone());
 		}
 	}
 
@@ -135,11 +158,16 @@ impl Scheduler {
 		self.current_task.borrow().id
 	}
 
+	/// Determines the start address of the stack
+	pub fn get_current_stack(&self) -> usize {
+		unsafe { (*self.current_task.borrow().stack).bottom() }
+	}
+
 	pub fn schedule(&mut self) {
 		// do we have finished tasks? => drop tasks => deallocate implicitly the stack
-		match self.finished_tasks.pop_front() {
+		match self.finished_tasks.lock().pop_front() {
 			Some(id) => {
-				if self.tasks.remove(&id).is_none() == true {
+				if self.tasks.lock().remove(&id).is_none() == true {
 					info!("Unable to drop task {}", id);
 				}
 			},
@@ -155,9 +183,9 @@ impl Scheduler {
 		// do we have a task, which is ready?
 		let mut next_task;
 		if current_status == TaskStatus::TaskRunning {
-			next_task = self.ready_queue.pop_with_prio(current_prio);
+			next_task = self.ready_queue.lock().pop_with_prio(current_prio);
 		} else {
-			next_task = self.ready_queue.pop();
+			next_task = self.ready_queue.lock().pop();
 		}
 
 		if next_task.is_none() == true {
@@ -180,14 +208,14 @@ impl Scheduler {
 				if current_status == TaskStatus::TaskRunning {
 					debug!("Add task {} to ready queue", current_id);
 					self.current_task.borrow_mut().status = TaskStatus::TaskReady;
-					self.ready_queue.push(self.current_task.clone());
+					self.ready_queue.lock().push(self.current_task.clone());
 				} else if current_status == TaskStatus::TaskFinished {
 					debug!("Task {} finished", current_id);
 					self.current_task.borrow_mut().status = TaskStatus::TaskInvalid;
 					// release the task later, because the stack is required
 					// to call the function "switch"
 					// => push id to a queue and release the task later
-					self.finished_tasks.push_back(current_id);
+					self.finished_tasks.lock().push_back(current_id);
 				}
 
 				debug!("Switching task from {} to {} (stack {:#X} => {:#X})", current_id, new_id,
@@ -202,6 +230,8 @@ impl Scheduler {
 	}
 
 	pub fn reschedule(&mut self) {
+		let flags = irq_nested_disable();
 		self.schedule();
+		irq_nested_enable(flags);
 	}
 }

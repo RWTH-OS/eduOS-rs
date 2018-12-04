@@ -240,15 +240,16 @@ impl<T> SpinlockIrqSave<T>
 impl<T: ?Sized> SpinlockIrqSave<T>
 {
 	fn obtain_lock(&self) {
-		let ticket = self.queue.fetch_add(1, Ordering::SeqCst) + 1;
 		let irq = arch::irq::irq_nested_disable();
-		self.irq.store(irq, Ordering::SeqCst);
+		let ticket = self.queue.fetch_add(1, Ordering::SeqCst) + 1;
 
 		while self.dequeue.load(Ordering::SeqCst) != ticket {
 			arch::irq::irq_nested_enable(irq);
 			arch::processor::pause();
 			arch::irq::irq_nested_disable();
 		}
+
+		self.irq.store(irq, Ordering::SeqCst);
 	}
 
 	pub fn lock(&self) -> SpinlockIrqSaveGuard<T>

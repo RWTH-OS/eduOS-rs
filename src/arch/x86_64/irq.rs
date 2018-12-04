@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Stefan Lankes, RWTH Aachen University
+// Copyright (c) 2017-2018 Stefan Lankes, RWTH Aachen University
 //
 // MIT License
 //
@@ -20,6 +20,23 @@
 // LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+#![allow(dead_code)]
+
+use core::fmt;
+use logging::*;
+use cpuio::outb;
+use scheduler::*;
+use synch::spinlock::*;
+use x86::shared::dtables::{DescriptorTablePointer,lidt};
+use x86::shared::PrivilegeLevel;
+use x86::shared::paging::VAddr;
+use x86::bits64::irq::{IdtEntry, Type};
+use x86::shared::segmentation::SegmentSelector;
+
+/// Maximum possible number of interrupts
+const IDT_ENTRIES: usize = 256;
+const KERNEL_CODE_SELECTOR: SegmentSelector = SegmentSelector::new(1, PrivilegeLevel::Ring0);
 
 /// Enable Interrupts
 pub fn irq_enable() {
@@ -64,4 +81,407 @@ pub fn irq_nested_enable(was_enabled: bool) {
 	if was_enabled == true {
 		irq_enable();
 	}
+}
+
+#[inline(always)]
+fn send_eoi_to_slave()
+{
+	/*
+	 * If the IDT entry that was invoked was greater-than-or-equal to 40
+	 * and lower than 48 (meaning IRQ8 - 15), then we need to
+	 * send an EOI to the slave controller of the PIC
+	 */
+	unsafe { outb(0x20, 0xA0); }
+}
+
+#[inline(always)]
+fn send_eoi_to_master()
+{
+	/*
+	 * In either case, we need to send an EOI to the master
+	 * interrupt controller of the PIC, too
+	 */
+	unsafe { outb(0x20, 0x20); }
+}
+
+// Create isr entries, where the number after the
+// pseudo error code represents following interrupts:
+// 0: Divide By Zero Exception
+// 1: Debug Exception
+// 2: Non Maskable Interrupt Exception
+// 3: Int 3 Exception
+// 4: INTO Exception
+// 5: Out of Bounds Exception
+// 6: Invalid Opcode Exception
+// 7: Coprocessor Not Available Exception
+
+extern "x86-interrupt" fn divide_by_zero_exception(stack_frame: &mut ExceptionStackFrame)
+{
+	info!("Task {} receive a Divide By Zero Exception: {:#?}",
+		get_current_taskid(), stack_frame);
+	send_eoi_to_master();
+	abort();
+}
+
+extern "x86-interrupt" fn debug_exception(stack_frame: &mut ExceptionStackFrame)
+{
+	info!("Task {} receive a Debug Exception: {:#?}",
+		get_current_taskid(), stack_frame);
+	send_eoi_to_master();
+	abort();
+}
+
+extern "x86-interrupt" fn nmi_exception(stack_frame: &mut ExceptionStackFrame)
+{
+	info!("Task {} receive a Non Maskable Interrupt Exception: {:#?}",
+		get_current_taskid(), stack_frame);
+	send_eoi_to_master();
+	abort();
+}
+
+extern "x86-interrupt" fn int3_exception(stack_frame: &mut ExceptionStackFrame)
+{
+	info!("Task {} receive a Int 3 Exception: {:#?}",
+		get_current_taskid(), stack_frame);
+	send_eoi_to_master();
+	abort();
+}
+
+extern "x86-interrupt" fn int0_exception(stack_frame: &mut ExceptionStackFrame)
+{
+	info!("Task {} receive a INT0 Exception: {:#?}",
+		get_current_taskid(), stack_frame);
+	send_eoi_to_master();
+	abort();
+}
+
+extern "x86-interrupt" fn out_of_bound_exception(stack_frame: &mut ExceptionStackFrame)
+{
+	info!("Task {} receive a Out of Bounds Exception: {:#?}",
+		get_current_taskid(), stack_frame);
+	send_eoi_to_master();
+	abort();
+}
+
+extern "x86-interrupt" fn invalid_opcode_exception(stack_frame: &mut ExceptionStackFrame)
+{
+	info!("Task {} receive a Invalid Opcode Exception: {:#?}",
+		get_current_taskid(), stack_frame);
+	send_eoi_to_master();
+	abort();
+}
+
+extern "x86-interrupt" fn no_coprocessor_exception(stack_frame: &mut ExceptionStackFrame)
+{
+	info!("Task {} receive a Coprocessor Not Available Exception: {:#?}",
+		get_current_taskid(), stack_frame);
+	send_eoi_to_master();
+	abort();
+}
+
+// 8: Double Fault Exception (With Error Code!)
+
+extern "x86-interrupt" fn double_fault_exception(stack_frame: &mut ExceptionStackFrame,
+	error_code: u64)
+{
+	info!("Task {} receive a Double Fault Exception: {:#?}, error_code {}",
+		get_current_taskid(), stack_frame, error_code);
+	send_eoi_to_master();
+	abort();
+}
+
+// 9: Coprocessor Segment Overrun Exception
+
+extern "x86-interrupt" fn overrun_exception(stack_frame: &mut ExceptionStackFrame)
+{
+	info!("Task {} receive a Coprocessor Segment Overrun Exception: {:#?}",
+		get_current_taskid(), stack_frame);
+	send_eoi_to_master();
+	abort();
+}
+
+// 10: Bad TSS Exception (With Error Code!)
+// 11: Segment Not Present Exception (With Error Code!)
+// 12: Stack Fault Exception (With Error Code!)
+// 13: General Protection Fault Exception (With Error Code!)
+// 14: Page Fault Exception (With Error Code!)
+
+extern "x86-interrupt" fn bad_tss_exception(stack_frame: &mut ExceptionStackFrame,
+	error_code: u64)
+{
+	info!("Task {} receive a Bad TSS Exception: {:#?}, error_code 0x{:x}",
+		get_current_taskid(), stack_frame, error_code);
+	send_eoi_to_master();
+	abort();
+}
+
+extern "x86-interrupt" fn not_present_exception(stack_frame: &mut ExceptionStackFrame,
+	error_code: u64)
+{
+	info!("Task {} receive a Segment Not Present Exception: {:#?}, error_code 0x{:x}",
+		get_current_taskid(), stack_frame, error_code);
+	send_eoi_to_master();
+	abort();
+}
+
+extern "x86-interrupt" fn stack_fault_exception(stack_frame: &mut ExceptionStackFrame,
+	error_code: u64)
+{
+	info!("Task {} receive a Stack Fault Exception: {:#?}, error_code 0x{:x}", get_current_taskid(),
+		stack_frame, error_code);
+	send_eoi_to_master();
+	abort();
+}
+
+extern "x86-interrupt" fn general_protection_exception(stack_frame: &mut ExceptionStackFrame,
+	error_code: u64)
+{
+	info!("Task {} receive a General Protection Exception: {:#?}, error_code 0x{:x}",  get_current_taskid(),
+		stack_frame, error_code);
+	send_eoi_to_master();
+	abort();
+}
+
+extern "x86-interrupt" fn page_fault_exception(stack_frame: &mut ExceptionStackFrame,
+	error_code: u64)
+{
+	info!("Task {} receive a Page Fault Exception: {:#?}, error_code {:x}", get_current_taskid(),
+		stack_frame, error_code);
+	send_eoi_to_master();
+	abort();
+}
+
+// 15: Reserved Exception
+// 16: Floating Point Exception
+// 17: Alignment Check Exception
+// 18: Machine Check Exception
+// 19-31: Reserved
+
+extern "x86-interrupt" fn floating_point_exception(stack_frame: &mut ExceptionStackFrame)
+{
+	info!("Task {} receive a Floating Point Exception: {:#?}", get_current_taskid(), stack_frame);
+	send_eoi_to_master();
+	abort();
+}
+
+extern "x86-interrupt" fn alignment_check_exception(stack_frame: &mut ExceptionStackFrame)
+{
+	info!("Task {} receive a Alignment Check Exception: {:#?}", get_current_taskid(), stack_frame);
+	send_eoi_to_master();
+	abort();
+}
+
+extern "x86-interrupt" fn machine_check_exception(stack_frame: &mut ExceptionStackFrame)
+{
+	info!("Task {} receive a Machine Check Exception: {:#?}", get_current_taskid(), stack_frame);
+	send_eoi_to_master();
+	abort();
+}
+
+extern "x86-interrupt" fn reserved_exception(stack_frame: &mut ExceptionStackFrame)
+{
+	info!("Task {} receive a reserved exception: {:#?}", get_current_taskid(), stack_frame);
+	send_eoi_to_master();
+	abort();
+}
+
+extern "x86-interrupt" fn unhandled_irq1(stack_frame: &mut ExceptionStackFrame)
+{
+	info!("Task {} receive unknown interrupt: {:#?}", get_current_taskid(), stack_frame);
+	send_eoi_to_master();
+	abort();
+}
+
+extern "x86-interrupt" fn unhandled_irq2(stack_frame: &mut ExceptionStackFrame)
+{
+	info!("Task {} receive unknown interrupt: {:#?}", get_current_taskid(), stack_frame);
+	send_eoi_to_slave();
+	send_eoi_to_master();
+	abort();
+}
+
+extern "x86-interrupt" fn timer_handler(stack_frame: &mut ExceptionStackFrame)
+{
+	debug!("Task {} receive timer interrupt!\n{:#?}", get_current_taskid(), stack_frame);
+
+	send_eoi_to_master();
+	schedule();
+}
+
+static INTERRUPT_HANDLER: SpinlockIrqSave<InteruptHandler> = SpinlockIrqSave::new(InteruptHandler::new());
+
+struct InteruptHandler {
+	/// An Interrupt Descriptor Table which specifies how to respond to each
+	/// interrupt.
+	idt: [IdtEntry; IDT_ENTRIES]
+}
+
+impl InteruptHandler {
+	pub const fn new() -> InteruptHandler {
+		InteruptHandler {
+			idt: [IdtEntry::MISSING; IDT_ENTRIES]
+		}
+	}
+
+	pub fn add_handler(&mut self, int_no: usize,
+		func: extern "x86-interrupt" fn (&mut ExceptionStackFrame))
+	{
+		if int_no < IDT_ENTRIES {
+			self.idt[int_no] = IdtEntry::new(VAddr::from_usize(func as usize),
+				KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+		} else {
+			info!("unable to add handler for interrupt {}", int_no);
+		}
+	}
+
+	pub fn remove_handler(&mut self, int_no: usize)
+	{
+		if int_no < IDT_ENTRIES {
+			if int_no < 40 {
+				self.idt[int_no] = IdtEntry::new(VAddr::from_usize(unhandled_irq1 as usize),
+					KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			} else {
+				// send  eoi to the master and to the slave
+				self.idt[int_no] = IdtEntry::new(VAddr::from_usize(unhandled_irq2 as usize),
+					KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			}
+		} else {
+			info!("unable to remove handler for interrupt {}", int_no);
+		}
+	}
+
+	pub unsafe fn load_idt(&mut self) {
+		self.idt[0] = IdtEntry::new(VAddr::from_usize(divide_by_zero_exception as usize),
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+		self.idt[1] = IdtEntry::new(VAddr::from_usize(debug_exception as usize),
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+		self.idt[2] = IdtEntry::new(VAddr::from_usize(nmi_exception as usize),
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+		self.idt[3] = IdtEntry::new(VAddr::from_usize(int3_exception as usize),
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+		self.idt[4] = IdtEntry::new(VAddr::from_usize(int0_exception as usize),
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+		self.idt[5] = IdtEntry::new(VAddr::from_usize(out_of_bound_exception as usize),
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+		self.idt[6] = IdtEntry::new(VAddr::from_usize(invalid_opcode_exception as usize),
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+		self.idt[7] = IdtEntry::new(VAddr::from_usize(no_coprocessor_exception as usize),
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+		self.idt[8] = IdtEntry::new(VAddr::from_usize(double_fault_exception as usize),
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+		self.idt[9] = IdtEntry::new(VAddr::from_usize(overrun_exception as usize),
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+		self.idt[10] = IdtEntry::new(VAddr::from_usize(bad_tss_exception as usize),
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+		self.idt[11] = IdtEntry::new(VAddr::from_usize(not_present_exception as usize),
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+		self.idt[12] = IdtEntry::new(VAddr::from_usize(stack_fault_exception as usize),
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+		self.idt[13] = IdtEntry::new(VAddr::from_usize(general_protection_exception as usize),
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+		self.idt[14] = IdtEntry::new(VAddr::from_usize(page_fault_exception as usize),
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+		self.idt[15] = IdtEntry::new(VAddr::from_usize(reserved_exception as usize),
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+		self.idt[16] = IdtEntry::new(VAddr::from_usize(floating_point_exception as usize),
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+		self.idt[17] = IdtEntry::new(VAddr::from_usize(alignment_check_exception as usize),
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+		self.idt[18] = IdtEntry::new(VAddr::from_usize(machine_check_exception as usize),
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+		for i in 19..32 {
+			self.idt[i] = IdtEntry::new(VAddr::from_usize(reserved_exception as usize),
+				KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+		}
+		self.idt[32] = IdtEntry::new(VAddr::from_usize(timer_handler as usize),
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+
+		// send only eoi to the master
+		for i in 33..40 {
+			self.idt[i] = IdtEntry::new(VAddr::from_usize(unhandled_irq1 as usize),
+				KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+		}
+		// send  eoi to the master and to the slave
+		for i in 40..IDT_ENTRIES {
+			self.idt[i] = IdtEntry::new(VAddr::from_usize(unhandled_irq2 as usize),
+				KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+		}
+
+		let idtr = DescriptorTablePointer::new(&self.idt);
+		lidt(&idtr);
+	}
+}
+
+/// Normally, IRQs 0 to 7 are mapped to entries 8 to 15. This
+/// is a problem in protected mode, because IDT entry 8 is a
+/// Double Fault! Without remapping, every time IRQ0 fires,
+/// you get a Double Fault Exception, which is NOT what's
+/// actually happening. We send commands to the Programmable
+/// Interrupt Controller (PICs - also called the 8259's) in
+/// order to make IRQ0 to 15 be remapped to IDT entries 32 to
+/// 47
+unsafe fn irq_remap()
+{
+	outb(0x11, 0x20);
+	outb(0x11, 0xA0);
+	outb(0x20, 0x21);
+	outb(0x28, 0xA1);
+	outb(0x04, 0x21);
+	outb(0x02, 0xA1);
+	outb(0x01, 0x21);
+	outb(0x01, 0xA1);
+	outb(0x0, 0x21);
+	outb(0x0, 0xA1);
+}
+
+pub fn init() {
+	debug!("initialize interrupt descriptor table");
+
+	unsafe {
+		irq_remap();
+
+		// load address of the IDT
+		INTERRUPT_HANDLER.lock().load_idt();
+	}
+}
+
+// derived from hilipp Oppermann's blog
+// => https://github.com/phil-opp/blog_os/blob/master/src/interrupts/mod.rs
+
+/// Represents the exception stack frame pushed by the CPU on exception entry.
+#[repr(C)]
+pub struct ExceptionStackFrame {
+    /// This value points to the instruction that should be executed when the interrupt
+    /// handler returns. For most interrupts, this value points to the instruction immediately
+    /// following the last executed instruction. However, for some exceptions (e.g., page faults),
+    /// this value points to the faulting instruction, so that the instruction is restarted on
+    /// return. See the documentation of the `Idt` fields for more details.
+    pub instruction_pointer: u64,
+    /// The code segment selector, padded with zeros.
+    pub code_segment: u64,
+    /// The flags register before the interrupt handler was invoked.
+    pub cpu_flags: u64,
+    /// The stack pointer at the time of the interrupt.
+    pub stack_pointer: u64,
+    /// The stack segment descriptor at the time of the interrupt (often zero in 64-bit mode).
+    pub stack_segment: u64,
+}
+
+impl fmt::Debug for ExceptionStackFrame {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        struct Hex(u64);
+        impl fmt::Debug for Hex {
+            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                write!(f, "{:#x}", self.0)
+            }
+        }
+
+        let mut s = f.debug_struct("ExceptionStackFrame");
+        s.field("instruction_pointer", &Hex(self.instruction_pointer));
+        s.field("code_segment", &Hex(self.code_segment));
+        s.field("cpu_flags", &Hex(self.cpu_flags));
+        s.field("stack_pointer", &Hex(self.stack_pointer));
+        s.field("stack_segment", &Hex(self.stack_segment));
+        s.finish()
+    }
 }

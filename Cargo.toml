@@ -5,7 +5,6 @@ license = "MIT"
 authors = ["Stefan Lankes <slankes@eonerc.rwth-aachen.de>"]
 
 [dependencies]
-spin = "0.4.10"	# Spinlocks.
 bootloader = "0.3.4"
 
 [target.'cfg(target_arch = "x86_64")'.dependencies.cpuio]

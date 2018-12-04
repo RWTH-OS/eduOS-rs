@@ -9,23 +9,13 @@ extern crate eduos_rs;
 
 use core::panic::PanicInfo;
 use eduos_rs::arch::processor::{shutdown,halt};
+use eduos_rs::arch;
 use eduos_rs::scheduler;
-use eduos_rs::synch::mutex::Mutex;
-use eduos_rs::scheduler::task::{NORMAL_PRIORITY,HIGH_PRIORITY};
-
-static mut COUNTER: Option<Mutex<u64>> = None;
+use eduos_rs::scheduler::task::NORMAL_PRIORITY;
 
 extern "C" fn foo() {
-	let mut guard = unsafe { match COUNTER {
-		Some(ref mut c) => { c.lock() },
-		None => { panic!("Mutex isn't initialized"); }
-	} };
-
-	for _i in 0..5 {
-		*guard += 1;
-
-		println!("hello from task {}, counter {}", scheduler::get_current_taskid(), 0); //*guard);
-		scheduler::reschedule();
+	for _ in 0..500 {
+		println!("hello from task {}", scheduler::get_current_taskid());
 	}
 }
 
@@ -34,16 +24,17 @@ extern "C" fn foo() {
 #[cfg(not(test))]
 #[no_mangle] // don't mangle the name of this function
 pub extern "C" fn main() -> ! {
+	arch::init();
 	scheduler::init();
 
 	println!("Hello from eduOS-rs!");
 
-	unsafe { COUNTER = Some(Mutex::new(0)); }
-
 	for _i in 0..2 {
 		scheduler::spawn(foo, NORMAL_PRIORITY).unwrap();
 	}
-	scheduler::spawn(foo, HIGH_PRIORITY).unwrap();
+
+	// enable interrupts => enable preemptive multitasking
+	arch::irq::irq_enable();
 
 	scheduler::reschedule();
 

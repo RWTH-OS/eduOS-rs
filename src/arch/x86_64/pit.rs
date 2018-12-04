@@ -21,22 +21,52 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#![allow(dead_code)]
+use consts::*;
+use logging::*;
+use arch::processor::*;
+use cpuio::outb;
+use x86::shared::time::rdtsc;
 
-//! Configuration parameter of the kernel eduOS-rs
+const CLOCK_TICK_RATE: u32 = 1193182u32; /* 8254 chip's internal oscillator frequency */
 
-/// Define the size of the kernel stack
-pub const STACK_SIZE : usize = 0x2000;
+unsafe fn wait_some_time() {
+ 	let start = rdtsc();
 
-/// Size of a cache line
-pub const CACHE_LINE : usize = 64;
+	mb();
+	while rdtsc() - start < 1000000 {
+		mb();
+	}
+}
 
-/// Size of a page frame on a x86_64 processor
-#[cfg(target_arch="x86_64")]
-pub const PAGE_SIZE : usize = 4096;
+// initialize the Programmable Interrupt controller
+pub fn init()
+{
+	debug!("initialize timer");
 
-/// Maximum number of priorities
-pub const NO_PRIORITIES: usize = 32;
+	let latch = ((CLOCK_TICK_RATE + TIMER_FREQ/2) / TIMER_FREQ) as u16;
 
-/// frequency of the timer interrupt
-pub const TIMER_FREQ: u32 = 100; /* in HZ */
+	unsafe {
+		/*
+		 * Port 0x43 is for initializing the PIT:
+		 *
+		 * 0x34 means the following:
+		 * 0b...     (step-by-step binary representation)
+		 * ...  00  - channel 0
+		 * ...  11  - write two values to counter register:
+		 *            first low-, then high-byte
+		 * ... 010  - mode number 2: "rate generator" / frequency divider
+		 * ...   0  - binary counter (the alternative is BCD)
+		 */
+		outb(0x34, 0x43);
+
+		wait_some_time();
+
+		/* Port 0x40 is for the counter register of channel 0 */
+
+		outb((latch & 0xFF) as u8, 0x40);   /* low byte  */
+
+		wait_some_time();
+
+		outb((latch >> 8) as u8, 0x40);     /* high byte */
+	}
+}

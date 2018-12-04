@@ -1,7 +1,17 @@
 #![allow(dead_code)]
 
 use cpuio;
+use logging::*;
 use x86::shared::control_regs::*;
+
+/// Force strict CPU ordering, serializes load and store operations.
+#[inline(always)]
+pub fn mb()
+{
+	unsafe {
+		asm!("mfence" ::: "memory" : "volatile");
+	}
+}
 
 /// Search the most significant bit
 #[inline(always)]
@@ -52,7 +62,9 @@ pub extern "C" fn shutdown() -> ! {
 	}
 }
 
-pub fn cpu_init() {
+pub fn init() {
+	debug!("enable supported processor features");
+
 	let mut cr0 = unsafe { cr0() };
 
 	// be sure that AM, NE and MP is enabled
@@ -61,6 +73,8 @@ pub fn cpu_init() {
 	cr0 = cr0 | CR0_MONITOR_COPROCESSOR;
 	// enable cache
 	cr0 = cr0 & !(CR0_CACHE_DISABLE|CR0_NOT_WRITE_THROUGH);
+
+	debug!("set CR0 to {:?}", cr0);
 
 	unsafe { cr0_write(cr0) };
 }

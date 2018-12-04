@@ -57,10 +57,30 @@ pub fn reschedule() {
 	}
 }
 
+/// Timer interrupt  call scheduler to switch to the next available task
+pub fn schedule() {
+	unsafe {
+		SCHEDULER.as_mut().unwrap().schedule()
+	}
+}
+
 /// Terminate the current running task
 pub fn do_exit() {
 	unsafe {
 		SCHEDULER.as_mut().unwrap().exit();
+	}
+}
+
+/// Terminate the current running task
+pub fn abort() -> ! {
+	unsafe {
+		SCHEDULER.as_mut().unwrap().abort()
+	}
+}
+
+pub fn get_current_stack() -> usize {
+	unsafe {
+		SCHEDULER.as_mut().unwrap().get_current_stack()
 	}
 }
 

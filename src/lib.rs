@@ -4,9 +4,9 @@
 #![feature(integer_atomics)]
 #![feature(compiler_builtins_lib)]
 #![feature(naked_functions)]
+#![feature(abi_x86_interrupt)]
 #![no_std]
 
-extern crate spin;
 #[cfg(target_arch = "x86_64")]
 extern crate cpuio;
 #[cfg(target_arch = "x86_64")]
