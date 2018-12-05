@@ -19,6 +19,7 @@ curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
 export PATH=$PATH:~/.cargo/bin
 cargo install cargo-xbuild bootimage
 rustup component add rust-src
+cargo install --git https://github.com/RWTH-OS/ehyve.git
 make
 
 elif [ "$OS_NAME" = "ubuntu" ]; then
@@ -30,6 +31,7 @@ curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
 export PATH=$PATH:~/.cargo/bin
 cargo install cargo-xbuild bootimage
 rustup component add rust-src
+cargo install --git https://github.com/RWTH-OS/ehyve.git
 make
 
 fi
