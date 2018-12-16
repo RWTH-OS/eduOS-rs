@@ -33,6 +33,7 @@ use errno::*;
 use alloc::rc::Rc;
 use core::cell::RefCell;
 use scheduler::task::{TaskPriority, Task};
+use arch;
 
 static mut SCHEDULER: Option<scheduler::Scheduler> = None;
 
@@ -41,6 +42,8 @@ pub fn init() {
 	unsafe {
 		SCHEDULER = Some(scheduler::Scheduler::new());
 	}
+
+	arch::register_task();
 }
 
 /// Create a new kernel task

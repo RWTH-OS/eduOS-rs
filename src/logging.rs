@@ -34,6 +34,7 @@ pub struct KernelLogger {
 pub static LOGGER: KernelLogger = KernelLogger { log_level: LogLevel::INFO };
 
 /// Print formatted info text to our console, followed by a newline.
+#[macro_export]
 macro_rules! info {
 	($fmt:expr) => ({
 		let current_level = LOGGER.log_level as u8;
@@ -54,6 +55,7 @@ macro_rules! info {
 }
 
 /// Print formatted warnings to our console, followed by a newline.
+#[macro_export]
 macro_rules! warn {
 	($fmt:expr) => ({
 		let current_level = LOGGER.log_level as u8;
@@ -74,6 +76,7 @@ macro_rules! warn {
 }
 
 /// Print formatted warnings to our console, followed by a newline.
+#[macro_export]
 macro_rules! error {
 	($fmt:expr) => ({
 		let current_level = LOGGER.log_level as u8;
@@ -94,6 +97,7 @@ macro_rules! error {
 }
 
 /// Print formatted debuf messages to our console, followed by a newline.
+#[macro_export]
 macro_rules! debug {
 	($fmt:expr) => ({
 		let current_level = LOGGER.log_level as u8;

@@ -11,6 +11,8 @@
 extern crate cpuio;
 #[cfg(target_arch = "x86_64")]
 extern crate x86;
+#[cfg(target_arch = "x86_64")]
+extern crate raw_cpuid;
 extern crate alloc;
 
 // These need to be visible to the linker, so we need to export them.
@@ -30,6 +32,7 @@ pub mod collections;
 pub mod scheduler;
 pub mod errno;
 pub mod synch;
+pub mod syscall;
 
 #[global_allocator]
 static ALLOCATOR: &'static mm::allocator::Allocator = &mm::allocator::Allocator;

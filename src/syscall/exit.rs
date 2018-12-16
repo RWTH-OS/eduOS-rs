@@ -21,17 +21,12 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-// Export our platform-specific modules.
-#[cfg(target_arch="x86_64")]
-pub use self::x86_64::{serial,processor,irq,init,jump_to_user_land,register_task};
+use logging::*;
+use scheduler::*;
 
-#[cfg(target_arch="wasm32")]
-pub use self::wasm32::{serial};
-
-// Implementations for x86_64.
-#[cfg(target_arch="x86_64")]
-pub mod x86_64;
-
-// Implementations for wasm32.
-#[cfg(target_arch="wasm32")]
-pub mod wasm32;
+#[no_mangle]
+pub extern "C" fn sys_exit()
+{
+	debug!("enter syscall exit");
+	do_exit();
+}

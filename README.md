@@ -116,6 +116,10 @@ Currently, following stages of development are available:
 
    Introduction into preemptive multitasking and interrupt handling
 
+5. stage 5 - Support of user-level tasks
+
+   Add support of user-level tasks with an small interface for basic system calls
+
 ## Useful Links
 
 1. [http://www.gnu.org/software/grub/manual/multiboot/](http://www.gnu.org/software/grub/manual/multiboot/)

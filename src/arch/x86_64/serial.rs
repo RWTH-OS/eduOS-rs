@@ -28,6 +28,7 @@ impl fmt::Write for ComPort {
 				uart_port.write(b);
 			}
 		}
+
 		Ok(())
 	}
 }

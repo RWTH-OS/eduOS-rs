@@ -21,17 +21,38 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-// Export our platform-specific modules.
-#[cfg(target_arch="x86_64")]
-pub use self::x86_64::{serial,processor,irq,init,jump_to_user_land,register_task};
+pub mod write;
+pub mod exit;
 
-#[cfg(target_arch="wasm32")]
-pub use self::wasm32::{serial};
+use syscall::exit::sys_exit;
+use syscall::write::sys_write;
 
-// Implementations for x86_64.
-#[cfg(target_arch="x86_64")]
-pub mod x86_64;
+/// number of the sytem call `exit`
+pub const SYSNO_EXIT: usize = 0;
 
-// Implementations for wasm32.
-#[cfg(target_arch="wasm32")]
-pub mod wasm32;
+/// number of the sytem call `write`
+pub const SYSNO_WRITE: usize = 1;
+
+/// total number of system calls
+pub const NO_SYSCALLS: usize = 2;
+
+#[repr(align(64))]
+#[repr(C)]
+pub struct SyscallTable{
+	 handle: [*const usize; NO_SYSCALLS]
+}
+
+impl SyscallTable {
+	pub const fn new() -> Self {
+		SyscallTable {
+			handle:	[sys_exit as *const _,
+					 sys_write as *const _]
+		}
+	}
+}
+
+unsafe impl Send for SyscallTable {}
+unsafe impl Sync for SyscallTable {}
+
+#[no_mangle]
+pub static SYSHANDLER_TABLE: SyscallTable = SyscallTable::new();

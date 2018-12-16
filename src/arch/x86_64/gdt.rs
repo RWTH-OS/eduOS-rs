@@ -34,11 +34,14 @@ use scheduler;
 const GDT_NULL: usize = 0;
 const GDT_KERNEL_CODE: usize = 1;
 const GDT_KERNEL_DATA: usize = 2;
-const GDT_FIRST_TSS:   usize = 3;
+const GDT_USER32_CODE: usize = 3;
+const GDT_USER32_DATA: usize = 4;
+const GDT_USER64_CODE: usize = 5;
+const GDT_FIRST_TSS: usize = 6;
 
 // fox x86_64 is a TSS descriptor twice larger than a code/data descriptor
 const TSS_ENTRIES: usize = 2;
-const GDT_ENTRIES: usize = (3+TSS_ENTRIES);
+const GDT_ENTRIES: usize = (GDT_FIRST_TSS+TSS_ENTRIES);
 
 // thread_local on a static mut, signals that the value of this static may
 // change depending on the current thread.
@@ -81,6 +84,21 @@ pub fn init()
 		 * All other parameters are ignored.
 		 */
 		GDT[GDT_KERNEL_DATA] = SegmentDescriptor::new_memory(0, 0, Type::Data(DATA_WRITE), false, PrivilegeLevel::Ring0, SegmentBitness::Bits64);
+
+		/*
+		 * Create code segment for 32bit user-space applications (ring 3)
+		 */
+		GDT[GDT_USER32_CODE] = SegmentDescriptor::new_memory(0, 0, Type::Code(CODE_READ), false, PrivilegeLevel::Ring3, SegmentBitness::Bits32);
+
+		/*
+		 * Create code segment for 32bit user-space applications (ring 3)
+		 */
+		GDT[GDT_USER32_DATA] = SegmentDescriptor::new_memory(0, 0, Type::Data(DATA_WRITE), false, PrivilegeLevel::Ring3, SegmentBitness::Bits32);
+
+		/*
+		 * Create code segment for 64bit user-space applications (ring 3)
+		 */
+		GDT[GDT_USER64_CODE] = SegmentDescriptor::new_memory(0, 0, Type::Code(CODE_READ), false, PrivilegeLevel::Ring3, SegmentBitness::Bits64);
 
 		/*
 		 * Create TSS for each core (we use these segments for task switching)
