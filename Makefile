@@ -10,11 +10,6 @@ opt := --release
 rdir := release
 endif
 
-build_wasm :=
-ifeq ($(arch), wasm32)
-build_wasm := eduos.wasm
-endif
-
 RN :=
 ifdef COMSPEC
 RM := del
@@ -24,7 +19,7 @@ endif
 
 .PHONY: all fmt clean run debug cargo docs
 
-all: cargo $(build_wasm)
+all: cargo
 
 bootimage.bin:
 	bootimage build --target $(target).json
@@ -40,10 +35,6 @@ run:
 
 clean:
 	$(RM) target bootimage.bin
-
-eduos.wasm: cargo
-	@echo WASM_GC
-	@wasm-gc target/$(target)/$(rdir)/eduos_rs.wasm eduos.wasm
 
 docs:
 	@echo DOC
