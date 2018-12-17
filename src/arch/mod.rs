@@ -25,13 +25,6 @@
 #[cfg(target_arch="x86_64")]
 pub use self::x86_64::{serial,processor,irq,init,jump_to_user_land,register_task};
 
-#[cfg(target_arch="wasm32")]
-pub use self::wasm32::{serial};
-
 // Implementations for x86_64.
 #[cfg(target_arch="x86_64")]
 pub mod x86_64;
-
-// Implementations for wasm32.
-#[cfg(target_arch="wasm32")]
-pub mod wasm32;
