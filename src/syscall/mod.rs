@@ -27,10 +27,10 @@ pub mod exit;
 use syscall::exit::sys_exit;
 use syscall::write::sys_write;
 
-/// number of the sytem call `exit`
+/// number of the system call `exit`
 pub const SYSNO_EXIT: usize = 0;
 
-/// number of the sytem call `write`
+/// number of the system call `write`
 pub const SYSNO_WRITE: usize = 1;
 
 /// total number of system calls
