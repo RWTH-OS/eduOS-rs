@@ -20,12 +20,12 @@ use eduos_rs::{LogLevel,LOGGER};
 fn user_foo() -> ! {
 	let str = b"Hello from user_foo!\n\0";
 
-	unsafe {
-		//let _ = arch::x86_64::serial::COM1.write_str("Hello from user_foo!\n");
+	/*unsafe {
+		let _ = arch::x86_64::serial::COM1.write_str("Hello from user_foo!\n");
+	}*/
 
-		syscall!(SYSNO_WRITE, str.as_ptr() as u64, str.len());
-		syscall!(SYSNO_EXIT);
-	}
+	syscall!(SYSNO_WRITE, str.as_ptr() as u64, str.len());
+	syscall!(SYSNO_EXIT);
 
 	loop {
 		arch::processor::halt();
