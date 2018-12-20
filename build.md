@@ -70,3 +70,33 @@ From here, we should be able to run the kernel in ehyve:
 ```sh
 $ make run
 ```
+
+## Overview of all branches
+
+Step by step (here branch by branch) the operating system design will be introduced.
+This tutorial shows the steps to develop from a minimal kernel to a Unix-like computer operating system.
+Currently, following stages of development are available:
+
+0. stage0 - Smallest HelloWorld of the World
+
+   Description of loading a minimal 64bit kernel
+
+1. stage1 - Cooperative/non-preemptive multitasking
+
+   Introduction into a simple form of multitasking, where no interrupts are required.
+
+2. stage2 - Priority-based cooperative/non-preemptive multitasking
+
+   Introduction into a simple form of priority-based multitasking, where no interrupts are required.
+
+3. stage3 - Synchronization primitives
+
+   Introduce basic synchronization primitives
+
+4. stage 4 - Preemptive multitasking
+
+   Introduction into preemptive multitasking and interrupt handling
+
+5. stage 5 - Support of user-level tasks
+
+   Add support of user-level tasks with an small interface for basic system calls
