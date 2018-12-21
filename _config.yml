@@ -5,7 +5,7 @@ highlighter:      rouge
 # Setup
 title:            eduOS-rs
 tagline:          'A teaching operating system written in Rust'
-description:      '<a href="https://rwth-os.github.io/eduOS-rs/" target="_blank">eduOS-rs</a> is teaching operating system written in <a href="https://www.rust-lang.org" target="_blank">Rust</a>'
+description:      '<a href="https://rwth-os.github.io/eduOS-rs/" target="_blank">eduOS-rs</a> is a teaching operating system written in <a href="https://www.rust-lang.org" target="_blank">Rust</a>'
 url:              https://rwth-os.github.io/eduOS-rs/
 baseurl:          # the optional subpath of your site, e.g. "/blog"
                   # NB: This applies to all pages in your Jekyll site.
