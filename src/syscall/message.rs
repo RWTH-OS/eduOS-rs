@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Stefan Lankes, RWTH Aachen University
+// Copyright (c) 2018 Stefan Lankes, RWTH Aachen University
 //
 // MIT License
 //
@@ -21,44 +21,10 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-pub mod write;
-pub mod exit;
-pub mod message;
-
-use syscall::exit::sys_exit;
-use syscall::write::sys_write;
-use syscall::message::sys_message;
-
-/// number of the system call `exit`
-pub const SYSNO_EXIT: usize = 0;
-
-/// number of the system call `write`
-pub const SYSNO_WRITE: usize = 1;
-
-/// number of the system call `message`
-pub const SYSNO_MESSAGE: usize = 2;
-
-/// total number of system calls
-pub const NO_SYSCALLS: usize = 3;
-
-#[repr(align(64))]
-#[repr(C)]
-pub struct SyscallTable{
-	 handle: [*const usize; NO_SYSCALLS]
-}
-
-impl SyscallTable {
-	pub const fn new() -> Self {
-		SyscallTable {
-			handle:	[sys_exit as *const _,
-					 sys_write as *const _,
-					 sys_message as *const _]
-		}
-	}
-}
-
-unsafe impl Send for SyscallTable {}
-unsafe impl Sync for SyscallTable {}
+use logging::*;
 
 #[no_mangle]
-pub static SYSHANDLER_TABLE: SyscallTable = SyscallTable::new();
+pub extern "C" fn sys_message()
+{
+	println!("Hello World form eduOS-rs!");
+}
