@@ -120,9 +120,9 @@ Currently, following stages of development are available:
 
    Add support of user-level tasks with an small interface for basic system calls
 
-5. stage 6 - Support of paging
+6. stage 6 - Support of paging
 
-   Add support of paging and a simple demo to create a processes
+   Add support of paging and a simple demo for process creation
 
 ## Useful Links
 
