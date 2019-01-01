@@ -17,12 +17,9 @@ else
 RM := rm -rf
 endif
 
-.PHONY: all fmt clean run debug cargo docs
+.PHONY: all clean run debug cargo docs
 
 all: cargo
-
-fmt:
-	rustfmt --write-mode overwrite src/lib.rs
 
 run:
 	@ehyve target/$(arch)-eduos/$(rdir)/eduos-rs
@@ -32,7 +29,9 @@ clean:
 
 docs:
 	@echo DOC
+	@mv .cargo cargo
 	@cargo doc
+	@mv cargo .cargo
 
 cargo:
 	@echo CARGO
