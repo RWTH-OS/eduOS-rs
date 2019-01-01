@@ -81,6 +81,7 @@ pub fn jump_to_user_land(func: extern fn() -> !) -> !
 	}
 }
 
+/// This macro can be used to call system functions from user-space
 #[macro_export]
 macro_rules! syscall {
 	($arg0:expr)

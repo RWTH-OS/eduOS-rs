@@ -96,7 +96,7 @@ macro_rules! error {
 	});
 }
 
-/// Print formatted debuf messages to our console, followed by a newline.
+/// Print formatted debug messages to our console, followed by a newline.
 #[macro_export]
 macro_rules! debug {
 	($fmt:expr) => ({

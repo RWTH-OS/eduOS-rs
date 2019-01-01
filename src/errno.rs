@@ -21,12 +21,16 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE
 
+//! Basic error handling
+
 use core::{result, fmt};
 
 pub type Result<T> = result::Result<T, Error>;
 
+/// Possible errors of eduOS-rs
 #[derive(Debug,Clone)]
 pub enum Error {
+	/// Usage of a invalid priority
 	BadPriority
 }
 
