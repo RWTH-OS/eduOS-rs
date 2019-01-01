@@ -1,6 +1,7 @@
 #![feature(asm, const_fn, lang_items)]
 #![feature(alloc)]
 #![feature(allocator_api)]
+#![feature(panic_info_message)]
 #![feature(integer_atomics)]
 #![feature(compiler_builtins_lib)]
 #![feature(naked_functions)]
@@ -23,6 +24,7 @@ extern crate num_traits;
 pub use logging::*;
 #[cfg(target_arch = "x86_64")]
 pub use arch::processor::*;
+use core::panic::PanicInfo;
 
 #[macro_use]
 pub mod macros;
@@ -40,3 +42,24 @@ pub mod syscall;
 
 #[global_allocator]
 static ALLOCATOR: &'static mm::allocator::Allocator = &mm::allocator::Allocator;
+
+/// This function is called on panic.
+#[cfg(not(test))]
+#[panic_handler]
+pub fn panic(info: &PanicInfo) -> ! {
+	print!("[!!!PANIC!!!] ");
+
+	if let Some(location) = info.location() {
+		print!("{}:{}: ", location.file(), location.line());
+	}
+
+	if let Some(message) = info.message() {
+		print!("{}", message);
+	}
+
+	print!("\n");
+
+	loop {
+		halt();
+	}
+}
