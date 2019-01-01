@@ -21,8 +21,10 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+use scheduler;
+
 #[no_mangle]
 pub extern "C" fn sys_message()
 {
-	println!("Hello World form eduOS-rs!");
+	println!("hello from user task {}!", scheduler::get_current_taskid());
 }
