@@ -5,7 +5,7 @@ license = "MIT"
 authors = ["Stefan Lankes <slankes@eonerc.rwth-aachen.de>"]
 
 [dependencies]
-bootloader = "0.3.4"
+bitflags = "1.0"
 
 [target.'cfg(target_arch = "x86_64")'.dependencies.cpuio]
 version = "0.2.0"
@@ -17,20 +17,12 @@ version = "6.*"
 path = "crates/x86"
 default-features = false
 
+[dependencies.num-traits]
+version = "0.2"
+default-features = false
+
 [package.metadata.cargo-xbuild]
 memcpy = true
-
-[package.metadata.bootimage]
-default-target = "x86_64-eduos.json" # This target is used if no `--target` is passed
-output = "bootimage.bin"    # The output file name
-minimum-image-size = 0      # The minimum output file size (in MiB)
-# The command invoked on `bootimage run`
-# (the "{}" will be replaced with the path to the bootable disk image)
-run-command = ["qemu-system-x86_64", "-drive", "format=raw,file={}"]
-
-[package.metadata.bootimage.bootloader]
-name = "bootloader"                 # The bootloader crate name
-target = "x86_64-bootloader.json"   # Target triple for compiling the bootloader
 
 # The development profile, used for `cargo build`.
 [profile.dev]
