@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Stefan Lankes, RWTH Aachen University
+// Copyright (c) 2017-2018 Stefan Lankes, RWTH Aachen University
 //
 // MIT License
 //
@@ -21,21 +21,5 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#![allow(dead_code)]
-
-//! Configuration parameter of the kernel eduOS-rs
-
-/// Define the size of the kernel stack
-pub const STACK_SIZE : usize = 0x4000;
-
-/// Size of a cache line
-pub const CACHE_LINE : usize = 64;
-
-/// Maximum number of priorities
-pub const NO_PRIORITIES: usize = 32;
-
-/// frequency of the timer interrupt
-pub const TIMER_FREQ: u32 = 100; /* in HZ */
-
-/// Entry point of the user tasks
-pub const USER_ENTRY: usize = 0x8000000000usize;
+pub mod kernel;
+pub mod mm;

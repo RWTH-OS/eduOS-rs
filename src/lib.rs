@@ -5,6 +5,7 @@
 #![feature(compiler_builtins_lib)]
 #![feature(naked_functions)]
 #![feature(abi_x86_interrupt)]
+#![feature(specialization)]
 #![no_std]
 
 #[cfg(target_arch = "x86_64")]
@@ -14,6 +15,9 @@ extern crate x86;
 #[cfg(target_arch = "x86_64")]
 extern crate raw_cpuid;
 extern crate alloc;
+#[macro_use]
+extern crate bitflags;
+extern crate num_traits;
 
 // These need to be visible to the linker, so we need to export them.
 pub use logging::*;

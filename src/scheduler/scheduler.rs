@@ -26,6 +26,7 @@ use alloc::collections::{BTreeMap, VecDeque};
 use core::cell::RefCell;
 use core::sync::atomic::{AtomicU32, Ordering};
 use arch::irq::{irq_nested_enable,irq_nested_disable};
+use arch::drop_user_space;
 use scheduler::task::*;
 use logging::*;
 use synch::spinlock::*;
@@ -102,12 +103,20 @@ impl Scheduler {
 		Ok(tid)
 	}
 
+	fn cleanup(&mut self) {
+		// destroy user space
+		drop_user_space();
+
+		self.current_task.borrow_mut().status = TaskStatus::TaskFinished;
+
+		// update the number of tasks
+		NO_TASKS.fetch_sub(1, Ordering::SeqCst);
+	}
+
 	pub fn exit(&mut self) -> ! {
 		if self.current_task.borrow().status != TaskStatus::TaskIdle {
 			info!("finish task with id {}", self.current_task.borrow().id);
-			self.current_task.borrow_mut().status = TaskStatus::TaskFinished;
-			// update the number of tasks
-			NO_TASKS.fetch_sub(1, Ordering::SeqCst);
+			self.cleanup();
 		} else {
 			panic!("unable to terminate idle task");
 		}
@@ -121,9 +130,7 @@ impl Scheduler {
 	pub fn abort(&mut self) -> ! {
 			if self.current_task.borrow().status != TaskStatus::TaskIdle {
 				info!("abort task with id {}", self.current_task.borrow().id);
-				self.current_task.borrow_mut().status = TaskStatus::TaskFinished;
-				// update the number of tasks
-				NO_TASKS.fetch_sub(1, Ordering::SeqCst);
+				self.cleanup();
 			} else {
 				panic!("unable to terminate idle task");
 			}
@@ -159,8 +166,17 @@ impl Scheduler {
 	}
 
 	/// Determines the start address of the stack
+	#[no_mangle]
 	pub fn get_current_stack(&self) -> usize {
 		unsafe { (*self.current_task.borrow().stack).bottom() }
+	}
+
+	pub fn get_root_page_table(&self) -> usize {
+		self.current_task.borrow().root_page_table
+	}
+
+	pub fn set_root_page_table(&self, addr: usize) {
+		self.current_task.borrow_mut().root_page_table = addr;
 	}
 
 	pub fn schedule(&mut self) {

@@ -23,7 +23,16 @@
 
 // Export our platform-specific modules.
 #[cfg(target_arch="x86_64")]
-pub use self::x86_64::{serial,processor,irq,init,jump_to_user_land,register_task};
+pub use self::x86_64::kernel::{serial,processor,irq,init,jump_to_user_land,register_task,
+	get_memory_size};
+
+// Export our platform-specific modules.
+#[cfg(target_arch="x86_64")]
+pub use self::x86_64::mm;
+
+// Export our platform-specific modules.
+#[cfg(target_arch="x86_64")]
+pub use self::x86_64::mm::paging::{get_kernel_root_page_table,drop_user_space,PageSize,BasePageSize};
 
 // Implementations for x86_64.
 #[cfg(target_arch="x86_64")]

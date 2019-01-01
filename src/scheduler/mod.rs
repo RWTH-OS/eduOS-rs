@@ -87,6 +87,18 @@ pub fn get_current_stack() -> usize {
 	}
 }
 
+pub fn get_root_page_table() -> usize {
+	unsafe {
+		SCHEDULER.as_mut().unwrap().get_root_page_table()
+	}
+}
+
+pub fn set_root_page_table(addr: usize) {
+	unsafe {
+		SCHEDULER.as_mut().unwrap().set_root_page_table(addr);
+	}
+}
+
 pub fn block_current_task() -> Rc<RefCell<Task>> {
 	unsafe {
 		SCHEDULER.as_mut().unwrap().block_current_task()
@@ -103,5 +115,23 @@ pub fn wakeup_task(task: Rc<RefCell<Task>>) {
 pub fn get_current_taskid() -> task::TaskId {
 	unsafe {
 		SCHEDULER.as_ref().unwrap().get_current_taskid()
+	}
+}
+
+pub struct DisabledPreemption {
+	irq_enabled: bool
+}
+
+impl DisabledPreemption {
+	pub fn new() -> Self {
+		DisabledPreemption {
+			irq_enabled: arch::irq::irq_nested_disable()
+		}
+	}
+}
+
+impl Drop for DisabledPreemption {
+	fn drop(&mut self) {
+		arch::irq::irq_nested_enable(self.irq_enabled);
 	}
 }

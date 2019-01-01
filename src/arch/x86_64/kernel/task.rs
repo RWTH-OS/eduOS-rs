@@ -33,6 +33,10 @@ use logging::*;
 
 #[repr(C, packed)]
 struct State {
+	/// GS register
+	gs: u64,
+	/// FS register
+	fs: u64,
 	/// R15 register
 	r15: u64,
 	/// R14 register
@@ -106,8 +110,9 @@ impl TaskFrame for Task {
 
 			(*state).rsp = (stack as usize + size_of::<State>()) as u64;
 			(*state).rbp = (*state).rsp + size_of::<u64>() as u64;
+			(*state).gs = ((*self.stack).top()) as u64;
 
-			(*state).rip = (func as *const()) as u64;;
+			(*state).rip = (func as *const()) as u64;
 			(*state).rflags = 0x1202u64;
 
 			/* Set the task's stack pointer entry to the stack we have crafted right now. */

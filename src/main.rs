@@ -1,3 +1,4 @@
+#![feature(asm)]
 #![feature(panic_info_message)]
 #![feature(abi_x86_interrupt)]
 #![no_std] // don't link the Rust standard library
@@ -8,31 +9,35 @@
 extern crate eduos_rs;
 
 use core::panic::PanicInfo;
-use core::fmt::Write;
 use eduos_rs::arch::processor::{shutdown,halt};
 use eduos_rs::arch;
+use eduos_rs::mm;
 use eduos_rs::scheduler;
 use eduos_rs::scheduler::task::NORMAL_PRIORITY;
 use eduos_rs::syscall;
-use eduos_rs::syscall::{SYSNO_WRITE,SYSNO_EXIT};
+use eduos_rs::syscall::{SYSNO_EXIT, SYSNO_MESSAGE};
 use eduos_rs::{LogLevel,LOGGER};
 
-fn user_foo() -> ! {
-	let str = b"Hello from user_foo!\n\0";
+extern "C" fn user_foo() -> ! {
+	// try to call a kernel function => page fault
+	//scheduler::do_exit();
 
-	/*unsafe {
-		let _ = arch::x86_64::serial::COM1.write_str("Hello from user_foo!\n");
-	}*/
-
-	syscall!(SYSNO_WRITE, str.as_ptr() as u64, str.len());
+	syscall!(SYSNO_MESSAGE);
 	syscall!(SYSNO_EXIT);
 
-	loop {
-		arch::processor::halt();
-	}
+	// we should never reach this point
+	panic!("Syscall `exit` failed!");
 }
 
 extern "C" fn create_user_foo() {
+	let cr3 = arch::x86_64::mm::paging::create_usr_pgd();
+
+	unsafe {
+		asm!("mov $0, %cr3" :: "r" (cr3) : "memory" : "volatile");
+	}
+
+	arch::x86_64::mm::paging::map_usr_entry(user_foo);
+
 	debug!("jump to user land");
 	arch::jump_to_user_land(user_foo);
 }
@@ -47,6 +52,7 @@ extern "C" fn foo() {
 #[no_mangle] // don't mangle the name of this function
 pub extern "C" fn main() -> ! {
 	arch::init();
+	mm::init();
 	scheduler::init();
 
 	println!("Hello from eduOS-rs!");

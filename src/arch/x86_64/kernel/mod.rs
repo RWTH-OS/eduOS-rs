@@ -1,3 +1,26 @@
+// Copyright (c) 2017-2018 Stefan Lankes, RWTH Aachen University
+//
+// MIT License
+//
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
+//
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 pub mod serial;
 pub mod processor;
 pub mod task;
@@ -8,24 +31,48 @@ mod start;
 mod switch;
 mod syscall;
 
-pub use arch::x86_64::syscall::syscall_handler;
+use consts::*;
+pub use arch::x86_64::kernel::syscall::syscall_handler;
 
-pub fn register_task()
-{
+#[repr(C)]
+struct KernelHeader {
+	magic_number: u32,
+	version: u32,
+	mem_limit: u64,
+	num_cpus: u32
+}
+
+/// Kernel header to announce machine features
+#[link_section = ".kheader"]
+static KERNEL_HEADER: KernelHeader = KernelHeader {
+	magic_number: 0xDEADC0DEu32,
+	version: 0,
+	mem_limit: 0,
+	num_cpus: 1
+};
+
+pub fn get_memory_size() -> usize {
+		KERNEL_HEADER.mem_limit as usize
+}
+
+pub fn register_task() {
 	let sel: u16 = 6u16 << 3;
 
 	unsafe { asm!("ltr $0" :: "r"(sel) :: "volatile"); }
 }
 
 #[naked]
-pub fn jump_to_user_land(func: fn() -> !) -> !
+pub fn jump_to_user_land(func: extern fn() -> !) -> !
 {
 	let ds = 0x23u64;
 	let cs = 0x2bu64;
+	let offset = (func as *const()) as usize & 0xFFF;
+	let entry = USER_ENTRY | offset;
+	let stack = USER_ENTRY + 4*1024*1024;
 
 	unsafe {
-		asm!("mov $0, %ds; mov $0, %es; push $0; push %rsp; addq $$16, (%rsp); pushfq; push $1; push $2; iretq"
-			:: "r"(ds), "r"(cs), "r"(func as u64)
+		asm!("swapgs; mov $0, %ds; mov $0, %es; push $0; push $3; pushfq; push $1; push $2; iretq"
+			:: "r"(ds), "r"(cs), "r"(entry as u64), "r"(stack)
 			:: "volatile");
 	}
 
@@ -37,28 +84,28 @@ pub fn jump_to_user_land(func: fn() -> !) -> !
 #[macro_export]
 macro_rules! syscall {
 	($arg0:expr)
-		=> ( arch::x86_64::syscall0($arg0 as u64) );
+		=> ( arch::x86_64::kernel::syscall0($arg0 as u64) );
 
 	($arg0:expr, $arg1:expr)
-		=> ( arch::x86_64::syscall1($arg0 as u64, $arg1 as u64) );
+		=> ( arch::x86_64::kernel::syscall1($arg0 as u64, $arg1 as u64) );
 
 	($arg0:expr, $arg1:expr, $arg2:expr)
-		=> ( arch::x86_64::syscall2($arg0 as u64, $arg1 as u64, $arg2 as u64) );
+		=> ( arch::x86_64::kernel::syscall2($arg0 as u64, $arg1 as u64, $arg2 as u64) );
 
 	($arg0:expr, $arg1:expr, $arg2:expr, $arg3:expr)
-		=> ( arch::x86_64::syscall3($arg0 as u64, $arg1 as u64, $arg2 as u64, $arg3 as u64) );
+		=> ( arch::x86_64::kernel::syscall3($arg0 as u64, $arg1 as u64, $arg2 as u64, $arg3 as u64) );
 
 	($arg0:expr, $arg1:expr, $arg2:expr, $arg3:expr, $arg4:expr)
-		=> ( arch::x86_64::syscall4($arg0 as u64, $arg1 as u64, $arg2 as u64, $arg3 as u64, $arg4 as u64) );
+		=> ( arch::x86_64::kernel::syscall4($arg0 as u64, $arg1 as u64, $arg2 as u64, $arg3 as u64, $arg4 as u64) );
 
 	($arg0:expr, $arg1:expr, $arg2:expr, $arg3:expr, $arg4:expr, $arg5:expr)
-		=> ( arch::x86_64::syscall5($arg0 as u64, $arg1 as u64, $arg2 as u64, $arg3 as u64, $arg4 as u64, $arg5 as u64) );
+		=> ( arch::x86_64::kernel::syscall5($arg0 as u64, $arg1 as u64, $arg2 as u64, $arg3 as u64, $arg4 as u64, $arg5 as u64) );
 
 	($arg0:expr, $arg1:expr, $arg2:expr, $arg3:expr, $arg4:expr, $arg5:expr, $arg6:expr)
-		=> ( arch::x86_64::syscall6($arg0 as u64, $arg1 as u64, $arg2 as u64, $arg3 as u64, $arg4 as u64, $arg5 as u64, $arg6 as u64) );
+		=> ( arch::x86_64::kernel::syscall6($arg0 as u64, $arg1 as u64, $arg2 as u64, $arg3 as u64, $arg4 as u64, $arg5 as u64, $arg6 as u64) );
 
 	($arg0:expr, $arg1:expr, $arg2:expr, $arg3:expr, $arg4:expr, $arg5:expr, $arg6:expr, $arg7:expr)
-		=> ( arch::x86_64::syscall7($arg0 as u64, $arg1 as u64, $arg2 as u64, $arg3 as u64, $arg4 as u64, $arg5 as u64, $arg6 as u64, $arg7 as u64) );
+		=> ( arch::x86_64::kernel::syscall7($arg0 as u64, $arg1 as u64, $arg2 as u64, $arg3 as u64, $arg4 as u64, $arg5 as u64, $arg6 as u64, $arg7 as u64) );
 }
 
 #[inline(always)]

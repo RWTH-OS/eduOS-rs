@@ -28,7 +28,9 @@ use alloc::rc::Rc;
 use core::cell::RefCell;
 use core::fmt;
 use alloc::alloc::{alloc, dealloc, Layout};
+use arch;
 use arch::processor::msb;
+use arch::{PageSize,BasePageSize};
 use logging::*;
 use consts::*;
 
@@ -303,6 +305,8 @@ pub struct Task {
 	pub last_stack_pointer: usize,
 	// Stack of the task
 	pub stack: *mut Stack,
+	// Physical address of the 1st level page table
+	pub root_page_table: usize,
 	// next task in queue
 	pub next: Option<Rc<RefCell<Task>>>,
 	// previous task in queue
@@ -317,6 +321,7 @@ impl Task {
 			status: TaskStatus::TaskIdle,
 			last_stack_pointer: 0,
 			stack: unsafe { &mut BOOT_STACK },
+			root_page_table: arch::get_kernel_root_page_table(),
 			next: None,
 			prev: None
 		}
@@ -333,6 +338,7 @@ impl Task {
 			status: status,
 			last_stack_pointer: 0,
 			stack: stack,
+			root_page_table: arch::get_kernel_root_page_table(),
 			next: None,
 			prev: None
 		}
@@ -351,6 +357,11 @@ impl Drop for Task {
 
 			// deallocate stack
 			unsafe { dealloc(self.stack as *mut u8, Layout::new::<Stack>()); }
+		}
+
+		if self.root_page_table != arch::get_kernel_root_page_table() {
+			debug!("Deallocate page table 0x{:x} of task {}", self.root_page_table, self.id);
+			arch::mm::physicalmem::deallocate(self.root_page_table, BasePageSize::SIZE);
 		}
 	}
 }

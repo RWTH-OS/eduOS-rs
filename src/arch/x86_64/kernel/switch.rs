@@ -47,6 +47,10 @@ unsafe extern "C" fn switch() {
 		push %r13\n\t\
 		push %r14\n\t\
 		push %r15\n\t\
+		rdfsbase %rax\n\t\
+		rdgsbase %rdx\n\t\
+		push %rax\n\t\
+		push %rdx\n\t\
 		mov %rsp, (%rdi)\n\t\
 		mov %rsi, %rsp\n\t\
 		// Set task switched flag \n\t\
@@ -56,6 +60,10 @@ unsafe extern "C" fn switch() {
 		// set stack pointer in TSS \n\t\
 		call set_current_kernel_stack \n\t\
 		// restore context \n\t\
+		pop %r15\n\t\
+		wrgsbase %r15\n\t\
+		pop %r15\n\t\
+		wrfsbase %r15\n\t\
 		pop %r15\n\t\
 		pop %r14\n\t\
 		pop %r13\n\t\

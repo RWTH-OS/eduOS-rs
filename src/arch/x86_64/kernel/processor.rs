@@ -6,7 +6,8 @@ use logging::*;
 use x86::shared::*;
 use x86::shared::control_regs::*;
 use x86::shared::msr::*;
-use arch::x86_64::syscall_handler;
+use arch::x86_64::kernel::syscall_handler;
+use scheduler::task::BOOT_STACK;
 
 // MSR EFER bits
 const EFER_SCE: u64 = (1 << 0);
@@ -17,6 +18,10 @@ const EFER_SVME: u64 = (1 << 12);
 const EFER_LMSLE: u64 = (1 << 13);
 const EFER_FFXSR: u64 = (1 << 14);
 const EFER_TCE: u64 = (1 << 15);
+
+static mut PHYSICAL_ADDRESS_BITS: u8 = 0;
+static mut LINEAR_ADDRESS_BITS: u8 = 0;
+static mut SUPPORTS_1GIB_PAGES: bool = false;
 
 /// Force strict CPU ordering, serializes load and store operations.
 #[inline(always)]
@@ -51,12 +56,14 @@ pub fn lsb(value: u64) -> Option<u64> {
 	}
 }
 
+#[inline(always)]
 pub fn halt() {
 	unsafe {
 		asm!("hlt" :::: "volatile");
 	}
 }
 
+#[inline(always)]
 pub fn pause() {
 	unsafe {
 		asm!("pause" :::: "volatile");
@@ -76,6 +83,18 @@ pub extern "C" fn shutdown() -> ! {
 	}
 }
 
+pub fn supports_1gib_pages() -> bool {
+	unsafe { SUPPORTS_1GIB_PAGES }
+}
+
+pub fn get_linear_address_bits() -> u8 {
+	unsafe { LINEAR_ADDRESS_BITS }
+}
+
+pub fn get_physical_address_bits() -> u8 {
+	unsafe { PHYSICAL_ADDRESS_BITS }
+}
+
 pub fn init() {
 	debug!("enable supported processor features");
 
@@ -89,7 +108,6 @@ pub fn init() {
 	cr0 = cr0 | CR0_MONITOR_COPROCESSOR;
 	// enable cache
 	cr0 = cr0 & !(CR0_CACHE_DISABLE|CR0_NOT_WRITE_THROUGH);
-
 	debug!("set CR0 to {:?}", cr0);
 
 	unsafe { cr0_write(cr0) };
@@ -112,6 +130,8 @@ pub fn init() {
 
 	if has_fsgsbase {
 		cr4 |= CR4_ENABLE_FSGSBASE;
+	} else {
+		panic!("eduOS-rs requires the CPU feature FSGSBASE");
 	}
 
 	let has_mce = match cpuid.get_feature_info() {
@@ -142,32 +162,29 @@ pub fn init() {
 
 	// enable support of syscall and sysret
 	unsafe {
-		wrmsr(IA32_EFER, rdmsr(IA32_EFER) | EFER_LMA | EFER_SCE);
+		wrmsr(IA32_EFER, rdmsr(IA32_EFER) | EFER_LMA | EFER_SCE | EFER_NXE);
 		wrmsr(IA32_STAR, (0x1Bu64 << 48) | (0x08u64 << 32));
 		wrmsr(IA32_LSTAR, syscall_handler as u64);
 		wrmsr(IA32_FMASK, 1 << 9); // clear IF flag during system call
+
+		// reset GS registers
+		wrmsr(IA32_KERNEL_GS_BASE, 0);
+		asm!("wrgsbase $0" :: "r"(BOOT_STACK.top()) :: "volatile");
 	}
 
-	/*print!("Detected processor: ");
-	match cpuid.get_extended_function_info() {
-		Some(exinfo) => {
-			match exinfo.processor_brand_string() {
-				Some(str) => println!("{}", str),
-				None => println!("unknwon")
-			}
-		},
-		None => println!("unknwon")
+	// determin processor features
+	let extended_function_info = cpuid.get_extended_function_info().expect("CPUID Extended Function Info not available!");
+	unsafe {
+		PHYSICAL_ADDRESS_BITS = extended_function_info.physical_address_bits().expect("CPUID Physical Address Bits not available!");
+		LINEAR_ADDRESS_BITS = extended_function_info.linear_address_bits().expect("CPUID Linear Address Bits not available!");
+		SUPPORTS_1GIB_PAGES = extended_function_info.has_1gib_pages();
 	}
 
-	println!("Summary of cache information:");
-	match cpuid.get_cache_parameters() {
-		Some(cparams) => {
-			for cache in cparams {
-				let size = cache.associativity() * cache.physical_line_partitions() * cache.coherency_line_size() * cache.sets();
-				println!("L{}-Cache size is {}", cache.level(), size);
-			}
-		},
-		None => println!("No cache parameter information available"),
+	if supports_1gib_pages() {
+		info!("System supports 1GiB pages");
 	}
-	println!("");*/
+	debug!("Physical address bits {}", get_physical_address_bits());
+	debug!("Linear address bits {}", get_linear_address_bits());
+	debug!("CR0: {:?}", cr0);
+	debug!("CR4: {:?}", cr4);
 }

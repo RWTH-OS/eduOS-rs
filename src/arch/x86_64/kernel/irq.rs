@@ -28,6 +28,7 @@ use logging::*;
 use cpuio::outb;
 use scheduler::*;
 use synch::spinlock::*;
+use arch::x86_64::mm::paging::page_fault_handler;
 use x86::shared::dtables::{DescriptorTablePointer,lidt};
 use x86::shared::PrivilegeLevel;
 use x86::shared::paging::VAddr;
@@ -84,7 +85,7 @@ pub fn irq_nested_enable(was_enabled: bool) {
 }
 
 #[inline(always)]
-fn send_eoi_to_slave()
+pub fn send_eoi_to_slave()
 {
 	/*
 	 * If the IDT entry that was invoked was greater-than-or-equal to 40
@@ -95,7 +96,7 @@ fn send_eoi_to_slave()
 }
 
 #[inline(always)]
-fn send_eoi_to_master()
+pub fn send_eoi_to_master()
 {
 	/*
 	 * In either case, we need to send an EOI to the master
@@ -242,15 +243,6 @@ extern "x86-interrupt" fn general_protection_exception(stack_frame: &mut Excepti
 	abort();
 }
 
-extern "x86-interrupt" fn page_fault_exception(stack_frame: &mut ExceptionStackFrame,
-	error_code: u64)
-{
-	info!("Task {} receive a Page Fault Exception: {:#?}, error_code {:x}", get_current_taskid(),
-		stack_frame, error_code);
-	send_eoi_to_master();
-	abort();
-}
-
 // 15: Reserved Exception
 // 16: Floating Point Exception
 // 17: Alignment Check Exception
@@ -356,7 +348,7 @@ impl InteruptHandler {
 		self.idt[1] = IdtEntry::new(VAddr::from_usize(debug_exception as usize),
 			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
 		self.idt[2] = IdtEntry::new(VAddr::from_usize(nmi_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 1);
 		self.idt[3] = IdtEntry::new(VAddr::from_usize(int3_exception as usize),
 			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
 		self.idt[4] = IdtEntry::new(VAddr::from_usize(int0_exception as usize),
@@ -368,7 +360,7 @@ impl InteruptHandler {
 		self.idt[7] = IdtEntry::new(VAddr::from_usize(no_coprocessor_exception as usize),
 			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
 		self.idt[8] = IdtEntry::new(VAddr::from_usize(double_fault_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 2);
 		self.idt[9] = IdtEntry::new(VAddr::from_usize(overrun_exception as usize),
 			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
 		self.idt[10] = IdtEntry::new(VAddr::from_usize(bad_tss_exception as usize),
@@ -379,7 +371,7 @@ impl InteruptHandler {
 			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
 		self.idt[13] = IdtEntry::new(VAddr::from_usize(general_protection_exception as usize),
 			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
-		self.idt[14] = IdtEntry::new(VAddr::from_usize(page_fault_exception as usize),
+		self.idt[14] = IdtEntry::new(VAddr::from_usize(page_fault_handler as usize),
 			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
 		self.idt[15] = IdtEntry::new(VAddr::from_usize(reserved_exception as usize),
 			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
@@ -388,7 +380,7 @@ impl InteruptHandler {
 		self.idt[17] = IdtEntry::new(VAddr::from_usize(alignment_check_exception as usize),
 			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
 		self.idt[18] = IdtEntry::new(VAddr::from_usize(machine_check_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 3);
 		for i in 19..32 {
 			self.idt[i] = IdtEntry::new(VAddr::from_usize(reserved_exception as usize),
 				KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);

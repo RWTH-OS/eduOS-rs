@@ -43,12 +43,22 @@ pub unsafe extern "C" fn syscall_handler() {
 		mov $$0x10, %rcx\n\t\
 		mov %rcx, %ds\n\t\
 		mov %rcx, %es\n\t\
+		// switch to kernel stack\n\t
+		swapgs\n\t
+		mov %rsp, %rcx\n\t
+		rdgsbase %rsp\n\t
+		push %rcx
 		// copy 4th argument to rcx to adhere x86_64 ABI \n\t\
 		mov %r10, %rcx\n\t\
 		sti\n\t\
 		call *SYSHANDLER_TABLE(,%rax,8)\n\t
 		// restore context, see x86_64 ABI \n\t\
 		cli\n\t\
+		// switch to user stack\n\t
+		pop %rcx\n\t
+		mov %rcx, %rsp\n\t
+		swapgs\n\t\
+		// restore context
 		pop %rcx\n\t\
 		mov %rcx, %es\n\t\
 	    pop %rcx\n\t\

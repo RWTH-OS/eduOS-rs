@@ -32,11 +32,13 @@
 
 use alloc::alloc::Layout;
 use core::alloc::GlobalAlloc;
+use arch::{PageSize,BasePageSize};
 use consts::*;
 use logging::*;
+use mm;
 
 /// Size of the preallocated space for the Bootstrap Allocator.
-const BOOTSTRAP_HEAP_SIZE: usize = 2*1024*1024;
+const BOOTSTRAP_HEAP_SIZE: usize = 0x1000;
 
 /// Alignment of pointers returned by the Bootstrap Allocator.
 /// Note that you also have to align the HermitAllocatorInfo structure!
@@ -48,15 +50,22 @@ const BOOTSTRAP_HEAP_ALIGNMENT: usize = CACHE_LINE;
 #[repr(C)]
 struct AllocatorInfo {
 	heap: [u8; BOOTSTRAP_HEAP_SIZE],
-	index: usize
+	index: usize,
+	is_bootstrapping: bool
 }
 
 impl AllocatorInfo {
 	const fn new() -> AllocatorInfo {
 		AllocatorInfo {
 			heap: [0xCC; BOOTSTRAP_HEAP_SIZE],
-			index: 0
+			index: 0,
+			is_bootstrapping: true
 		}
+	}
+
+	fn switch_to_system_allocator(&mut self) {
+		info!("Switching to the System Allocator");
+		self.is_bootstrapping = false;
 	}
 }
 
@@ -66,12 +75,24 @@ pub struct Allocator;
 
 unsafe impl<'a> GlobalAlloc for &'a Allocator {
 	unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-		alloc_bootstrap(layout)
+		if ALLOCATOR_INFO.is_bootstrapping {
+			alloc_bootstrap(layout)
+		} else {
+			alloc_system(layout)
+		}
 	}
 
 	unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+		let address = ptr as usize;
+
 		// We never deallocate memory of the Bootstrap Allocator.
+		// It would only increase the management burden and we wouldn't save
+		// any significant amounts of memory.
+		// So check if this is a pointer allocated by the System Allocator.
 		debug!("Deallocate {} bytes at {:#X}", layout.size(), ptr as usize);
+		if address >= mm::kernel_end_address() {
+			dealloc_system(address, layout);
+		}
 	}
 }
 
@@ -90,5 +111,22 @@ unsafe fn alloc_bootstrap(layout: Layout) -> *mut u8 {
 	ptr
 }
 
+/// An allocation using the initialized System Allocator.
+fn alloc_system(layout: Layout) -> *mut u8 {
+	debug!("Allocating {} bytes using the System Allocator", layout.size());
+
+	let size = align_up!(layout.size(), BasePageSize::SIZE);
+	mm::allocate(size, true) as *mut u8
+}
+
+/// A deallocation using the initialized System Allocator.
+fn dealloc_system(virtual_address: usize, layout: Layout) {
+	debug!("Deallocating {} bytes at {:#X} using the System Allocator", layout.size(), virtual_address);
+
+	let size = align_up!(layout.size(), BasePageSize::SIZE);
+	mm::deallocate(virtual_address, size);
+}
+
 pub fn init() {
+	unsafe { ALLOCATOR_INFO.switch_to_system_allocator(); }
 }

@@ -120,6 +120,10 @@ Currently, following stages of development are available:
 
    Add support of user-level tasks with an small interface for basic system calls
 
+5. stage 6 - Support of paging
+
+   Add support of paging and a simple demo to create a processes
+
 ## Useful Links
 
 1. [http://www.gnu.org/software/grub/manual/multiboot/](http://www.gnu.org/software/grub/manual/multiboot/)

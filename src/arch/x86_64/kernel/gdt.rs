@@ -27,6 +27,7 @@ use x86::bits64::segmentation::*;
 use x86::bits64::task::*;
 use x86::shared::PrivilegeLevel;
 use x86::shared::dtables::{self, DescriptorTablePointer};
+use x86::shared::control_regs::cr3_write;
 use consts::*;
 //use logging::*;
 use scheduler;
@@ -43,10 +44,16 @@ const GDT_FIRST_TSS: usize = 6;
 const TSS_ENTRIES: usize = 2;
 const GDT_ENTRIES: usize = (GDT_FIRST_TSS+TSS_ENTRIES);
 
+/// We use IST1 through IST4.
+/// Each critical exception (NMI, Double Fault, Machine Check) gets a dedicated one while IST1 is shared for all other
+/// interrupts. See also irq.rs.
+const IST_ENTRIES: usize = 4;
+
 // thread_local on a static mut, signals that the value of this static may
 // change depending on the current thread.
 static mut GDT: [SegmentDescriptor; GDT_ENTRIES] = [SegmentDescriptor::NULL; GDT_ENTRIES];
 static mut TSS: Tss = Tss::from(TaskStateSegment::new());
+static IST: [u8; IST_ENTRIES*STACK_SIZE] = [0; IST_ENTRIES*STACK_SIZE];
 
 // workaround to use the new repr(align) feature
 // currently, it is only supported by structs
@@ -106,6 +113,11 @@ pub fn init()
 		GDT[GDT_FIRST_TSS..GDT_FIRST_TSS+TSS_ENTRIES].copy_from_slice(
 			&SegmentDescriptor::new_tss(&TSS.0, PrivilegeLevel::Ring0));
 
+		// Allocate all ISTs for this core.
+		for i in 0..IST_ENTRIES {
+			TSS.0.ist[i] = &IST[i*STACK_SIZE] as *const _ as u64 + STACK_SIZE as u64 - 0x10;
+		}
+
 		// load GDT
 		let gdtr = DescriptorTablePointer::new(&GDT);
 		dtables::lgdt(&gdtr);
@@ -119,7 +131,7 @@ pub fn init()
 }
 
 #[inline(always)]
-pub unsafe fn set_kernel_stack(stack: usize)
+unsafe fn set_kernel_stack(stack: usize)
 {
 	TSS.0.rsp[0] = stack as u64;
 }
@@ -127,5 +139,8 @@ pub unsafe fn set_kernel_stack(stack: usize)
 #[no_mangle]
  pub unsafe extern "C" fn set_current_kernel_stack()
  {
-	 set_kernel_stack(scheduler::get_current_stack() + STACK_SIZE - 0x10);
+	 cr3_write(scheduler::get_root_page_table() as u64);
+
+	 let rsp = scheduler::get_current_stack();
+	 set_kernel_stack(rsp + STACK_SIZE - 0x10);
  }
