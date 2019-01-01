@@ -31,7 +31,7 @@ pub struct KernelLogger {
 }
 
 /// default logger to handle kernel messages
-pub static LOGGER: KernelLogger = KernelLogger { log_level: LogLevel::INFO };
+pub const LOGGER: KernelLogger = KernelLogger { log_level: LogLevel::INFO };
 
 /// Print formatted info text to our console, followed by a newline.
 #[macro_export]
