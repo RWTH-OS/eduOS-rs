@@ -25,7 +25,7 @@ use consts::*;
 use logging::*;
 use arch::processor::*;
 use cpuio::outb;
-use x86::shared::time::rdtsc;
+use x86::time::rdtsc;
 
 const CLOCK_TICK_RATE: u32 = 1193182u32; /* 8254 chip's internal oscillator frequency */
 
