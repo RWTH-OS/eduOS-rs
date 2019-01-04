@@ -10,11 +10,9 @@ bootloader = "0.3.4"
 [target.'cfg(target_arch = "x86_64")'.dependencies.cpuio]
 version = "0.2.0"
 
-#[target.'cfg(target_arch = "x86_64")'.dependencies.raw-cpuid]
-#version = "3.0.0"
-
 [target.'cfg(target_arch = "x86_64")'.dependencies.x86]
-path = "crates/x86"
+git = "https://github.com/hermitcore/rust-x86.git"
+branch = "hermit"
 default-features = false
 
 [package.metadata.cargo-xbuild]
