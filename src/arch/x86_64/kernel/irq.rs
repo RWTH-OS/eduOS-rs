@@ -29,15 +29,14 @@ use cpuio::outb;
 use scheduler::*;
 use synch::spinlock::*;
 use arch::x86_64::mm::paging::page_fault_handler;
-use x86::shared::dtables::{DescriptorTablePointer,lidt};
-use x86::shared::PrivilegeLevel;
-use x86::shared::paging::VAddr;
-use x86::bits64::irq::{IdtEntry, Type};
-use x86::shared::segmentation::SegmentSelector;
+use x86::dtables::{DescriptorTablePointer,lidt};
+use x86::Ring;
+use x86::bits64::paging::VAddr;
+use x86::segmentation::{SegmentSelector,SystemDescriptorTypes64};
 
 /// Maximum possible number of interrupts
 const IDT_ENTRIES: usize = 256;
-const KERNEL_CODE_SELECTOR: SegmentSelector = SegmentSelector::new(1, PrivilegeLevel::Ring0);
+const KERNEL_CODE_SELECTOR: SegmentSelector = SegmentSelector::new(1, Ring::Ring0);
 
 /// Enable Interrupts
 pub fn irq_enable() {
@@ -300,6 +299,80 @@ extern "x86-interrupt" fn timer_handler(stack_frame: &mut ExceptionStackFrame)
 	schedule();
 }
 
+/// An interrupt gate descriptor.
+///
+/// See Intel manual 3a for details, specifically section "6.14.1 64-Bit Mode
+/// IDT" and "Figure 6-7. 64-Bit IDT Gate Descriptors".
+#[derive(Debug, Clone, Copy)]
+#[repr(C, packed)]
+struct IdtEntry {
+    /// Lower 16 bits of ISR.
+    pub base_lo: u16,
+    /// Segment selector.
+    pub selector: SegmentSelector,
+    /// This must always be zero.
+    pub ist_index: u8,
+    /// Flags.
+    pub flags: u8,
+    /// The upper 48 bits of ISR (the last 16 bits must be zero).
+    pub base_hi: u64,
+    /// Must be zero.
+    pub reserved1: u16,
+}
+
+enum Type {
+    InterruptGate,
+    TrapGate
+}
+
+impl Type {
+    pub fn pack(self) -> u8 {
+        match self {
+            Type::InterruptGate => SystemDescriptorTypes64::InterruptGate as u8,
+			Type::TrapGate => SystemDescriptorTypes64::TrapGate as u8
+        }
+    }
+}
+
+impl IdtEntry {
+    /// A "missing" IdtEntry.
+    ///
+    /// If the CPU tries to invoke a missing interrupt, it will instead
+    /// send a General Protection fault (13), with the interrupt number and
+    /// some other data stored in the error code.
+    pub const MISSING: IdtEntry = IdtEntry {
+        base_lo: 0,
+        selector: SegmentSelector::from_raw(0),
+        ist_index: 0,
+        flags: 0,
+        base_hi: 0,
+        reserved1: 0,
+    };
+
+    /// Create a new IdtEntry pointing at `handler`, which must be a function
+    /// with interrupt calling conventions.  (This must be currently defined in
+    /// assembly language.)  The `gdt_code_selector` value must be the offset of
+    /// code segment entry in the GDT.
+    ///
+    /// The "Present" flag set, which is the most common case.  If you need
+    /// something else, you can construct it manually.
+    pub fn new(handler: VAddr, gdt_code_selector: SegmentSelector,
+               dpl: Ring, ty: Type, ist_index: u8) -> IdtEntry {
+        assert!(ist_index < 0b1000);
+        IdtEntry {
+            base_lo: ((handler.as_usize() as u64) & 0xFFFF) as u16,
+            base_hi: handler.as_usize() as u64 >> 16,
+            selector: gdt_code_selector,
+            ist_index: ist_index,
+            flags: dpl as u8
+                |  ty.pack()
+                |  (1 << 7),
+            reserved1: 0,
+        }
+    }
+}
+
+
 static INTERRUPT_HANDLER: SpinlockIrqSave<InteruptHandler> = SpinlockIrqSave::new(InteruptHandler::new());
 
 struct InteruptHandler {
@@ -320,7 +393,7 @@ impl InteruptHandler {
 	{
 		if int_no < IDT_ENTRIES {
 			self.idt[int_no] = IdtEntry::new(VAddr::from_usize(func as usize),
-				KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+				KERNEL_CODE_SELECTOR, Ring::Ring0, Type::InterruptGate, 0);
 		} else {
 			info!("unable to add handler for interrupt {}", int_no);
 		}
@@ -331,11 +404,11 @@ impl InteruptHandler {
 		if int_no < IDT_ENTRIES {
 			if int_no < 40 {
 				self.idt[int_no] = IdtEntry::new(VAddr::from_usize(unhandled_irq1 as usize),
-					KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+					KERNEL_CODE_SELECTOR, Ring::Ring0, Type::InterruptGate, 0);
 			} else {
 				// send  eoi to the master and to the slave
 				self.idt[int_no] = IdtEntry::new(VAddr::from_usize(unhandled_irq2 as usize),
-					KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+					KERNEL_CODE_SELECTOR, Ring::Ring0, Type::InterruptGate, 0);
 			}
 		} else {
 			info!("unable to remove handler for interrupt {}", int_no);
@@ -344,59 +417,59 @@ impl InteruptHandler {
 
 	pub unsafe fn load_idt(&mut self) {
 		self.idt[0] = IdtEntry::new(VAddr::from_usize(divide_by_zero_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, Ring::Ring0, Type::InterruptGate, 0);
 		self.idt[1] = IdtEntry::new(VAddr::from_usize(debug_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, Ring::Ring0, Type::InterruptGate, 0);
 		self.idt[2] = IdtEntry::new(VAddr::from_usize(nmi_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 1);
+			KERNEL_CODE_SELECTOR, Ring::Ring0, Type::InterruptGate, 1);
 		self.idt[3] = IdtEntry::new(VAddr::from_usize(int3_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, Ring::Ring0, Type::InterruptGate, 0);
 		self.idt[4] = IdtEntry::new(VAddr::from_usize(int0_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, Ring::Ring0, Type::InterruptGate, 0);
 		self.idt[5] = IdtEntry::new(VAddr::from_usize(out_of_bound_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, Ring::Ring0, Type::InterruptGate, 0);
 		self.idt[6] = IdtEntry::new(VAddr::from_usize(invalid_opcode_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, Ring::Ring0, Type::InterruptGate, 0);
 		self.idt[7] = IdtEntry::new(VAddr::from_usize(no_coprocessor_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, Ring::Ring0, Type::InterruptGate, 0);
 		self.idt[8] = IdtEntry::new(VAddr::from_usize(double_fault_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 2);
+			KERNEL_CODE_SELECTOR, Ring::Ring0, Type::InterruptGate, 2);
 		self.idt[9] = IdtEntry::new(VAddr::from_usize(overrun_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, Ring::Ring0, Type::InterruptGate, 0);
 		self.idt[10] = IdtEntry::new(VAddr::from_usize(bad_tss_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, Ring::Ring0, Type::InterruptGate, 0);
 		self.idt[11] = IdtEntry::new(VAddr::from_usize(not_present_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, Ring::Ring0, Type::InterruptGate, 0);
 		self.idt[12] = IdtEntry::new(VAddr::from_usize(stack_fault_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, Ring::Ring0, Type::InterruptGate, 0);
 		self.idt[13] = IdtEntry::new(VAddr::from_usize(general_protection_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, Ring::Ring0, Type::InterruptGate, 0);
 		self.idt[14] = IdtEntry::new(VAddr::from_usize(page_fault_handler as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, Ring::Ring0, Type::InterruptGate, 0);
 		self.idt[15] = IdtEntry::new(VAddr::from_usize(reserved_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, Ring::Ring0, Type::InterruptGate, 0);
 		self.idt[16] = IdtEntry::new(VAddr::from_usize(floating_point_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, Ring::Ring0, Type::InterruptGate, 0);
 		self.idt[17] = IdtEntry::new(VAddr::from_usize(alignment_check_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, Ring::Ring0, Type::InterruptGate, 0);
 		self.idt[18] = IdtEntry::new(VAddr::from_usize(machine_check_exception as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 3);
+			KERNEL_CODE_SELECTOR, Ring::Ring0, Type::InterruptGate, 3);
 		for i in 19..32 {
 			self.idt[i] = IdtEntry::new(VAddr::from_usize(reserved_exception as usize),
-				KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+				KERNEL_CODE_SELECTOR, Ring::Ring0, Type::InterruptGate, 0);
 		}
 		self.idt[32] = IdtEntry::new(VAddr::from_usize(timer_handler as usize),
-			KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+			KERNEL_CODE_SELECTOR, Ring::Ring0, Type::InterruptGate, 0);
 
 		// send only eoi to the master
 		for i in 33..40 {
 			self.idt[i] = IdtEntry::new(VAddr::from_usize(unhandled_irq1 as usize),
-				KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+				KERNEL_CODE_SELECTOR, Ring::Ring0, Type::InterruptGate, 0);
 		}
 		// send  eoi to the master and to the slave
 		for i in 40..IDT_ENTRIES {
 			self.idt[i] = IdtEntry::new(VAddr::from_usize(unhandled_irq2 as usize),
-				KERNEL_CODE_SELECTOR, PrivilegeLevel::Ring0, Type::InterruptGate, 0);
+				KERNEL_CODE_SELECTOR, Ring::Ring0, Type::InterruptGate, 0);
 		}
 
 		let idtr = DescriptorTablePointer::new(&self.idt);

@@ -5,6 +5,8 @@
 
 #[macro_use]
 extern crate eduos_rs;
+#[cfg(target_arch = "x86_64")]
+extern crate x86;
 
 use eduos_rs::arch;
 use eduos_rs::mm;
@@ -13,6 +15,7 @@ use eduos_rs::scheduler::task::NORMAL_PRIORITY;
 use eduos_rs::syscall;
 use eduos_rs::syscall::{SYSNO_EXIT, SYSNO_MESSAGE};
 use eduos_rs::{LogLevel,LOGGER};
+use x86::controlregs;
 
 extern "C" fn user_foo() -> ! {
 	// try to call a kernel function => page fault
@@ -26,12 +29,11 @@ extern "C" fn user_foo() -> ! {
 }
 
 extern "C" fn create_user_foo() {
-	let cr3 = arch::x86_64::mm::paging::create_usr_pgd();
-
 	unsafe {
-		asm!("mov $0, %cr3" :: "r" (cr3) : "memory" : "volatile");
+		controlregs::cr3_write(arch::x86_64::mm::paging::create_usr_pgd() as u64);
 	}
 
+	// Map demo code in our user-space
 	arch::x86_64::mm::paging::map_usr_entry(user_foo);
 
 	debug!("jump to user land");

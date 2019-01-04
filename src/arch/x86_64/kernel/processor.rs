@@ -3,9 +3,8 @@
 use cpuio;
 use raw_cpuid::*;
 use logging::*;
-use x86::shared::*;
-use x86::shared::control_regs::*;
-use x86::shared::msr::*;
+use x86::controlregs::*;
+use x86::msr::*;
 use arch::x86_64::kernel::syscall_handler;
 use scheduler::task::BOOT_STACK;
 
@@ -103,16 +102,17 @@ pub fn init() {
 	let mut cr0 = unsafe { cr0() };
 
 	// be sure that AM, NE and MP is enabled
-	cr0 = cr0 | CR0_ALIGNMENT_MASK;
-	cr0 = cr0 | CR0_NUMERIC_ERROR;
-	cr0 = cr0 | CR0_MONITOR_COPROCESSOR;
+	cr0 = cr0 | Cr0::CR0_ALIGNMENT_MASK;
+	cr0 = cr0 | Cr0::CR0_NUMERIC_ERROR;
+	cr0 = cr0 | Cr0::CR0_MONITOR_COPROCESSOR;
 	// enable cache
-	cr0 = cr0 & !(CR0_CACHE_DISABLE|CR0_NOT_WRITE_THROUGH);
+	cr0 = cr0 & !(Cr0::CR0_CACHE_DISABLE|Cr0::CR0_NOT_WRITE_THROUGH);
+
 	debug!("set CR0 to {:?}", cr0);
 
 	unsafe { cr0_write(cr0) };
 
-	let mut cr4 = unsafe { control_regs::cr4() };
+	let mut cr4 = unsafe { cr4() };
 
 	let has_pge = match cpuid.get_feature_info() {
 		Some(finfo) => finfo.has_pge(),
@@ -120,7 +120,7 @@ pub fn init() {
 	};
 
 	if has_pge {
-		cr4 |= CR4_ENABLE_GLOBAL_PAGES;
+		cr4 |= Cr4::CR4_ENABLE_GLOBAL_PAGES;
 	}
 
 	let has_fsgsbase = match cpuid.get_extended_feature_info() {
@@ -129,7 +129,7 @@ pub fn init() {
 	};
 
 	if has_fsgsbase {
-		cr4 |= CR4_ENABLE_FSGSBASE;
+		cr4 |= Cr4::CR4_ENABLE_FSGSBASE;
 	} else {
 		panic!("eduOS-rs requires the CPU feature FSGSBASE");
 	}
@@ -140,16 +140,16 @@ pub fn init() {
 	};
 
 	if has_mce {
-		cr4 |= CR4_ENABLE_MACHINE_CHECK; // enable machine check exceptions
+		cr4 |= Cr4::CR4_ENABLE_MACHINE_CHECK; // enable machine check exceptions
 	}
 
 	// disable performance monitoring counter
 	// allow the usage of rdtsc in user space
-	cr4 &= !(CR4_ENABLE_PPMC|CR4_TIME_STAMP_DISABLE);
+	cr4 &= !(Cr4::CR4_ENABLE_PPMC|Cr4::CR4_TIME_STAMP_DISABLE);
 
 	debug!("set CR4 to {:?}", cr4);
 
-	unsafe { control_regs::cr4_write(cr4) };
+	unsafe { cr4_write(cr4) };
 
 	let has_syscall = match cpuid.get_extended_function_info() {
 		Some(finfo) => finfo.has_syscall_sysret(),

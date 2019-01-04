@@ -14,7 +14,8 @@ version = "0.2.0"
 version = "6.*"
 
 [target.'cfg(target_arch = "x86_64")'.dependencies.x86]
-path = "crates/x86"
+git = "https://github.com/hermitcore/rust-x86.git"
+branch = "hermit"
 default-features = false
 
 [dependencies.num-traits]

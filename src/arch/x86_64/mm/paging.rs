@@ -34,7 +34,7 @@ use core::marker::PhantomData;
 use num_traits::CheckedShr;
 use mm;
 use scheduler;
-use x86::shared::control_regs;
+use x86::controlregs;
 use logging::*;
 use consts::*;
 
@@ -613,7 +613,7 @@ impl fmt::Display for PageFaultError {
 }
 
 pub extern "x86-interrupt" fn page_fault_handler(stack_frame: &mut irq::ExceptionStackFrame, error_code: u64) {
-	let mut virtual_address = unsafe { control_regs::cr2() };
+	let mut virtual_address = unsafe { controlregs::cr2() };
 
 	// do we have to create the user-space stack?
 	if virtual_address > USER_ENTRY + 4*1024*1024 - 64*1024 {
@@ -633,7 +633,7 @@ pub extern "x86-interrupt" fn page_fault_handler(stack_frame: &mut irq::Exceptio
 			memset(virtual_address as *mut u8, 0x00, BasePageSize::SIZE);
 
 			// clear cr2 to signalize that the pagefault is solved by the pagefault handler
-			control_regs::cr2_write(0);
+			controlregs::cr2_write(0);
 		}
 
 		irq::send_eoi_to_master();
@@ -645,7 +645,7 @@ pub extern "x86-interrupt" fn page_fault_handler(stack_frame: &mut irq::Exceptio
 		error!("virtual_address = {:#X}, page fault error = {}", virtual_address, pferror);
 
 		// clear cr2 to signalize that the pagefault is solved by the pagefault handler
-		unsafe { control_regs::cr2_write(0); }
+		unsafe { controlregs::cr2_write(0); }
 
 		irq::send_eoi_to_master();
 
@@ -801,6 +801,6 @@ pub fn init() {
 			}
 		}
 
-		control_regs::cr3_write(root_page_table as u64);
+		controlregs::cr3_write(root_page_table as u64);
 	}
 }

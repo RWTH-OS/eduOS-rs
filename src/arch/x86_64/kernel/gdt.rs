@@ -23,11 +23,13 @@
 
 #![allow(dead_code)]
 
+use core::mem;
 use x86::bits64::segmentation::*;
 use x86::bits64::task::*;
-use x86::shared::PrivilegeLevel;
-use x86::shared::dtables::{self, DescriptorTablePointer};
-use x86::shared::control_regs::cr3_write;
+use x86::segmentation::*;
+use x86::Ring;
+use x86::dtables::{self, DescriptorTablePointer};
+use x86::controlregs::cr3_write;
 use consts::*;
 //use logging::*;
 use scheduler;
@@ -51,7 +53,7 @@ const IST_ENTRIES: usize = 4;
 
 // thread_local on a static mut, signals that the value of this static may
 // change depending on the current thread.
-static mut GDT: [SegmentDescriptor; GDT_ENTRIES] = [SegmentDescriptor::NULL; GDT_ENTRIES];
+static mut GDT: [Descriptor; GDT_ENTRIES] = [Descriptor::NULL; GDT_ENTRIES];
 static mut TSS: Tss = Tss::from(TaskStateSegment::new());
 static IST: [u8; IST_ENTRIES*STACK_SIZE] = [0; IST_ENTRIES*STACK_SIZE];
 
@@ -78,40 +80,59 @@ impl Tss {
 pub fn init()
 {
 	unsafe {
-		/* The NULL descriptor is already inserted as the first entry. */
+		// The NULL descriptor is always the first entry.
+		GDT[GDT_NULL] = Descriptor::NULL;
 
-		/*
-		 * The second entry is a 64-bit Code Segment in kernel-space (ring 0).
-		 * All other parameters are ignored.
-		 */
-		GDT[GDT_KERNEL_CODE] = SegmentDescriptor::new_memory(0, 0, Type::Code(CODE_READ), false, PrivilegeLevel::Ring0, SegmentBitness::Bits64);
+		// The second entry is a 64-bit Code Segment in kernel-space (Ring 0).
+		// All other parameters are ignored.
+		GDT[GDT_KERNEL_CODE] = DescriptorBuilder::code_descriptor(0, 0, CodeSegmentType::ExecuteRead)
+            .present()
+            .dpl(Ring::Ring0)
+			.l()
+            .finish();
 
-		/*
-		 * The third entry is a 64-bit Data Segment in kernel-space (ring 0).
-		 * All other parameters are ignored.
-		 */
-		GDT[GDT_KERNEL_DATA] = SegmentDescriptor::new_memory(0, 0, Type::Data(DATA_WRITE), false, PrivilegeLevel::Ring0, SegmentBitness::Bits64);
+		// The third entry is a 64-bit Data Segment in kernel-space (Ring 0).
+		// All other parameters are ignored.
+		GDT[GDT_KERNEL_DATA] = DescriptorBuilder::data_descriptor(0, 0, DataSegmentType::ReadWrite)
+			.present()
+			.dpl(Ring::Ring0)
+			.finish();
 
 		/*
 		 * Create code segment for 32bit user-space applications (ring 3)
 		 */
-		GDT[GDT_USER32_CODE] = SegmentDescriptor::new_memory(0, 0, Type::Code(CODE_READ), false, PrivilegeLevel::Ring3, SegmentBitness::Bits32);
+		GDT[GDT_USER32_CODE] = DescriptorBuilder::code_descriptor(0, 0, CodeSegmentType::ExecuteRead)
+			.present()
+			.dpl(Ring::Ring3)
+			.finish();
 
 		/*
 		 * Create code segment for 32bit user-space applications (ring 3)
 		 */
-		GDT[GDT_USER32_DATA] = SegmentDescriptor::new_memory(0, 0, Type::Data(DATA_WRITE), false, PrivilegeLevel::Ring3, SegmentBitness::Bits32);
+		GDT[GDT_USER32_DATA] = DescriptorBuilder::data_descriptor(0, 0, DataSegmentType::ReadWrite)
+			.present()
+			.dpl(Ring::Ring3)
+			.finish();
 
 		/*
 		 * Create code segment for 64bit user-space applications (ring 3)
 		 */
-		GDT[GDT_USER64_CODE] = SegmentDescriptor::new_memory(0, 0, Type::Code(CODE_READ), false, PrivilegeLevel::Ring3, SegmentBitness::Bits64);
+		GDT[GDT_USER64_CODE] = DescriptorBuilder::code_descriptor(0, 0, CodeSegmentType::ExecuteRead)
+            .present()
+            .dpl(Ring::Ring3)
+			.l()
+            .finish();
 
 		/*
 		 * Create TSS for each core (we use these segments for task switching)
 		 */
-		GDT[GDT_FIRST_TSS..GDT_FIRST_TSS+TSS_ENTRIES].copy_from_slice(
-			&SegmentDescriptor::new_tss(&TSS.0, PrivilegeLevel::Ring0));
+		let base = &TSS.0 as *const _ as u64;
+		let tss_descriptor: Descriptor64 = <DescriptorBuilder as GateDescriptorBuilder<u64>>::tss_descriptor(base,
+				base + mem::size_of::<TaskStateSegment>() as u64 - 1, true)
+				.present()
+				.dpl(Ring::Ring0)
+				.finish();
+		GDT[GDT_FIRST_TSS..GDT_FIRST_TSS+TSS_ENTRIES].copy_from_slice(&mem::transmute::<Descriptor64, [Descriptor; 2]>(tss_descriptor));
 
 		// Allocate all ISTs for this core.
 		for i in 0..IST_ENTRIES {
@@ -123,10 +144,10 @@ pub fn init()
 		dtables::lgdt(&gdtr);
 
 		// Reload the segment descriptors
-		set_cs(SegmentSelector::new(GDT_KERNEL_CODE as u16, PrivilegeLevel::Ring0));
-		load_ds(SegmentSelector::new(GDT_KERNEL_DATA as u16, PrivilegeLevel::Ring0));
-		load_es(SegmentSelector::new(GDT_KERNEL_DATA as u16, PrivilegeLevel::Ring0));
-		load_ss(SegmentSelector::new(GDT_KERNEL_DATA as u16, PrivilegeLevel::Ring0));
+		load_cs(SegmentSelector::new(GDT_KERNEL_CODE as u16, Ring::Ring0));
+		load_ds(SegmentSelector::new(GDT_KERNEL_DATA as u16, Ring::Ring0));
+		load_es(SegmentSelector::new(GDT_KERNEL_DATA as u16, Ring::Ring0));
+		load_ss(SegmentSelector::new(GDT_KERNEL_DATA as u16, Ring::Ring0));
 	}
 }
 
