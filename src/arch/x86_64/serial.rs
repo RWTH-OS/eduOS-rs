@@ -1,6 +1,6 @@
 use core::fmt;
 use spin::Mutex;
-use cpuio;
+use x86::io::*;
 
 /// A COM serial port.
 pub struct ComPort {
@@ -21,12 +21,10 @@ impl fmt::Write for ComPort {
 	/// high-level tools like Rust's `write!` macro.
 	fn write_str(&mut self, s: &str) -> fmt::Result {
 		unsafe {
-			let mut uart_port : cpuio::Port<u8> = cpuio::Port::new(self.base_addr);
-
 			// Output each byte of our string.
 			for &b in s.as_bytes() {
 				// Write our byte.
-				uart_port.write(b);
+				outb(self.base_addr, b);
 			}
 		}
 		Ok(())

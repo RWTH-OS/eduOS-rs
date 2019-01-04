@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
-use cpuio;
 use x86::controlregs::*;
+use x86::io::*;
 
 pub fn halt() {
 	unsafe {
@@ -13,9 +13,8 @@ pub fn halt() {
 pub extern "C" fn shutdown() -> ! {
 	// shutdown, works like Qemu's shutdown command
 	unsafe {
-		let mut shutdown_port : cpuio::Port<u8> = cpuio::Port::new(0xf4);
-		shutdown_port.write(0x00);
-	};
+		outb(0xf4, 0x00);
+	}
 
 	loop {
 		halt();
