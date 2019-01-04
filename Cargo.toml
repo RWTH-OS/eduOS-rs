@@ -7,9 +7,6 @@ authors = ["Stefan Lankes <slankes@eonerc.rwth-aachen.de>"]
 [dependencies]
 bitflags = "1.0"
 
-[target.'cfg(target_arch = "x86_64")'.dependencies.cpuio]
-version = "0.2.0"
-
 [target.'cfg(target_arch = "x86_64")'.dependencies.raw-cpuid]
 version = "6.*"
 

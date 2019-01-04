@@ -24,7 +24,7 @@
 use consts::*;
 use logging::*;
 use arch::processor::*;
-use cpuio::outb;
+use x86::io::*;
 use x86::time::rdtsc;
 
 const CLOCK_TICK_RATE: u32 = 1193182u32; /* 8254 chip's internal oscillator frequency */
@@ -57,16 +57,16 @@ pub fn init()
 		 * ... 010  - mode number 2: "rate generator" / frequency divider
 		 * ...   0  - binary counter (the alternative is BCD)
 		 */
-		outb(0x34, 0x43);
+		outb(0x43, 0x34);
 
 		wait_some_time();
 
 		/* Port 0x40 is for the counter register of channel 0 */
 
-		outb((latch & 0xFF) as u8, 0x40);   /* low byte  */
+		outb(0x40, (latch & 0xFF) as u8);   /* low byte  */
 
 		wait_some_time();
 
-		outb((latch >> 8) as u8, 0x40);     /* high byte */
+		outb(0x40, (latch >> 8) as u8);     /* high byte */
 	}
 }

@@ -25,7 +25,6 @@
 
 use core::fmt;
 use logging::*;
-use cpuio::outb;
 use scheduler::*;
 use synch::spinlock::*;
 use arch::x86_64::mm::paging::page_fault_handler;
@@ -33,6 +32,7 @@ use x86::dtables::{DescriptorTablePointer,lidt};
 use x86::Ring;
 use x86::bits64::paging::VAddr;
 use x86::segmentation::{SegmentSelector,SystemDescriptorTypes64};
+use x86::io::*;
 
 /// Maximum possible number of interrupts
 const IDT_ENTRIES: usize = 256;
@@ -91,7 +91,7 @@ pub fn send_eoi_to_slave()
 	 * and lower than 48 (meaning IRQ8 - 15), then we need to
 	 * send an EOI to the slave controller of the PIC
 	 */
-	unsafe { outb(0x20, 0xA0); }
+	unsafe { outb(0xA0, 0x20); }
 }
 
 #[inline(always)]
@@ -487,16 +487,16 @@ impl InteruptHandler {
 /// 47
 unsafe fn irq_remap()
 {
-	outb(0x11, 0x20);
-	outb(0x11, 0xA0);
-	outb(0x20, 0x21);
-	outb(0x28, 0xA1);
-	outb(0x04, 0x21);
-	outb(0x02, 0xA1);
-	outb(0x01, 0x21);
-	outb(0x01, 0xA1);
-	outb(0x0, 0x21);
-	outb(0x0, 0xA1);
+	outb(0x20, 0x11);
+	outb(0xA0, 0x11);
+	outb(0x21, 0x20);
+	outb(0xA1, 0x28);
+	outb(0x21, 0x04);
+	outb(0xA1, 0x02);
+	outb(0x21, 0x01);
+	outb(0xA1, 0x01);
+	outb(0x21, 0x00);
+	outb(0xA1, 0x00);
 }
 
 pub fn init() {

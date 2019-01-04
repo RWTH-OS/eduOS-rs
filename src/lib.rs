@@ -10,8 +10,6 @@
 #![no_std]
 
 #[cfg(target_arch = "x86_64")]
-extern crate cpuio;
-#[cfg(target_arch = "x86_64")]
 extern crate x86;
 #[cfg(target_arch = "x86_64")]
 extern crate raw_cpuid;
