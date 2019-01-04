@@ -1,9 +1,8 @@
 #![allow(dead_code)]
 
-use cpuio;
-
 use logging::*;
 use x86::controlregs::*;
+use x86::io::*;
 
 /// Force strict CPU ordering, serializes load and store operations.
 #[inline(always)]
@@ -54,9 +53,8 @@ pub fn pause() {
 pub extern "C" fn shutdown() -> ! {
 	// shutdown, works like Qemu's shutdown command
 	unsafe {
-		let mut shutdown_port : cpuio::Port<u8> = cpuio::Port::new(0xf4);
-		shutdown_port.write(0x00);
-	};
+		outb(0xf4, 0x00);
+	}
 
 	loop {
 		halt();

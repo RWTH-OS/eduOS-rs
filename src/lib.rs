@@ -8,8 +8,6 @@
 #![no_std]
 
 #[cfg(target_arch = "x86_64")]
-extern crate cpuio;
-#[cfg(target_arch = "x86_64")]
 extern crate x86;
 extern crate alloc;
 
