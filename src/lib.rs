@@ -11,8 +11,6 @@
 
 #[cfg(target_arch = "x86_64")]
 extern crate x86;
-#[cfg(target_arch = "x86_64")]
-extern crate raw_cpuid;
 extern crate alloc;
 #[macro_use]
 extern crate bitflags;

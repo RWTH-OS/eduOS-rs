@@ -1,10 +1,10 @@
 #![allow(dead_code)]
 
-use raw_cpuid::*;
 use logging::*;
 use x86::controlregs::*;
 use x86::msr::*;
 use x86::io::*;
+use x86::cpuid::*;
 use arch::x86_64::kernel::syscall_handler;
 use scheduler::task::BOOT_STACK;
 
