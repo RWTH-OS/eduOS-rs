@@ -78,9 +78,7 @@ $ # Get our source code.
 $ git clone https://github.com/RWTH-OS/eduOS-rs.git
 $ cd eduOS-rs
 
-$ # Get a copy of the Rust source code so we can rebuild core
-$ # for a bare-metal target.
-$ git submodule update --init
+$ # Build kernel
 $ make
 ```
 
