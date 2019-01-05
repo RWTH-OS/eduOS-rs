@@ -26,14 +26,11 @@ use alloc::collections::{BTreeMap, VecDeque};
 use core::cell::RefCell;
 use core::sync::atomic::{AtomicU32, Ordering};
 use scheduler::task::*;
+use arch::switch;
 use logging::*;
 
 static NO_TASKS: AtomicU32 = AtomicU32::new(0);
 static TID_COUNTER: AtomicU32 = AtomicU32::new(0);
-
-extern {
-    pub fn switch(old_stack: *mut usize, new_stack: usize);
-}
 
 pub struct Scheduler {
 	/// task id which is currently running
@@ -161,7 +158,7 @@ impl Scheduler {
 
 				self.current_task = new_task;
 
-				unsafe { switch(old_stack_pointer, new_stack_pointer); }
+				switch(old_stack_pointer, new_stack_pointer);
 			},
 			_ => {}
 		}
