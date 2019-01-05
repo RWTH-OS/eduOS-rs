@@ -2,10 +2,10 @@ pub mod serial;
 pub mod processor;
 pub mod task;
 pub mod irq;
+pub mod switch;
 mod gdt;
 mod pit;
 mod start;
-mod switch;
 mod syscall;
 
 pub use arch::x86_64::syscall::syscall_handler;
@@ -136,16 +136,15 @@ pub fn syscall6(arg0: u64,
 	arg3: u64,
 	arg4: u64,
 	arg5: u64,
-	arg6: u64)
-	-> u64 {
-		let mut ret: u64;
-		unsafe {
-			asm!("syscall"	: "={rax}" (ret) : "{rax}" (arg0), "{rdi}" (arg1), "{rsi}" (arg2),
-							"{rdx}" (arg3), "{r10}" (arg4), "{r8}" (arg5), "{r9}" (arg6)
-							: "rcx", "r11", "memory" : "volatile");
-		}
-		ret
+	arg6: u64) -> u64 {
+	let mut ret: u64;
+	unsafe {
+		asm!("syscall"	: "={rax}" (ret) : "{rax}" (arg0), "{rdi}" (arg1), "{rsi}" (arg2),
+						"{rdx}" (arg3), "{r10}" (arg4), "{r8}" (arg5), "{r9}" (arg6)
+						: "rcx", "r11", "memory" : "volatile");
 	}
+	ret
+}
 
 /// Initialize module, must be called once, and only once
 pub fn init() {
