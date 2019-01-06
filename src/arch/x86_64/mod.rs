@@ -17,6 +17,7 @@ pub fn register_task()
 	unsafe { asm!("ltr $0" :: "r"(sel) :: "volatile"); }
 }
 
+#[inline(never)]
 #[naked]
 pub fn jump_to_user_land(func: fn() -> !) -> !
 {
