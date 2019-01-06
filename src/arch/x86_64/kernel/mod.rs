@@ -25,12 +25,13 @@ pub mod serial;
 pub mod processor;
 pub mod task;
 pub mod irq;
+pub mod switch;
 mod gdt;
 mod pit;
 mod start;
-mod switch;
 mod syscall;
 
+use core::ptr::read_volatile;
 use consts::*;
 pub use arch::x86_64::kernel::syscall::syscall_handler;
 
@@ -52,7 +53,7 @@ static KERNEL_HEADER: KernelHeader = KernelHeader {
 };
 
 pub fn get_memory_size() -> usize {
-		KERNEL_HEADER.mem_limit as usize
+		unsafe { read_volatile(&KERNEL_HEADER.mem_limit) as usize }
 }
 
 pub fn register_task() {
@@ -61,6 +62,7 @@ pub fn register_task() {
 	unsafe { asm!("ltr $0" :: "r"(sel) :: "volatile"); }
 }
 
+#[inline(never)]
 #[naked]
 pub fn jump_to_user_land(func: extern fn() -> !) -> !
 {
@@ -184,16 +186,15 @@ pub fn syscall6(arg0: u64,
 	arg3: u64,
 	arg4: u64,
 	arg5: u64,
-	arg6: u64)
-	-> u64 {
-		let mut ret: u64;
-		unsafe {
-			asm!("syscall"	: "={rax}" (ret) : "{rax}" (arg0), "{rdi}" (arg1), "{rsi}" (arg2),
-							"{rdx}" (arg3), "{r10}" (arg4), "{r8}" (arg5), "{r9}" (arg6)
-							: "rcx", "r11", "memory" : "volatile");
-		}
-		ret
+	arg6: u64) -> u64 {
+	let mut ret: u64;
+	unsafe {
+		asm!("syscall"	: "={rax}" (ret) : "{rax}" (arg0), "{rdi}" (arg1), "{rsi}" (arg2),
+						"{rdx}" (arg3), "{r10}" (arg4), "{r8}" (arg5), "{r9}" (arg6)
+						: "rcx", "r11", "memory" : "volatile");
 	}
+	ret
+}
 
 /// Initialize module, must be called once, and only once
 pub fn init() {
