@@ -6,6 +6,11 @@ authors = ["Stefan Lankes <slankes@eonerc.rwth-aachen.de>"]
 
 [dependencies]
 bitflags = "1.0"
+spin = "0.5"
+
+#[dependencies.lazy_static]
+#version = "1.2"
+#features = ["spin_no_std"]
 
 [target.'cfg(target_arch = "x86_64")'.dependencies.x86]
 git = "https://github.com/hermitcore/rust-x86.git"

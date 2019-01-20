@@ -9,6 +9,7 @@
 #![feature(specialization)]
 #![no_std]
 
+extern crate spin;
 #[cfg(target_arch = "x86_64")]
 extern crate x86;
 extern crate alloc;
@@ -35,6 +36,7 @@ pub mod scheduler;
 pub mod errno;
 pub mod synch;
 pub mod syscall;
+pub mod fs;
 
 #[global_allocator]
 static ALLOCATOR: &'static mm::allocator::Allocator = &mm::allocator::Allocator;

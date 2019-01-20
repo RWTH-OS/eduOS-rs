@@ -122,6 +122,10 @@ Currently, following stages of development are available:
 
    Add support of paging and a simple demo for process creation
 
+7. stage 7 - Integration of an in-memory file system
+
+   Introduce a virtual file system with an in-memory file system as example file system.
+
 ## Useful Links
 
 1. [http://www.gnu.org/software/grub/manual/multiboot/](http://www.gnu.org/software/grub/manual/multiboot/)
