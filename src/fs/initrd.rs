@@ -25,7 +25,8 @@
 
 use logging::*;
 use errno::*;
-use fs::{NodeKind, VfsNode, VfsNodeFile, VfsNodeDirectory, Vfs, OpenOptions, FileHandle, SeekFrom, check_path};
+use fs::{NodeKind, VfsNode, VfsNodeFile, VfsNodeDirectory, Vfs,
+		OpenOptions, FileHandle, SeekFrom, check_path};
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use alloc::string::String;
@@ -93,22 +94,12 @@ impl VfsNodeDirectory for MemoryFsDirectory {
 		}
 	}
 
-	/// Create a new directory within the current one
-	fn mkdir(&mut self, path: &String) -> Result<()> {
-		let mut components: Vec<&str> = path.split("/").collect();
-
-		components.reverse();
-		components.pop();
-
-		self.traverse_mkdir(&mut components)
-	}
-
-	fn lsdir(&self, mut tabs: String) -> Result<()> {
+	fn traverse_lsdir(&self, mut tabs: String) -> Result<()> {
 		tabs.push_str("  ");
 		for (name, node) in self.children.iter() {
 			if let Some(directory) = node.downcast_ref::<MemoryFsDirectory>() {
 				info!("{}{} ({:?})", tabs, name, self.get_kind());
-				directory.lsdir(tabs.clone())?;
+				directory.traverse_lsdir(tabs.clone())?;
 			} else {
 				let file = node.downcast_ref::<MemoryFsFile>().unwrap();
 				info!("{}{} ({:?})", tabs, name, file.get_kind());
@@ -151,15 +142,6 @@ impl VfsNodeDirectory for MemoryFsDirectory {
 		} else {
 			Err(Error::InvalidArgument)
 		}
-	}
-
-	fn open(&mut self, path: &String, flags: OpenOptions) -> Result<Box<FileHandle>> {
-		let mut components: Vec<&str> = path.split("/").collect();
-
-		components.reverse();
-		components.pop();
-
-		self.traverse_open(&mut components, flags)
 	}
 }
 
@@ -333,7 +315,12 @@ impl MemoryFs {
 impl Vfs for MemoryFs {
 	fn mkdir(&mut self, path: &String) -> Result<()> {
 		if check_path(path) {
-			self.handle.lock().mkdir(path)
+			let mut components: Vec<&str> = path.split("/").collect();
+
+			components.reverse();
+			components.pop();
+
+			self.handle.lock().traverse_mkdir(&mut components)
 		} else {
 			Err(Error::InvalidFsPath)
 		}
@@ -341,12 +328,18 @@ impl Vfs for MemoryFs {
 
 	fn lsdir(&self) -> Result<()> {
 		info!("/");
-		self.handle.lock().lsdir(String::from(""))
+
+		self.handle.lock().traverse_lsdir(String::from(""))
 	}
 
 	fn open(&mut self, path: &String, flags: OpenOptions) -> Result<Box<FileHandle>> {
 		if check_path(path) {
-			self.handle.lock().open(path, flags)
+			let mut components: Vec<&str> = path.split("/").collect();
+
+			components.reverse();
+			components.pop();
+
+			self.handle.lock().traverse_open(&mut components, flags)
 		} else {
 			Err(Error::InvalidFsPath)
 		}

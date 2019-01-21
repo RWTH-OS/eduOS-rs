@@ -69,20 +69,14 @@ trait VfsNodeFile: VfsNode + core::fmt::Debug + core::marker::Send + core::marke
 
 /// VfsNodeDirectory represents a directory node of the virtual file system.
 trait VfsNodeDirectory: VfsNode + core::fmt::Debug + core::marker::Send + core::marker::Sync {
-	/// Create a directory node at the location `path`.
-	fn mkdir(&mut self, _path: &String) -> Result<()>;
-
+	/// Helper function to create a new dirctory node
 	fn traverse_mkdir(&mut self, _components: &mut Vec<&str>) -> Result<()>;
 
 	/// Helper function to print the current state of the file system
-	fn lsdir(&self, _tabs: String) -> Result<()>;
+	fn traverse_lsdir(&self, _tabs: String) -> Result<()>;
 
+	/// Helper function to open a file
 	fn traverse_open(&mut self, _components: &mut Vec<&str>, _flags: OpenOptions) -> Result<Box<FileHandle>>;
-
-	/// Open a file node with the path `path`.
-	/// `path` must be an absolute path to the file, while `flags` defined
-	/// if the file is writeable or created on demand.
-	fn open(&mut self, _path: &String, _flags: OpenOptions) -> Result<Box<FileHandle>>;
 }
 
 /// The trait `Vfs` specifies all operation on the virtual file systems.
