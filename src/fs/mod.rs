@@ -55,47 +55,50 @@ bitflags! {
     }
 }
 
-/// VfsNode represents the internal nodes of the virtual file system.
+/// VfsNode represents an internal node of the virtual file system.
 trait VfsNode: core::fmt::Debug + core::marker::Send + core::marker::Sync {
 	/// Name of the current node
 	fn get_name(&self) -> String;
 
 	/// Determines the current node type
 	fn get_kind(&self) -> NodeKind;
+}
 
-	fn get_handle(&self, _opt: OpenOptions) -> Result<Box<FileHandle>> {
-		Err(Error::BadFsOperation)
-	}
+/// VfsNodeFile represents a file node of the virtual file system.
+trait VfsNodeFile: VfsNode + core::fmt::Debug + core::marker::Send + core::marker::Sync {
+	/// Create a file handle to the current file
+	fn get_handle(&self, _opt: OpenOptions) -> Result<Box<FileHandle>>;
+}
 
+/// VfsNodeDirectory represents a directory node of the virtual file system.
+trait VfsNodeDirectory: VfsNode + core::fmt::Debug + core::marker::Send + core::marker::Sync {
 	/// Create a directory node at the location `path`.
-	fn mkdir(&mut self, _path: &String) -> Result<()> {
-		Err(Error::BadFsOperation)
-	}
+	fn mkdir(&mut self, _path: &String) -> Result<()>;
 
-	fn traverse_mkdir(&mut self, _components: &mut Vec<&str>) -> Result<()> {
-		Err(Error::BadFsOperation)
-	}
+	fn traverse_mkdir(&mut self, _components: &mut Vec<&str>) -> Result<()>;
 
-	fn lsdir(&self, _tabs: String) -> Result<()> {
-		Err(Error::BadFsOperation)
-	}
+	/// Helper function to print the current state of the file system
+	fn lsdir(&self, _tabs: String) -> Result<()>;
 
-	fn traverse_open(&mut self, _components: &mut Vec<&str>, _flags: OpenOptions) -> Result<Box<FileHandle>> {
-		Err(Error::BadFsOperation)
-	}
+	fn traverse_open(&mut self, _components: &mut Vec<&str>, _flags: OpenOptions) -> Result<Box<FileHandle>>;
 
 	/// Open a file node with the path `path`.
 	/// `path` must be an absolute path to the file, while `flags` defined
 	/// if the file is writeable or created on demand.
-	fn open(&mut self, _path: &String, _flags: OpenOptions) -> Result<Box<FileHandle>> {
-		Err(Error::BadFsOperation)
-	}
+	fn open(&mut self, _path: &String, _flags: OpenOptions) -> Result<Box<FileHandle>>;
 }
 
 /// The trait `Vfs` specifies all operation on the virtual file systems.
 trait Vfs: core::fmt::Debug + core::marker::Send + core::marker::Sync {
+	/// Create a directory node at the location `path`.
 	fn mkdir(&mut self, path: &String) -> Result<()>;
+
+	/// Print the current state of the file system
 	fn lsdir(&self) -> Result<()>;
+
+	/// Open a file with the path `path`.
+	/// `path` must be an absolute path to the file, while `flags` defined
+	/// if the file is writeable or created on demand.
 	fn open(&mut self, path: &String, flags: OpenOptions) -> Result<Box<FileHandle>>;
 }
 
@@ -161,6 +164,7 @@ pub fn init() {
 	root.mkdir(&String::from("/bin")).unwrap();
 	root.mkdir(&String::from("/dev")).unwrap();
 
+	//root.lsdir().unwrap();
 	//info!("root {:?}", root);
 	unsafe {
 		VFS_ROOT = Some(root);

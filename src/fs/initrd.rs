@@ -25,13 +25,14 @@
 
 use logging::*;
 use errno::*;
-use fs::{NodeKind,VfsNode, Vfs, OpenOptions, FileHandle, SeekFrom, check_path};
+use fs::{NodeKind, VfsNode, VfsNodeFile, VfsNodeDirectory, Vfs, OpenOptions, FileHandle, SeekFrom, check_path};
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use alloc::string::String;
 use alloc::collections::BTreeMap;
 use alloc::sync::Arc;
 use core::ops::{Deref,DerefMut};
+use core::any::Any;
 use core::fmt;
 use spin::RwLock;
 use synch::spinlock::*;
@@ -41,7 +42,7 @@ struct MemoryFsDirectory {
 	/// Directory name
 	name: String,
 	/// in principle, a map with all entries of the current directory
-	children: BTreeMap<String, Box<VfsNode>>
+	children: BTreeMap<String, Box<Any + core::marker::Send + core::marker::Sync>>
 }
 
 impl MemoryFsDirectory {
@@ -51,6 +52,20 @@ impl MemoryFsDirectory {
 			children: BTreeMap::new()
 		}
 	}
+
+	fn get_mut<T: VfsNode + Any>(&mut self, name: &String) -> Option<&mut T> {
+        if let Some(b) = self.children.get_mut(name) {
+            return b.downcast_mut::<T>();
+        }
+        None
+    }
+
+	fn get<T: VfsNode + Any>(&mut self, name: &String) -> Option<&T> {
+        if let Some(b) = self.children.get_mut(name) {
+            return b.downcast_ref::<T>();
+        }
+        None
+    }
 }
 
 impl VfsNode for MemoryFsDirectory {
@@ -63,16 +78,24 @@ impl VfsNode for MemoryFsDirectory {
 	fn get_kind(&self) -> NodeKind {
 		NodeKind::Directory
 	}
+}
 
+impl VfsNodeDirectory for MemoryFsDirectory {
 	fn traverse_mkdir(&mut self, components: &mut Vec<&str>) -> Result<()> {
     	if let Some(component) = components.pop() {
-			let directory = &mut self.children.entry(String::from(component))
-                            .or_insert(Box::new(MemoryFsDirectory::new(String::from(component))));
-        	if directory.get_kind() != NodeKind::Directory {
-            	Err(Error::BadFsKind)
-        	} else {
-				directory.traverse_mkdir(components)
+			let node_name = String::from(component);
+
+			{
+				if let Some(directory) = self.get_mut::<MemoryFsDirectory>(&node_name) {
+			 		return directory.traverse_mkdir(components);
+				}
 			}
+
+			let mut directory = Box::new(MemoryFsDirectory::new(node_name.clone()));
+			let result = directory.traverse_mkdir(components);
+			self.children.insert(node_name.clone(), directory);
+
+			result
     	} else {
         	Ok(())
     	}
@@ -93,10 +116,11 @@ impl VfsNode for MemoryFsDirectory {
 
 		tabs.push_str("  ");
 		for (_, node) in self.children.iter() {
-			if node.get_kind() == NodeKind::Directory {
-				node.lsdir(tabs.clone())?;
+			if let Some(directory) = node.downcast_ref::<MemoryFsDirectory>() {
+				directory.lsdir(tabs.clone())?;
 			} else {
-				info!("{}{} ({:?})", tabs, node.get_name(), node.get_kind());
+				let file = node.downcast_ref::<MemoryFsFile>().unwrap();
+				info!("{}{} ({:?})", tabs, file.get_name(), file.get_kind());
 			}
 		}
 
@@ -105,36 +129,29 @@ impl VfsNode for MemoryFsDirectory {
 
 	fn traverse_open(&mut self, components: &mut Vec<&str>, flags: OpenOptions) -> Result<Box<FileHandle>> {
 		if let Some(component) = components.pop() {
+			let node_name = String::from(component);
+
 			if components.is_empty() == true {
 				// reach endpoint => reach file
+				if let Some(file) = self.get_mut::<MemoryFsFile>(&node_name) {
+					return file.get_handle(flags);
+				}
+			}
+
+			if components.is_empty() == true {
 				if flags.contains(OpenOptions::CREATE) {
 					// Create file on demand
-					let file = &mut self.children.entry(String::from(component))
-						.or_insert(Box::new(MemoryFsFile::new(String::from(component))));
-					if file.get_kind() == NodeKind::File {
-						file.get_handle(flags)
-					} else {
-						Err(Error::BadFsKind)
-					}
+					let file = Box::new(MemoryFsFile::new(node_name.clone()));
+					let result = file.get_handle(flags);
+					self.children.insert(node_name.clone(), file);
+
+					result
 				} else {
-					// Open existing file
-					if let Some(file) = self.children.get_mut(&String::from(component)) {
-						if file.get_kind() == NodeKind::File {
-							file.get_handle(flags)
-						} else {
-							Err(Error::BadFsKind)
-						}
-					} else {
-						Err(Error::InvalidArgument)
-					}
+					Err(Error::InvalidArgument)
 				}
 			} else {
 				// traverse to the directories to the endpoint
-				if let Some(directory) = self.children.get_mut(&String::from(component)) {
-					if directory.get_kind() != NodeKind::Directory {
-						return Err(Error::BadFsKind);
-					}
-
+				if let Some(directory) = self.get_mut::<MemoryFsDirectory>(&node_name) {
 					directory.traverse_open(components, flags)
 				} else {
 					Err(Error::InvalidArgument)
@@ -195,7 +212,9 @@ impl VfsNode for MemoryFsFile {
 	fn get_kind(&self) -> NodeKind {
 		NodeKind::File
 	}
+}
 
+impl VfsNodeFile for MemoryFsFile {
 	fn get_handle(&self, opt: OpenOptions) -> Result<Box<FileHandle>> {
 		Ok(Box::new(MemoryFsFile {
 			writeable: opt.contains(OpenOptions::READWRITE),
