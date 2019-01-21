@@ -156,7 +156,7 @@ pub fn init() {
 	root.mkdir(&String::from("/dev")).unwrap();
 
 	//root.lsdir().unwrap();
-	info!("root {:?}", root);
+	//info!("root {:?}", root);
 	unsafe {
 		VFS_ROOT = Some(root);
 	}
