@@ -199,7 +199,7 @@ impl VfsNode for MemoryFsFile {
 	fn get_handle(&self, opt: OpenOptions) -> Result<Box<FileHandle>> {
 		Ok(Box::new(MemoryFsFile {
 			writeable: opt.contains(OpenOptions::READWRITE),
-			pos: Spinlock::new(*self.pos.lock()),
+			pos: Spinlock::new(0),
 			name: self.get_name(),
 			data: self.data.clone()
 		}))
