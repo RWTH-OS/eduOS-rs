@@ -50,7 +50,7 @@ extern "C" fn foo() {
 	println!("hello from task {}", tid);
 
 	// read data from file
-	let mut file = fs::open(String::from("/bin/bla.txt"),
+	let mut file = fs::open(&String::from("/bin/bla.txt"),
 		fs::OpenOptions::READWRITE|fs::OpenOptions::READONLY).expect("Unable to open file");
 	let mut buffer = [0; 20];
 	// read up to 20 bytes
@@ -71,7 +71,7 @@ pub extern "C" fn main() -> ! {
 	println!("Hello from eduOS-rs!");
 
 	// write data into file
-	let mut file = fs::open(String::from("/bin/bla.txt"),
+	let mut file = fs::open(&String::from("/bin/bla.txt"),
 		fs::OpenOptions::READWRITE|fs::OpenOptions::CREATE).expect("Unable to open file");
 	write!(file, "Hello World!!!").expect("Unable to write data");
 

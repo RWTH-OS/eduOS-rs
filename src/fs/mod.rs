@@ -68,7 +68,7 @@ trait VfsNode: core::fmt::Debug + core::marker::Send + core::marker::Sync {
 	}
 
 	/// Create a directory node at the location `path`.
-	fn mkdir(&mut self, _path: String) -> Result<()> {
+	fn mkdir(&mut self, _path: &String) -> Result<()> {
 		Err(Error::BadFsOperation)
 	}
 
@@ -87,22 +87,40 @@ trait VfsNode: core::fmt::Debug + core::marker::Send + core::marker::Sync {
 	/// Open a file node with the path `path`.
 	/// `path` must be an absolute path to the file, while `flags` defined
 	/// if the file is writeable or created on demand.
-	fn open(&mut self, _path: String, _flags: OpenOptions) -> Result<Box<FileHandle>> {
+	fn open(&mut self, _path: &String, _flags: OpenOptions) -> Result<Box<FileHandle>> {
 		Err(Error::BadFsOperation)
 	}
 }
 
 /// The trait `Vfs` specifies all operation on the virtual file systems.
 trait Vfs: core::fmt::Debug + core::marker::Send + core::marker::Sync {
-	fn mkdir(&mut self, path: String) -> Result<()>;
+	fn mkdir(&mut self, path: &String) -> Result<()>;
 	fn lsdir(&self) -> Result<()>;
-	fn open(&mut self, path: String, flags: OpenOptions) -> Result<Box<FileHandle>>;
+	fn open(&mut self, path: &String, flags: OpenOptions) -> Result<Box<FileHandle>>;
+}
+
+/// Enumeration of possible methods to seek within an I/O object.
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum SeekFrom {
+	/// Set the offset to the provided number of bytes.
+	Start(u64),
+	/// Set the offset to the size of this object plus the specified number of bytes.
+	///
+    /// It is possible to seek beyond the end of an object, but it's an error to
+    /// seek before byte 0.
+	End(i64),
+	/// Set the offset to the current position plus the specified number of bytes.
+	///
+    /// It is possible to seek beyond the end of an object, but it's an error to
+    /// seek before byte 0.
+	Current(i64)
 }
 
 /// The trait `FileHandle` defines all functions hat can be applied to the file.
 pub trait FileHandle: core::fmt::Debug + core::fmt::Write {
 	fn read(&mut self, buf: &mut [u8]) -> Result<usize>;
 	fn write(&mut self, buf: &[u8]) -> Result<usize>;
+	fn seek(&mut self, style: SeekFrom) -> Result<u64>;
 }
 
 /// Entrypoint of the file system
@@ -115,22 +133,33 @@ pub fn lsdir() -> Result<()> {
 
 /// Create a directory with the path `path`.
 /// `path` must be a absolete path to the direcory.
-pub fn mkdir(path: String) -> Result<()> {
+pub fn mkdir(path: &String) -> Result<()> {
 	unsafe { VFS_ROOT.as_mut().unwrap().mkdir(path) }
 }
 
 /// Open a file with the path `path`.
 /// `path` must be an absolute path to the file, while `flags` defined
 /// if the file is writeable or created on demand.
-pub fn open(path: String, flags: OpenOptions) -> Result<Box<FileHandle>> {
+pub fn open(path: &String, flags: OpenOptions) -> Result<Box<FileHandle>> {
 	unsafe { VFS_ROOT.as_mut().unwrap().open(path, flags) }
+}
+
+/// Help function to check if the argument is an abolute path
+fn check_path(path: &String) -> bool{
+	if let Some(pos) = path.find('/') {
+		if pos == 0 {
+			return true;
+		}
+	}
+
+	false
 }
 
 pub fn init() {
 	let mut root = MemoryFs::new();
 
-	root.mkdir(String::from("/bin")).unwrap();
-	root.mkdir(String::from("/dev")).unwrap();
+	root.mkdir(&String::from("/bin")).unwrap();
+	root.mkdir(&String::from("/dev")).unwrap();
 
 	//info!("root {:?}", root);
 	unsafe {
