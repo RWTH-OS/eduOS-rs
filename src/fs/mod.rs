@@ -21,6 +21,8 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+//! Definition a simple virtual file system
+
 #![allow(dead_code)]
 
 mod initrd;
@@ -65,6 +67,7 @@ trait VfsNode: core::fmt::Debug + core::marker::Send + core::marker::Sync {
 		Err(Error::BadFsOperation)
 	}
 
+	/// Create a directory node at the location `path`.
 	fn mkdir(&mut self, _path: String) -> Result<()> {
 		Err(Error::BadFsOperation)
 	}
@@ -81,6 +84,9 @@ trait VfsNode: core::fmt::Debug + core::marker::Send + core::marker::Sync {
 		Err(Error::BadFsOperation)
 	}
 
+	/// Open a file node with the path `path`.
+	/// `path` must be an absolute path to the file, while `flags` defined
+	/// if the file is writeable or created on demand.
 	fn open(&mut self, _path: String, _flags: OpenOptions) -> Result<Box<FileHandle>> {
 		Err(Error::BadFsOperation)
 	}
@@ -99,6 +105,7 @@ pub trait FileHandle: core::fmt::Debug + core::fmt::Write {
 	fn write(&mut self, buf: &[u8]) -> Result<usize>;
 }
 
+/// Entrypoint of the file system
 static mut VFS_ROOT: Option<MemoryFs> = None;
 
 /// List the current state of file system

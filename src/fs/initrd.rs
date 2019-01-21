@@ -21,6 +21,8 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+//! Implements a simple in-memory file system
+
 use logging::*;
 use errno::*;
 use fs::{NodeKind,VfsNode, Vfs, OpenOptions, FileHandle};
@@ -35,7 +37,7 @@ use spin::RwLock;
 use synch::spinlock::*;
 
 #[derive(Debug)]
-pub struct MemoryFsDirectory {
+struct MemoryFsDirectory {
 	/// Director name
 	name: String,
 	/// Queue of VfsNode
@@ -144,7 +146,7 @@ impl VfsNode for MemoryFsDirectory {
 }
 
 #[derive(Debug, Clone)]
-pub struct DataHandle(Arc<RwLock<Vec<u8>>>);
+struct DataHandle(Arc<RwLock<Vec<u8>>>);
 
 impl DataHandle {
     fn new() -> DataHandle {
@@ -153,7 +155,7 @@ impl DataHandle {
 }
 
 #[derive(Debug)]
-pub struct MemoryFsFile {
+struct MemoryFsFile {
 	/// is the file write able?
 	writeable: bool,
 	/// Position within the file
