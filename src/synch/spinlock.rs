@@ -70,6 +70,7 @@ pub struct Spinlock<T: ?Sized>
 /// A guard to which the protected data can be accessed
 ///
 /// When the guard falls out of scope it will release the lock.
+#[derive(Debug)]
 pub struct SpinlockGuard<'a, T: ?Sized + 'a>
 {
 	//queue: &'a AtomicUsize,
@@ -128,7 +129,8 @@ impl<T: ?Sized + fmt::Debug> fmt::Debug for Spinlock<T>
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result
 	{
 		write!(f, "queue: {} ", self.queue.load(Ordering::SeqCst))?;
-		write!(f, "dequeue: {}", self.dequeue.load(Ordering::SeqCst))
+		write!(f, "dequeue: {} ", self.dequeue.load(Ordering::SeqCst))?;
+		write!(f, "data: {:?}", self.data.get())
 	}
 }
 
@@ -203,6 +205,7 @@ pub struct SpinlockIrqSave<T: ?Sized>
 /// A guard to which the protected data can be accessed
 ///
 /// When the guard falls out of scope it will release the lock.
+#[derive(Debug)]
 pub struct SpinlockIrqSaveGuard<'a, T: ?Sized + 'a>
 {
 	//queue: &'a AtomicUsize,
@@ -271,7 +274,8 @@ impl<T: ?Sized + fmt::Debug> fmt::Debug for SpinlockIrqSave<T>
 	{
 		write!(f, "irq: {:?} ", self.irq)?;
 		write!(f, "queue: {} ", self.queue.load(Ordering::SeqCst))?;
-		write!(f, "dequeue: {}", self.dequeue.load(Ordering::SeqCst))
+		write!(f, "dequeue: {} ", self.dequeue.load(Ordering::SeqCst))?;
+		write!(f, "data: {:?}", self.data.get())
 	}
 }
 
