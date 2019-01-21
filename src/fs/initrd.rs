@@ -54,18 +54,18 @@ impl MemoryFsDirectory {
 	}
 
 	fn get_mut<T: VfsNode + Any>(&mut self, name: &String) -> Option<&mut T> {
-        if let Some(b) = self.children.get_mut(name) {
-            return b.downcast_mut::<T>();
-        }
-        None
-    }
+		if let Some(b) = self.children.get_mut(name) {
+			return b.downcast_mut::<T>();
+		}
+		None
+	}
 
 	fn get<T: VfsNode + Any>(&mut self, name: &String) -> Option<&T> {
-        if let Some(b) = self.children.get_mut(name) {
-            return b.downcast_ref::<T>();
-        }
-        None
-    }
+		if let Some(b) = self.children.get_mut(name) {
+			return b.downcast_ref::<T>();
+		}
+		None
+	}
 }
 
 impl VfsNode for MemoryFsDirectory {
@@ -82,12 +82,12 @@ impl VfsNode for MemoryFsDirectory {
 
 impl VfsNodeDirectory for MemoryFsDirectory {
 	fn traverse_mkdir(&mut self, components: &mut Vec<&str>) -> Result<()> {
-    	if let Some(component) = components.pop() {
+		if let Some(component) = components.pop() {
 			let node_name = String::from(component);
 
 			{
 				if let Some(directory) = self.get_mut::<MemoryFsDirectory>(&node_name) {
-			 		return directory.traverse_mkdir(components);
+					return directory.traverse_mkdir(components);
 				}
 			}
 
@@ -96,9 +96,9 @@ impl VfsNodeDirectory for MemoryFsDirectory {
 			self.children.insert(node_name.clone(), directory);
 
 			result
-    	} else {
-        	Ok(())
-    	}
+		} else {
+			Ok(())
+		}
 	}
 
 	/// Create a new directory within the current one
@@ -176,9 +176,9 @@ impl VfsNodeDirectory for MemoryFsDirectory {
 struct DataHandle(Arc<RwLock<Vec<u8>>>);
 
 impl DataHandle {
-    fn new() -> DataHandle {
-        DataHandle(Arc::new(RwLock::new(Vec::new())))
-    }
+	fn new() -> DataHandle {
+		DataHandle(Arc::new(RwLock::new(Vec::new())))
+	}
 }
 
 #[derive(Debug)]
@@ -226,14 +226,14 @@ impl VfsNodeFile for MemoryFsFile {
 }
 
 impl Clone for MemoryFsFile {
-    fn clone(&self) -> Self {
+	fn clone(&self) -> Self {
 		MemoryFsFile {
 			writeable: self.writeable,
 			pos: Spinlock::new(*self.pos.lock()),
 			name: self.name.clone(),
 			data: self.data.clone()
 		}
-    }
+	}
 }
 
 impl fmt::Write for MemoryFsFile {
@@ -306,46 +306,46 @@ impl FileHandle for MemoryFsFile {
 		let mut pos_guard = self.pos.lock();
 
 		match style {
-		   SeekFrom::Start(n) => {
-			   *pos_guard = n as usize;
-			   Ok(n)
-		   }
-		   SeekFrom::End(n) => {
-			   let guard = self.data.0.read();
-			   let ref vec: &Vec<u8> = guard.deref();
-			   let data = vec.len() as i64 + n;
-			   if data >= 0 {
-				   *pos_guard = data as usize;
-				   Ok(data as u64)
-			   } else {
-				   Err(Error::InvalidArgument)
-			   }
-		   }
-		   SeekFrom::Current(n) => {
-			   let pos = *pos_guard as i64 + n;
-			   if pos >= 0 {
-				   *pos_guard = pos as usize;
-				   Ok(pos as u64)
-			   } else {
-				   Err(Error::InvalidArgument)
-			   }
-		   }
-	   }
+			SeekFrom::Start(n) => {
+				*pos_guard = n as usize;
+				Ok(n)
+			}
+			SeekFrom::End(n) => {
+				let guard = self.data.0.read();
+				let ref vec: &Vec<u8> = guard.deref();
+				let data = vec.len() as i64 + n;
+				if data >= 0 {
+					*pos_guard = data as usize;
+					Ok(data as u64)
+				} else {
+					Err(Error::InvalidArgument)
+				}
+			}
+			SeekFrom::Current(n) => {
+				let pos = *pos_guard as i64 + n;
+				if pos >= 0 {
+					*pos_guard = pos as usize;
+					Ok(pos as u64)
+				} else {
+					Err(Error::InvalidArgument)
+				}
+			}
+		}
 	}
 }
 
 /// Entrypoint of the in-memory file system
 #[derive(Debug)]
 pub struct MemoryFs {
-    handle: Spinlock<MemoryFsDirectory>,
+	handle: Spinlock<MemoryFsDirectory>,
 }
 
 impl MemoryFs {
-    pub fn new() -> MemoryFs {
-        MemoryFs {
+	pub fn new() -> MemoryFs {
+		MemoryFs {
 			handle: Spinlock::new(MemoryFsDirectory::new(String::from("/")))
 		}
-    }
+	}
 }
 
 impl Vfs for MemoryFs {

@@ -45,14 +45,14 @@ pub enum NodeKind {
 
 bitflags! {
 	/// Options for opening files
-    pub struct OpenOptions: u32 {
+	pub struct OpenOptions: u32 {
 		/// Open file for reading.
-        const READONLY  = 0b00000001;
+		const READONLY  = 0b00000001;
 		/// Open file for reading and writing.
-        const READWRITE = 0b00000010;
+		const READWRITE = 0b00000010;
 		/// File is created if it does not exist
 		const CREATE    = 0b00000100;
-    }
+	}
 }
 
 /// VfsNode represents an internal node of the virtual file system.
@@ -109,13 +109,13 @@ pub enum SeekFrom {
 	Start(u64),
 	/// Set the offset to the size of this object plus the specified number of bytes.
 	///
-    /// It is possible to seek beyond the end of an object, but it's an error to
-    /// seek before byte 0.
+	/// It is possible to seek beyond the end of an object, but it's an error to
+	/// seek before byte 0.
 	End(i64),
 	/// Set the offset to the current position plus the specified number of bytes.
 	///
-    /// It is possible to seek beyond the end of an object, but it's an error to
-    /// seek before byte 0.
+	/// It is possible to seek beyond the end of an object, but it's an error to
+	/// seek before byte 0.
 	Current(i64)
 }
 
