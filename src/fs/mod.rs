@@ -57,9 +57,6 @@ bitflags! {
 
 /// VfsNode represents an internal node of the virtual file system.
 trait VfsNode: core::fmt::Debug + core::marker::Send + core::marker::Sync {
-	/// Name of the current node
-	fn get_name(&self) -> String;
-
 	/// Determines the current node type
 	fn get_kind(&self) -> NodeKind;
 }

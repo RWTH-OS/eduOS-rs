@@ -39,16 +39,13 @@ use synch::spinlock::*;
 
 #[derive(Debug)]
 struct MemoryFsDirectory {
-	/// Directory name
-	name: String,
 	/// in principle, a map with all entries of the current directory
 	children: BTreeMap<String, Box<Any + core::marker::Send + core::marker::Sync>>
 }
 
 impl MemoryFsDirectory {
-	pub fn new(name: String) -> Self {
+	pub fn new() -> Self {
 		MemoryFsDirectory {
-			name: name,
 			children: BTreeMap::new()
 		}
 	}
@@ -69,11 +66,6 @@ impl MemoryFsDirectory {
 }
 
 impl VfsNode for MemoryFsDirectory {
-	/// Returns the name of the current directory
-	fn get_name(&self) -> String {
-		self.name.clone()
-	}
-
 	/// Returns the node type
 	fn get_kind(&self) -> NodeKind {
 		NodeKind::Directory
@@ -91,9 +83,9 @@ impl VfsNodeDirectory for MemoryFsDirectory {
 				}
 			}
 
-			let mut directory = Box::new(MemoryFsDirectory::new(node_name.clone()));
+			let mut directory = Box::new(MemoryFsDirectory::new());
 			let result = directory.traverse_mkdir(components);
-			self.children.insert(node_name.clone(), directory);
+			self.children.insert(node_name, directory);
 
 			result
 		} else {
@@ -112,15 +104,14 @@ impl VfsNodeDirectory for MemoryFsDirectory {
 	}
 
 	fn lsdir(&self, mut tabs: String) -> Result<()> {
-		info!("{}{} ({:?})", tabs, self.get_name(), self.get_kind());
-
 		tabs.push_str("  ");
-		for (_, node) in self.children.iter() {
+		for (name, node) in self.children.iter() {
 			if let Some(directory) = node.downcast_ref::<MemoryFsDirectory>() {
+				info!("{}{} ({:?})", tabs, name, self.get_kind());
 				directory.lsdir(tabs.clone())?;
 			} else {
 				let file = node.downcast_ref::<MemoryFsFile>().unwrap();
-				info!("{}{} ({:?})", tabs, file.get_name(), file.get_kind());
+				info!("{}{} ({:?})", tabs, name, file.get_kind());
 			}
 		}
 
@@ -141,9 +132,9 @@ impl VfsNodeDirectory for MemoryFsDirectory {
 			if components.is_empty() == true {
 				if flags.contains(OpenOptions::CREATE) {
 					// Create file on demand
-					let file = Box::new(MemoryFsFile::new(node_name.clone()));
+					let file = Box::new(MemoryFsFile::new());
 					let result = file.get_handle(flags);
-					self.children.insert(node_name.clone(), file);
+					self.children.insert(node_name, file);
 
 					result
 				} else {
@@ -187,28 +178,21 @@ struct MemoryFsFile {
 	writeable: bool,
 	/// Position within the file
 	pos: Spinlock<usize>,
-	/// File name
-	name: String,
 	/// File content
 	data: DataHandle
 }
 
 impl MemoryFsFile {
-	pub fn new(name: String) -> Self {
+	pub fn new() -> Self {
 		MemoryFsFile {
 			writeable: true,
 			pos: Spinlock::new(0),
-			name: name,
 			data: DataHandle::new()
 		}
 	}
 }
 
 impl VfsNode for MemoryFsFile {
-	fn get_name(&self) -> String {
-		self.name.clone()
-	}
-
 	fn get_kind(&self) -> NodeKind {
 		NodeKind::File
 	}
@@ -219,7 +203,6 @@ impl VfsNodeFile for MemoryFsFile {
 		Ok(Box::new(MemoryFsFile {
 			writeable: opt.contains(OpenOptions::READWRITE),
 			pos: Spinlock::new(0),
-			name: self.get_name(),
 			data: self.data.clone()
 		}))
 	}
@@ -230,7 +213,6 @@ impl Clone for MemoryFsFile {
 		MemoryFsFile {
 			writeable: self.writeable,
 			pos: Spinlock::new(*self.pos.lock()),
-			name: self.name.clone(),
 			data: self.data.clone()
 		}
 	}
@@ -343,7 +325,7 @@ pub struct MemoryFs {
 impl MemoryFs {
 	pub fn new() -> MemoryFs {
 		MemoryFs {
-			handle: Spinlock::new(MemoryFsDirectory::new(String::from("/")))
+			handle: Spinlock::new(MemoryFsDirectory::new())
 		}
 	}
 }
@@ -358,6 +340,7 @@ impl Vfs for MemoryFs {
 	}
 
 	fn lsdir(&self) -> Result<()> {
+		info!("/");
 		self.handle.lock().lsdir(String::from(""))
 	}
 
