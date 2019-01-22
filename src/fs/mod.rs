@@ -40,7 +40,9 @@ pub enum NodeKind {
 	/// Node represent a file
 	File,
 	/// Node represent a directory
-	Directory
+	Directory,
+	/// Symbolic link
+	Symlink
 }
 
 bitflags! {
@@ -67,8 +69,17 @@ trait VfsNodeFile: VfsNode + core::fmt::Debug + core::marker::Send + core::marke
 	fn get_handle(&self, _opt: OpenOptions) -> Result<Box<FileHandle>>;
 }
 
+/// VfsNodeFile represents a file node of the virtual file system.
+trait VfsNodeSymlink: VfsNode + core::fmt::Debug + core::marker::Send + core::marker::Sync {
+	/// Retuns the path to the new location
+	fn get_path(&self) -> String;
+}
+
 /// VfsNodeDirectory represents a directory node of the virtual file system.
 trait VfsNodeDirectory: VfsNode + core::fmt::Debug + core::marker::Send + core::marker::Sync {
+	/// Helper functions to create a symbolic link
+	fn traverse_symlink(&mut self, _components: &mut Vec<&str>, path: &String) -> Result<()>;
+
 	/// Helper function to create a new dirctory node
 	fn traverse_mkdir(&mut self, _components: &mut Vec<&str>) -> Result<()>;
 
@@ -91,6 +102,9 @@ trait Vfs: core::fmt::Debug + core::marker::Send + core::marker::Sync {
 	/// `path` must be an absolute path to the file, while `flags` defined
 	/// if the file is writeable or created on demand.
 	fn open(&mut self, path: &String, flags: OpenOptions) -> Result<Box<FileHandle>>;
+
+	/// A symbolic link `path2` is created to `path1`
+	fn symlink(&mut self, path1: &String, path2: &String) -> Result<()>;
 }
 
 /// Enumeration of possible methods to seek within an I/O object.
@@ -136,6 +150,11 @@ pub fn mkdir(path: &String) -> Result<()> {
 /// if the file is writeable or created on demand.
 pub fn open(path: &String, flags: OpenOptions) -> Result<Box<FileHandle>> {
 	unsafe { VFS_ROOT.as_mut().unwrap().open(path, flags) }
+}
+
+/// A symbolic link `path2` is created to `path1`
+pub fn symlink(path1: &String, path2: &String) -> Result<()> {
+	unsafe { VFS_ROOT.as_mut().unwrap().symlink(path1, path2) }
 }
 
 /// Help function to check if the argument is an abolute path

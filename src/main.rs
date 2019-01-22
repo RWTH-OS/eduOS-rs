@@ -74,6 +74,8 @@ pub extern "C" fn main() -> ! {
 	let mut file = fs::open(&String::from("/bin/bla.txt"),
 		fs::OpenOptions::READWRITE|fs::OpenOptions::CREATE).expect("Unable to open file");
 	write!(file, "Hello World!!!").expect("Unable to write data");
+	fs::symlink(&String::from("/bin/bla.txt"),&String::from("/link.txt"))
+		.expect("Unable to create symbolic link");
 
 	info!("Print file system:");
 	fs::lsdir().unwrap();

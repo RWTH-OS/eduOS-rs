@@ -25,7 +25,7 @@
 
 use logging::*;
 use errno::*;
-use fs::{NodeKind, VfsNode, VfsNodeFile, VfsNodeDirectory, Vfs,
+use fs::{NodeKind, VfsNode, VfsNodeFile, VfsNodeDirectory, VfsNodeSymlink, Vfs,
 		OpenOptions, FileHandle, SeekFrom, check_path};
 use alloc::boxed::Box;
 use alloc::vec::Vec;
@@ -74,6 +74,34 @@ impl VfsNode for MemoryFsDirectory {
 }
 
 impl VfsNodeDirectory for MemoryFsDirectory {
+	fn traverse_symlink(&mut self, components: &mut Vec<&str>, path: &String) -> Result<()> {
+		if let Some(component) = components.pop() {
+			let node_name = String::from(component);
+
+			if components.is_empty() == true {
+				// reach endpoint => reach link
+				if self.children.get(&node_name).is_none() {
+					// Create symlink
+					let link = Box::new(MemoryFsSymlink::new(path));
+					self.children.insert(node_name, link);
+
+					Ok(())
+				} else {
+					Err(Error::InvalidArgument)
+				}
+			} else {
+				// traverse to the directories to the endpoint
+				if let Some(directory) = self.get_mut::<MemoryFsDirectory>(&node_name) {
+					directory.traverse_symlink(components, path)
+				} else {
+					Err(Error::InvalidArgument)
+				}
+			}
+		} else {
+			Err(Error::InvalidArgument)
+		}
+	}
+
 	fn traverse_mkdir(&mut self, components: &mut Vec<&str>) -> Result<()> {
 		if let Some(component) = components.pop() {
 			let node_name = String::from(component);
@@ -100,9 +128,12 @@ impl VfsNodeDirectory for MemoryFsDirectory {
 			if let Some(directory) = node.downcast_ref::<MemoryFsDirectory>() {
 				info!("{}{} ({:?})", tabs, name, self.get_kind());
 				directory.traverse_lsdir(tabs.clone())?;
-			} else {
-				let file = node.downcast_ref::<MemoryFsFile>().unwrap();
+			} else if let Some(file) = node.downcast_ref::<MemoryFsFile>() {
 				info!("{}{} ({:?})", tabs, name, file.get_kind());
+			} else if let Some(link) = node.downcast_ref::<MemoryFsSymlink>() {
+				info!("{}{} ({:?} -> {})", tabs, name, link.get_kind(), link.get_path());
+			} else {
+				info!("{}{} (Unknown))", tabs, name);
 			}
 		}
 
@@ -142,6 +173,32 @@ impl VfsNodeDirectory for MemoryFsDirectory {
 		} else {
 			Err(Error::InvalidArgument)
 		}
+	}
+}
+
+#[derive(Debug)]
+struct MemoryFsSymlink {
+	/// Path to the new location
+	path: String
+}
+
+impl MemoryFsSymlink {
+	pub fn new(path: &String) -> Self {
+		MemoryFsSymlink {
+			path: path.clone()
+		}
+	}
+}
+
+impl VfsNode for MemoryFsSymlink {
+	fn get_kind(&self) -> NodeKind {
+		NodeKind::Symlink
+	}
+}
+
+impl VfsNodeSymlink for MemoryFsSymlink {
+	fn get_path(&self) -> String {
+		self.path.clone()
 	}
 }
 
@@ -340,6 +397,19 @@ impl Vfs for MemoryFs {
 			components.pop();
 
 			self.handle.lock().traverse_open(&mut components, flags)
+		} else {
+			Err(Error::InvalidFsPath)
+		}
+	}
+
+	fn symlink(&mut self, path1: &String, path2: &String) -> Result<()> {
+		if check_path(path2) {
+			let mut components: Vec<&str> = path2.split("/").collect();
+
+			components.reverse();
+			components.pop();
+
+			self.handle.lock().traverse_symlink(&mut components, path1)
 		} else {
 			Err(Error::InvalidFsPath)
 		}
