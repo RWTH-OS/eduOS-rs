@@ -25,11 +25,13 @@
 
 #![allow(dead_code)]
 
+mod vfs;
 mod initrd;
 
 use logging::*;
 use errno::*;
-use fs::initrd::MemoryFs;
+use arch;
+use fs::vfs::Fs;
 use alloc::vec::Vec;
 use alloc::boxed::Box;
 use alloc::string::String;
@@ -77,6 +79,9 @@ trait VfsNodeDirectory: VfsNode + core::fmt::Debug + core::marker::Send + core::
 
 	/// Helper function to open a file
 	fn traverse_open(&mut self, _components: &mut Vec<&str>, _flags: OpenOptions) -> Result<Box<FileHandle>>;
+
+	/// Mound memory region as file
+	fn traverse_mount(&mut self, _components: &mut Vec<&str>, addr: u64, len: u64) -> Result<()>;
 }
 
 /// The trait `Vfs` specifies all operation on the virtual file systems.
@@ -91,6 +96,9 @@ trait Vfs: core::fmt::Debug + core::marker::Send + core::marker::Sync {
 	/// `path` must be an absolute path to the file, while `flags` defined
 	/// if the file is writeable or created on demand.
 	fn open(&mut self, path: &String, flags: OpenOptions) -> Result<Box<FileHandle>>;
+
+	/// Mound memory region as file
+	fn mount(&mut self, path: &String, addr: u64, len: u64) -> Result<()>;
 }
 
 /// Enumeration of possible methods to seek within an I/O object.
@@ -118,7 +126,7 @@ pub trait FileHandle: core::fmt::Debug + core::fmt::Write {
 }
 
 /// Entrypoint of the file system
-static mut VFS_ROOT: Option<MemoryFs> = None;
+static mut VFS_ROOT: Option<Fs> = None;
 
 /// List the current state of file system
 pub fn lsdir() -> Result<()> {
@@ -138,6 +146,11 @@ pub fn open(path: &String, flags: OpenOptions) -> Result<Box<FileHandle>> {
 	unsafe { VFS_ROOT.as_mut().unwrap().open(path, flags) }
 }
 
+/// A symbolic link `path2` is created to `path1`
+pub fn mount(path: &String, addr: u64, len: u64) -> Result<()> {
+	unsafe { VFS_ROOT.as_mut().unwrap().mount(path, addr, len) }
+}
+
 /// Help function to check if the argument is an abolute path
 fn check_path(path: &String) -> bool{
 	if let Some(pos) = path.find('/') {
@@ -150,10 +163,16 @@ fn check_path(path: &String) -> bool{
 }
 
 pub fn init() {
-	let mut root = MemoryFs::new();
+	let mut root = Fs::new();
 
 	root.mkdir(&String::from("/bin")).unwrap();
 	root.mkdir(&String::from("/dev")).unwrap();
+
+	let (addr, len) = arch::get_memfile();
+	if len > 0 {
+		info!("Found mountable file at 0x{:x} (len 0x{:x})", addr, len);
+		root.mount(&String::from("/bin/demo"), addr, len).expect("Unable to mount file");
+	}
 
 	//root.lsdir().unwrap();
 	//info!("root {:?}", root);

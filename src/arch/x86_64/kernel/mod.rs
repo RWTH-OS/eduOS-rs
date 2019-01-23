@@ -40,17 +40,28 @@ struct KernelHeader {
 	magic_number: u32,
 	version: u32,
 	mem_limit: u64,
-	num_cpus: u32
+	num_cpus: u32,
+	file_addr: u64,
+	file_length: u64
 }
 
 /// Kernel header to announce machine features
 #[link_section = ".kheader"]
 static KERNEL_HEADER: KernelHeader = KernelHeader {
 	magic_number: 0xDEADC0DEu32,
-	version: 0,
+	version: 1,
 	mem_limit: 0,
-	num_cpus: 1
+	num_cpus: 1,
+	file_addr: 0,
+	file_length: 0
 };
+
+pub fn get_memfile() -> (u64, u64) {
+	let addr = unsafe { read_volatile(&KERNEL_HEADER.file_addr) };
+	let len = unsafe { read_volatile(&KERNEL_HEADER.file_length) };
+
+	(addr, len)
+}
 
 pub fn get_memory_size() -> usize {
 		unsafe { read_volatile(&KERNEL_HEADER.mem_limit) as usize }
