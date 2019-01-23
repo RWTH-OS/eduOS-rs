@@ -24,7 +24,7 @@
 // Export our platform-specific modules.
 #[cfg(target_arch="x86_64")]
 pub use self::x86_64::kernel::{serial,processor,irq,init,jump_to_user_land,register_task,
-	get_memory_size};
+	get_memory_size,get_memfile};
 
 // Export our platform-specific modules.
 #[cfg(target_arch="x86_64")]
