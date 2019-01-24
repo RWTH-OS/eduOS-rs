@@ -129,6 +129,7 @@ pub trait FileHandle: core::fmt::Debug + core::fmt::Write {
 	fn read(&mut self, buf: &mut [u8]) -> Result<usize>;
 	fn write(&mut self, buf: &[u8]) -> Result<usize>;
 	fn seek(&mut self, style: SeekFrom) -> Result<u64>;
+	fn len(&self) -> usize;
 }
 
 /// Entrypoint of the file system

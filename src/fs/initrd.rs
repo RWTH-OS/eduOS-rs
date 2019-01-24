@@ -106,6 +106,11 @@ impl RomHandle {
 			}
 		}
 	}
+
+	pub fn len(&self) -> usize {
+		let guard = self.data.read();
+		guard.len() as usize
+	}
 }
 
 impl Clone for RomHandle {
@@ -236,6 +241,12 @@ impl RamHandle {
 			pos: Spinlock::new(0),
 			data: self.data.clone()
 		}
+	}
+
+	pub fn len(&self) -> usize {
+		let guard = self.data.read();
+		let ref vec: &Vec<u8> = guard.deref();
+		vec.len() as usize
 	}
 }
 

@@ -248,6 +248,13 @@ impl FileHandle for VfsFile {
 			DataHandle::ROM(ref mut data) => { data.seek(style) }
 		}
 	}
+
+	fn len(&self) -> usize {
+		match self.data {
+			DataHandle::RAM(ref data) => { data.len() },
+			DataHandle::ROM(ref data) => { data.len() }
+		}
+	}
 }
 
 /// Entrypoint of the in-memory file system
