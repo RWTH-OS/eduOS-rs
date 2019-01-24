@@ -25,8 +25,13 @@ use logging::*;
 use scheduler::*;
 
 #[no_mangle]
-pub extern "C" fn sys_exit(status: i32)
+#[naked]
+pub unsafe extern "C" fn sys_invalid()
 {
-	info!("enter syscall exit {}", status);
+	let mut rax: i64 = 0;
+
+	asm!("push %rax; pop $0" : "=r"(rax));
+
+	error!("Invalid syscall {}", rax);
 	do_exit();
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2018 Stefan Lankes, RWTH Aachen University
+// Copyright (c) 2017 Stefan Lankes, RWTH Aachen University
 //
 // MIT License
 //
@@ -21,10 +21,8 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-use scheduler;
 
 #[no_mangle]
-pub extern "C" fn sys_message()
-{
-	println!("hello from user task {}!", scheduler::get_current_taskid());
+pub extern "C" fn sys_nothing() -> i32 {
+	0
 }

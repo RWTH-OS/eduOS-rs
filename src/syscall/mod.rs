@@ -21,25 +21,39 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-pub mod write;
-pub mod exit;
-pub mod message;
+mod write;
+mod exit;
+mod invalid;
+mod nothing;
 
 use syscall::exit::sys_exit;
-use syscall::write::sys_write;
-use syscall::message::sys_message;
-
-/// number of the system call `exit`
-pub const SYSNO_EXIT: usize = 0;
+use syscall::write::{sys_write,sys_writev};
+use syscall::invalid::sys_invalid;
+use syscall::nothing::sys_nothing;
 
 /// number of the system call `write`
 pub const SYSNO_WRITE: usize = 1;
 
-/// number of the system call `message`
-pub const SYSNO_MESSAGE: usize = 2;
+/// number of the system call `close`
+pub const SYSNO_CLOSE: usize = 3;
+
+pub const SYSNO_IOCTL: usize = 16;
+
+pub const SYSNO_WRITEV: usize = 20;
+
+/// number of the system call `exit`
+pub const SYSNO_EXIT: usize = 60;
+
+pub const SYSNO_ARCH_PRCTL: usize = 158;
+
+/// set pointer to thread ID
+pub const SYSNO_SET_TID_ADDRESS: usize = 218;
+
+/// exit all threads in a process
+pub const SYSNO_EXIT_GROUP: usize = 231;
 
 /// total number of system calls
-pub const NO_SYSCALLS: usize = 3;
+pub const NO_SYSCALLS: usize = 400;
 
 #[repr(align(64))]
 #[repr(C)]
@@ -49,11 +63,20 @@ pub struct SyscallTable{
 
 impl SyscallTable {
 	pub const fn new() -> Self {
-		SyscallTable {
-			handle:	[sys_exit as *const _,
-					 sys_write as *const _,
-					 sys_message as *const _]
-		}
+		let mut table = SyscallTable {
+			handle:	[sys_invalid as *const _; NO_SYSCALLS]
+		};
+
+		table.handle[SYSNO_WRITE] = sys_write as *const _;
+		table.handle[SYSNO_CLOSE] = sys_nothing as *const _;
+		table.handle[SYSNO_IOCTL] = sys_nothing as *const _;
+		table.handle[SYSNO_WRITEV] = sys_writev as *const _;
+		table.handle[SYSNO_EXIT] = sys_exit as *const _;
+		table.handle[SYSNO_ARCH_PRCTL] = sys_nothing as *const _;
+		table.handle[SYSNO_SET_TID_ADDRESS] = sys_nothing as *const _;
+		table.handle[SYSNO_EXIT_GROUP] = sys_exit as *const _;
+
+		table
 	}
 }
 
