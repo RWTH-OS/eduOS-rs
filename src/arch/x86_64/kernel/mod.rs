@@ -33,6 +33,7 @@ mod syscall;
 
 use core::ptr::read_volatile;
 use consts::*;
+use logging::*;
 pub use arch::x86_64::kernel::syscall::syscall_handler;
 
 #[repr(C)]
@@ -75,13 +76,13 @@ pub fn register_task() {
 
 #[inline(never)]
 #[naked]
-pub fn jump_to_user_land(func: extern fn() -> !) -> !
+pub fn jump_to_user_land(entry: u64) -> !
 {
 	let ds = 0x23u64;
 	let cs = 0x2bu64;
-	let offset = (func as *const()) as usize & 0xFFF;
-	let entry = USER_ENTRY | offset;
-	let stack = USER_ENTRY + 4*1024*1024;
+	let stack = USER_STACK - 0x100;
+
+	info!("Set user space stack to 0x{:x}", stack);
 
 	unsafe {
 		asm!("swapgs; mov $0, %ds; mov $0, %es; push $0; push $3; pushfq; push $1; push $2; iretq"

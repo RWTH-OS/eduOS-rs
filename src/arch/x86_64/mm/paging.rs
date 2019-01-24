@@ -582,10 +582,10 @@ pub extern "x86-interrupt" fn page_fault_handler(stack_frame: &mut irq::Exceptio
 	let mut virtual_address = unsafe { controlregs::cr2() };
 
 	// do we have to create the user-space stack?
-	if virtual_address > USER_ENTRY + 4*1024*1024 - 64*1024 {
+	if virtual_address > USER_SPACE_START {
 		virtual_address = align_down!(virtual_address, BasePageSize::SIZE);
 
-		// Ok, user space want to have memory
+		// Ok, user space want to have memory (for the stack / heap)
 		let physical_address = physicalmem::allocate_aligned(BasePageSize::SIZE, BasePageSize::SIZE);
 
 		debug!("Map 0x{:x} into the user space at 0x{:x}", physical_address, virtual_address);
@@ -601,8 +601,6 @@ pub extern "x86-interrupt" fn page_fault_handler(stack_frame: &mut irq::Exceptio
 			// clear cr2 to signalize that the pagefault is solved by the pagefault handler
 			controlregs::cr2_write(0);
 		}
-
-		irq::send_eoi_to_master();
 	} else {
 		// Anything else is an error!
 		let pferror = PageFaultError::from_bits_truncate(error_code as u32);
@@ -612,8 +610,6 @@ pub extern "x86-interrupt" fn page_fault_handler(stack_frame: &mut irq::Exceptio
 
 		// clear cr2 to signalize that the pagefault is solved by the pagefault handler
 		unsafe { controlregs::cr2_write(0); }
-
-		irq::send_eoi_to_master();
 
 		scheduler::abort();
 	}
@@ -692,13 +688,6 @@ static mut ROOT_PAGE_TABLES: KernelPageTables = KernelPageTables::new();
 #[inline(always)]
 pub fn get_kernel_root_page_table() -> usize {
 		unsafe { &ROOT_PAGE_TABLES as *const _ as usize }
-}
-
-pub fn map_usr_entry(func: extern fn() -> !) {
-	let addr = align_down!((func as *const()) as usize, BasePageSize::SIZE);
-
-	map::<BasePageSize>(USER_ENTRY, virtual_to_physical(addr), 2,
-		PageTableEntryFlags::WRITABLE | PageTableEntryFlags::USER_ACCESSIBLE);
 }
 
 pub fn drop_user_space() {

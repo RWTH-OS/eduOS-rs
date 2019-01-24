@@ -37,5 +37,8 @@ pub const NO_PRIORITIES: usize = 32;
 /// frequency of the timer interrupt
 pub const TIMER_FREQ: u32 = 100; /* in HZ */
 
-/// Entry point of the user tasks
-pub const USER_ENTRY: usize = 0x8000000000usize;
+/// Start address of the user space
+pub const USER_SPACE_START: usize = 0x1_0000_0000;
+
+/// Initial value of the stack pointer
+pub const USER_STACK: usize = 0x8_0000_0000;

@@ -17,6 +17,15 @@ git = "https://github.com/hermitcore/rust-x86.git"
 branch = "hermit"
 default-features = false
 
+[dependencies.goblin]
+version = "0.0.19"
+default-features = false
+features = ["elf64", "elf32", "endian_fd"]
+
+#[dependencies.scroll]
+#version = "0.9"
+#default-features = false
+
 [dependencies.num-traits]
 version = "0.2"
 default-features = false

@@ -16,6 +16,7 @@ extern crate alloc;
 #[macro_use]
 extern crate bitflags;
 extern crate num_traits;
+extern crate goblin;
 
 // These need to be visible to the linker, so we need to export them.
 pub use logging::*;

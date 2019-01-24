@@ -28,6 +28,10 @@ pub use self::x86_64::kernel::{serial,processor,irq,init,jump_to_user_land,regis
 
 // Export our platform-specific modules.
 #[cfg(target_arch="x86_64")]
+pub use self::x86_64::load_application;
+
+// Export our platform-specific modules.
+#[cfg(target_arch="x86_64")]
 pub use self::x86_64::kernel::switch::switch;
 
 // Export our platform-specific modules.

@@ -17,12 +17,15 @@ else
 RM := rm -rf
 endif
 
-.PHONY: all clean run debug cargo docs
+.PHONY: all clean run debug cargo docs demo
 
 all: cargo
 
 run:
 	@ehyve target/$(arch)-eduos/$(rdir)/eduos-rs
+
+demo:
+	@ehyve --file demo/hello target/$(arch)-eduos/$(rdir)/eduos-rs
 
 clean:
 	$(RM) target
