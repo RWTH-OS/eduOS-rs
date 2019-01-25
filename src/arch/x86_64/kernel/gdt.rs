@@ -29,7 +29,7 @@ use x86::bits64::task::*;
 use x86::segmentation::*;
 use x86::Ring;
 use x86::dtables::{self, DescriptorTablePointer};
-use x86::controlregs::cr3_write;
+use x86::controlregs::{cr3,cr3_write};
 use consts::*;
 //use logging::*;
 use scheduler;
@@ -158,10 +158,13 @@ unsafe fn set_kernel_stack(stack: usize)
 }
 
 #[no_mangle]
- pub unsafe extern "C" fn set_current_kernel_stack()
- {
-	 cr3_write(scheduler::get_root_page_table() as u64);
+pub unsafe extern "C" fn set_current_kernel_stack()
+{
+	let root = scheduler::get_root_page_table() as u64;
+	if root != cr3() {
+		cr3_write(root);
+	}
 
-	 let rsp = scheduler::get_current_stack();
-	 set_kernel_stack(rsp + STACK_SIZE - 0x10);
- }
+	let rsp = scheduler::get_current_stack();
+	set_kernel_stack(rsp + STACK_SIZE - 0x10);
+}

@@ -38,7 +38,7 @@ pub const NO_PRIORITIES: usize = 32;
 pub const TIMER_FREQ: u32 = 100; /* in HZ */
 
 /// Start address of the user space
-pub const USER_SPACE_START: usize = 0x1_0000_0000;
+pub const USER_SPACE_START: usize = 0x8000000000usize;
 
 /// Initial value of the stack pointer
-pub const USER_STACK: usize = 0x8_0000_0000;
+pub const USER_STACK: usize = USER_SPACE_START + 0x800000000;

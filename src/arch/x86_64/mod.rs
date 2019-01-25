@@ -135,7 +135,7 @@ pub fn load_application(path: &String) -> Result<u64> {
 
 		if (j.r_info & 0xF) == R_386_RELATIVE as u64 {
 			unsafe {
-				*offset = (USER_SPACE_START as i64- vstart as i64 + j.r_addend) as u64;
+				*offset = (USER_SPACE_START as i64 - vstart as i64 + j.r_addend) as u64;
 			}
 		} else if (j.r_info & 0xF) == R_386_GLOB_DAT as u64 {
 		} else {
@@ -143,29 +143,8 @@ pub fn load_application(path: &String) -> Result<u64> {
 		}
 	}
 
-	/*for i in &elf.section_headers {
-		if i.sh_type == SHT_RELA {
-			let mem = (USER_SPACE_START + i.sh_offset as usize) as *mut u8;
-			let rela = unsafe { elf64::reloc::from_raw_rela(mem as *const elf64::reloc::Rela, i.sh_size as usize) };
-			for j in rela {
-				info!("rela {:?}", j);
-				let offset = (USER_SPACE_START - vstart + j.r_offset as usize) as *mut u64;
-				unsafe {
-					*offset = (USER_SPACE_START as i64- vstart as i64 + j.r_addend) as u64;
-					info!("set offset 0x{:x} to 0x{:x}", offset as u64, *offset);
-				}
-			}
-		} else if i.sh_type == SHT_REL {
-			let mem = (USER_SPACE_START + i.sh_offset as usize) as *mut u8;
-			let rel = unsafe { elf64::reloc::from_raw_rel(mem as *const elf64::reloc::Rel, i.sh_size as usize) };
-			for j in rel {
-				info!("rel {:?}", j);
-			}
-		}
-	}*/
-
 	let entry = elf.entry - vstart as u64 + USER_SPACE_START as u64;
-	info!("Entry point at 0x{:x}", entry);
+	debug!("Entry point at 0x{:x}", entry);
 
 	Ok(entry)
 }

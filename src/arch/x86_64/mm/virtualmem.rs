@@ -33,7 +33,7 @@ static mut KERNEL_FREE_LIST: FreeList = FreeList::new();
 
 /// End of the virtual memory address space reserved for kernel memory (4 GiB).
 /// This also marks the start of the virtual memory address space reserved for the task heap.
-const KERNEL_VIRTUAL_MEMORY_END: usize = USER_SPACE_START;
+const KERNEL_VIRTUAL_MEMORY_END: usize = 0x1_0000_0000;
 
 /// End of the virtual memory address space reserved for kernel memory (128 TiB).
 /// This is the maximum contiguous virtual memory area possible with current x86-64 CPUs, which only support 48-bit
