@@ -23,7 +23,6 @@
 
 use arch::x86_64::mm::paging::{BasePageSize, PageSize};
 use collections::Node;
-use consts::*;
 use mm;
 use mm::freelist::{FreeList, FreeListEntry};
 use mm::POOL;

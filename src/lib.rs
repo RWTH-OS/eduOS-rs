@@ -46,7 +46,9 @@ static ALLOCATOR: &'static mm::allocator::Allocator = &mm::allocator::Allocator;
 #[cfg(not(test))]
 #[panic_handler]
 pub fn panic(info: &PanicInfo) -> ! {
-	print!("[!!!PANIC!!!] ");
+	let tid = scheduler::get_current_taskid();
+
+	print!("[!!!PANIC from task {}!!!] ", tid);
 
 	if let Some(location) = info.location() {
 		print!("{}:{}: ", location.file(), location.line());
