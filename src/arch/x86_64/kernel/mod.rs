@@ -50,7 +50,7 @@ struct KernelHeader {
 #[link_section = ".kheader"]
 static KERNEL_HEADER: KernelHeader = KernelHeader {
 	magic_number: 0xDEADC0DEu32,
-	version: 1,
+	version: 0,
 	mem_limit: 0,
 	num_cpus: 1,
 	file_addr: 0,
@@ -58,10 +58,15 @@ static KERNEL_HEADER: KernelHeader = KernelHeader {
 };
 
 pub fn get_memfile() -> (u64, u64) {
+	let version = unsafe { read_volatile(&KERNEL_HEADER.version) };
 	let addr = unsafe { read_volatile(&KERNEL_HEADER.file_addr) };
 	let len = unsafe { read_volatile(&KERNEL_HEADER.file_length) };
 
-	(addr, len)
+	if version > 0 {
+		(addr, len)
+	} else {
+		(0, 0)
+	}
 }
 
 pub fn get_memory_size() -> usize {
