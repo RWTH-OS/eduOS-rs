@@ -21,12 +21,10 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-use logging::*;
 use scheduler::*;
 
 #[no_mangle]
-pub extern "C" fn sys_exit(status: i32)
+pub extern "C" fn sys_exit(_status: i32)
 {
-	info!("enter syscall exit {}", status);
 	do_exit();
 }
