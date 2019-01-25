@@ -22,9 +22,6 @@ endif
 all: cargo
 
 run:
-	@ehyve target/$(arch)-eduos/$(rdir)/eduos-rs
-
-demo:
 	@ehyve --file demo/hello target/$(arch)-eduos/$(rdir)/eduos-rs
 
 clean:
