@@ -28,8 +28,8 @@ mod nodepool;
 use alloc::alloc::Layout;
 use arch::mm::paging::{BasePageSize, PageSize, PageTableEntryFlags};
 use mm::nodepool::NodePool;
-use logging::*;
 use scheduler::DisabledPreemption;
+use logging::*;
 use arch;
 
 extern "C" {

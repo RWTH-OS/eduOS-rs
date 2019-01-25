@@ -414,12 +414,12 @@ impl<L: PageTableLevel> PageTableMethods for PageTable<L> {
 
 		for index in 0..last {
 			if self.entries[index].is_present() && self.entries[index].is_user() {
-				let physical_address = self.entries[index].address();
+				let address = self.entries[index].address();
 
-				if !(physical_address >= mm::kernel_start_address() &&
-					 physical_address < mm::kernel_end_address()) {
-						 debug!("Free page frame at 0x{:x}", physical_address);
-						 physicalmem::deallocate(physical_address, BasePageSize::SIZE);
+				if !(address >= mm::kernel_start_address() &&
+					 address < mm::kernel_end_address()) {
+						debug!("Free page frame at 0x{:x}", address);
+						physicalmem::deallocate(address, BasePageSize::SIZE);
 				}
 			}
 		}
@@ -470,10 +470,11 @@ impl<L: PageTableLevelWithSubtables> PageTableMethods for PageTable<L> where L::
 
 					subtable.drop_user_space();
 
-					let physical_address = self.entries[index].address();
-					if !(physical_address >= mm::kernel_start_address() && physical_address < mm::kernel_end_address()) {
-						debug!("Free page table at 0x{:x}", physical_address);
-						physicalmem::deallocate(physical_address, BasePageSize::SIZE);
+					let address = self.entries[index].address();
+					if !(address >= mm::kernel_start_address()
+					  && address < mm::kernel_end_address()) {
+						debug!("Free page table at 0x{:x}", address);
+						physicalmem::deallocate(address, BasePageSize::SIZE);
 					}
 				}
 			}
@@ -568,10 +569,10 @@ impl<L: PageTableLevelWithSubtables> PageTable<L> where L::SubtableLevel: PageTa
 
 				subtable.drop_user_space();
 
-				let physical_address = self.entries[index].address();
-				if !(physical_address >= mm::kernel_start_address() && physical_address < mm::kernel_end_address()) {
-					debug!("Free page table at 0x{:x}", physical_address);
-					physicalmem::deallocate(physical_address, BasePageSize::SIZE);
+				let address = self.entries[index].address();
+				if !(address >= mm::kernel_start_address() && address < mm::kernel_end_address()) {
+					debug!("Free page table at 0x{:x}", address);
+					physicalmem::deallocate(address, BasePageSize::SIZE);
 				}
 			}
 		}
@@ -733,8 +734,7 @@ pub fn init() {
 		memset(root_page_table as *mut u8, 0x00, 3*BasePageSize::SIZE);
 
 		let pml4 = root_page_table as *mut PageTableEntry;
-		(*pml4).set(root_page_table + BasePageSize::SIZE, PageTableEntryFlags::WRITABLE
-			| PageTableEntryFlags::USER_ACCESSIBLE);
+		(*pml4).set(root_page_table + BasePageSize::SIZE, PageTableEntryFlags::WRITABLE);
 		let pml4 = (root_page_table + BasePageSize::SIZE - size_of::<usize>()) as *mut PageTableEntry;
 		(*pml4).set(root_page_table, PageTableEntryFlags::WRITABLE);
 

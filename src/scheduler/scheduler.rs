@@ -25,10 +25,10 @@ use alloc::rc::Rc;
 use alloc::collections::{BTreeMap, VecDeque};
 use core::cell::RefCell;
 use core::sync::atomic::{AtomicU32, Ordering};
-use arch::irq::{irq_nested_enable,irq_nested_disable};
 use arch::drop_user_space;
-use scheduler::task::*;
+use arch::irq::{irq_nested_enable,irq_nested_disable};
 use arch::switch;
+use scheduler::task::*;
 use logging::*;
 use synch::spinlock::*;
 use consts::*;
@@ -125,17 +125,17 @@ impl Scheduler {
 	}
 
 	pub fn abort(&mut self) -> ! {
-			if self.current_task.borrow().status != TaskStatus::TaskIdle {
-				info!("abort task with id {}", self.current_task.borrow().id);
-				self.cleanup();
-			} else {
-				panic!("unable to terminate idle task");
-			}
+		if self.current_task.borrow().status != TaskStatus::TaskIdle {
+			info!("abort task with id {}", self.current_task.borrow().id);
+			self.cleanup();
+		} else {
+			panic!("unable to terminate idle task");
+		}
 
-			self.reschedule();
+		self.reschedule();
 
-			// we should never reach this point
-			panic!("abort failed!");
+		// we should never reach this point
+		panic!("abort failed!");
 	}
 
 	pub fn block_current_task(&mut self) -> Rc<RefCell<Task>> {

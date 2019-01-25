@@ -87,7 +87,7 @@ pub fn jump_to_user_land(entry: u64) -> !
 	let cs = 0x2bu64;
 	let stack = USER_STACK - 0x100;
 
-	info!("Set user space stack to 0x{:x}", stack);
+	debug!("Set user space stack to 0x{:x}", stack);
 
 	unsafe {
 		asm!("swapgs; mov $0, %ds; mov $0, %es; push $0; push $3; pushfq; push $1; push $2; iretq"
