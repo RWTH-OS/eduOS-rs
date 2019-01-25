@@ -80,6 +80,7 @@ pub fn reserve(virtual_address: usize, size: usize) {
 	assert!(size > 0);
 	assert!(size % BasePageSize::SIZE == 0, "Size {:#X} is not a multiple of {:#X}", size, BasePageSize::SIZE);
 
+	let _preemption = DisabledPreemption::new();
 	let result = unsafe {
 		POOL.maintain();
 		KERNEL_FREE_LIST.reserve(virtual_address, size)
