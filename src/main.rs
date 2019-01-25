@@ -25,12 +25,8 @@ extern "C" fn create_user_foo() {
 	info!("Hello from loader");
 
 	// load application
-	match load_application(&path) {
-		Ok(entry) => {
-			debug!("jump to user land");
-			arch::jump_to_user_land(entry);
-		},
-		_ => error!("Unable to load elf64 binary {}", path)
+	if load_application(&path).is_err() {
+		error!("Unable to load elf64 binary {}", path)
 	}
 }
 

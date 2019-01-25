@@ -43,7 +43,7 @@ use compiler_builtins::mem::memset;
 use core::slice;
 use x86::controlregs;
 
-pub fn load_application(path: &String) -> Result<u64> {
+pub fn load_application(path: &String) -> Result<()> {
 	unsafe {
 		controlregs::cr3_write(paging::create_usr_pgd() as u64);
 	}
@@ -112,9 +112,10 @@ pub fn load_application(path: &String) -> Result<u64> {
 		} else if i.p_type == PT_GNU_RELRO {
 			debug!("PT_GNU_RELRO at 0x{:x} (size 0x{:x})", i.p_vaddr, i.p_filesz);
 		} else if i.p_type == PT_DYNAMIC {
+			debug!("PT_DYNAMIC at 0x{:x} (size 0x{:x})", i.p_vaddr, i.p_filesz);
+
 			let mem = (USER_SPACE_START + i.p_vaddr as usize - vstart) as *mut u8;
 			let dyn = unsafe { elf::dyn::dyn64::from_raw(0, mem as usize) };
-			debug!("PT_DYNAMIC {:?}", dyn);
 
 			for j in dyn {
 				if j.d_tag == DT_RELA {
@@ -144,7 +145,7 @@ pub fn load_application(path: &String) -> Result<u64> {
 	}
 
 	let entry = elf.entry - vstart as u64 + USER_SPACE_START as u64;
-	debug!("Entry point at 0x{:x}", entry);
 
-	Ok(entry)
+	debug!("jump to user land at 0x{:x}", entry);
+	self::kernel::jump_to_user_land(entry);
 }
