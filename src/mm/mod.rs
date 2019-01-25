@@ -84,8 +84,11 @@ pub fn deallocate(virtual_address: usize, size: usize) {
 }
 
 pub fn init() {
+	let image_size;
+
 	// Calculate the start and end addresses of the 2 MiB page(s) that map the kernel.
 	unsafe {
+		image_size = &kernel_end as *const u8 as usize - &kernel_start as *const u8 as usize;
 		KERNEL_START_ADDRESS = align_down!(&kernel_start as *const u8 as usize, arch::mm::paging::LargePageSize::SIZE);
 		KERNEL_END_ADDRESS = align_up!(&kernel_end as *const u8 as usize, arch::mm::paging::LargePageSize::SIZE);
 	}
@@ -93,6 +96,7 @@ pub fn init() {
 	info!("Memory size {} MByte", arch::get_memory_size() >> 20);
 	info!("Kernel start address 0x{:x}", kernel_start_address());
 	info!("Kernel end address 0x{:x}", kernel_end_address());
+	info!("Kernel image size {} KByte", image_size >> 10);
 
 	arch::mm::init();
 	self::allocator::init();
