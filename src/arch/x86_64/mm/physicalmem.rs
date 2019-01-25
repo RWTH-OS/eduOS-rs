@@ -79,12 +79,14 @@ pub fn allocate_aligned(size: usize, alignment: usize) -> usize {
 	result.unwrap()
 }
 
-/// This function must only be called from mm::deallocate!
-/// Otherwise, it may fail due to an empty node pool (POOL.maintain() is called in virtualmem::deallocate)
 pub fn deallocate(physical_address: usize, size: usize) {
 	assert!(physical_address >= mm::kernel_end_address(), "Physical address {:#X} is not >= KERNEL_END_ADDRESS", physical_address);
 	assert!(size > 0);
 	assert!(size % BasePageSize::SIZE == 0, "Size {:#X} is not a multiple of {:#X}", size, BasePageSize::SIZE);
 
-	unsafe { PHYSICAL_FREE_LIST.deallocate(physical_address, size); }
+	let _preemption = DisabledPreemption::new();
+	unsafe {
+		POOL.maintain();
+		PHYSICAL_FREE_LIST.deallocate(physical_address, size);
+	}
 }

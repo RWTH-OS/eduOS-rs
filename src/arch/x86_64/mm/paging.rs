@@ -725,8 +725,7 @@ pub fn create_usr_pgd() -> usize {
 		memset(user_page_table as *mut u8, 0x00, BasePageSize::SIZE);
 
 		let pml4 = user_page_table as *mut PageTableEntry;
-		(*pml4).set(kernel_page_table + BasePageSize::SIZE, PageTableEntryFlags::WRITABLE
-			| PageTableEntryFlags::USER_ACCESSIBLE);
+		(*pml4).set(kernel_page_table + BasePageSize::SIZE, PageTableEntryFlags::WRITABLE);
 		let pml4 = (user_page_table + BasePageSize::SIZE - size_of::<usize>()) as *mut PageTableEntry;
 		(*pml4).set(physical_address, PageTableEntryFlags::WRITABLE);
 
