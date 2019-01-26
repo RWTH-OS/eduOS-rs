@@ -9,7 +9,7 @@
 
 ## Introduction
 
-<p align="center"><img src="/img/eduOS-rs.gif?raw=true"/></p>
+<p align="center"><img src="/img/demo.gif?raw=true"/></p>
 
 eduOS-rs is a Unix-like operating system based on a monolithic architecture for educational purposes.
 It is developed for the course [Operating Systems][acsos] at RWTH Aachen University and includes a modified hypervisor that simplifies the boot process to increase the intelligibility of the OS.
