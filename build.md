@@ -100,3 +100,15 @@ Currently, following stages of development are available:
 5. stage 5 - Support of user-level tasks
 
    Add support of user-level tasks with an small interface for basic system calls
+
+6. stage 6 - Support of paging
+
+   Add support of paging and a simple demo for process creation
+
+7. stage 7 - Integration of an in-memory file system
+
+   Introduce a virtual file system with an in-memory file system as example file system.
+
+8. stage8 - Run Linux application as common process
+
+   Start a simple Linux application (_HelloWorld_) on top of eduOS-rs. The application is a _position-independent executable_ (PIE) and use [musl-libc](http://www.musl-libc.org) as standard C library.
