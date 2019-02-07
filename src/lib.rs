@@ -2,7 +2,6 @@
 #![feature(alloc)]
 #![feature(allocator_api)]
 #![feature(panic_info_message)]
-#![feature(integer_atomics)]
 #![feature(compiler_builtins_lib)]
 #![feature(naked_functions)]
 #![feature(abi_x86_interrupt)]
