@@ -1,7 +1,6 @@
 #![feature(asm, const_fn, lang_items)]
 #![feature(alloc)]
 #![feature(allocator_api)]
-#![feature(integer_atomics)]
 #![feature(compiler_builtins_lib)]
 #![feature(naked_functions)]
 #![feature(abi_x86_interrupt)]
