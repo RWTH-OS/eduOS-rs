@@ -130,8 +130,6 @@ Currently, following stages of development are available:
 8. [http://rwth-os.github.io/eduOS/](http://rwth-os.github.io/eduOS/)
 9. [https://intermezzos.github.io](https://intermezzos.github.io)
 
-## License
-
 Licensed under either of
 
  * Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
