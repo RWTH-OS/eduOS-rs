@@ -8,7 +8,6 @@
 extern crate eduos_rs;
 
 use core::panic::PanicInfo;
-use core::fmt::Write;
 use eduos_rs::arch::processor::{shutdown,halt};
 use eduos_rs::arch;
 use eduos_rs::scheduler;
