@@ -222,7 +222,7 @@ impl PriorityTaskQueue {
 				Some(ref curr_task) => {
 					if Rc::ptr_eq(&curr_task, &task) {
 						let (mut prev, mut next) = {
-							let mut borrowed = curr_task.borrow_mut();
+							let borrowed = curr_task.borrow_mut();
 							(borrowed.prev.clone(), borrowed.next.clone())
 						};
 
