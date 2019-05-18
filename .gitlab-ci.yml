@@ -1,0 +1,48 @@
+variables:
+  IMAGE: ubuntu:with-hermitcore
+  GIT_SUBMODULE_STRATEGY: normal
+
+stages:
+  - prepare
+  - build
+  #- test
+
+# Stage: prepare
+##############################################################################
+
+docker:
+  stage: prepare
+  script:
+    - docker build -t ${IMAGE} .
+  tags:
+    - shell
+    - linux
+
+# Stage: build
+##############################################################################
+
+build:
+  stage: build
+  script:
+    - make
+  image: ${IMAGE}
+  tags:
+    - docker
+  #artifacts:
+  #  untracked: true
+  #  expire_in: 1 week
+  #  paths:
+  #    - ./target
+
+# Stage: test
+##############################################################################
+#test:
+#  stage: test
+#  script:
+#    - lscpu
+#    - make test
+#  image: ${IMAGE}
+#  tags:
+#    - docker
+#  dependencies:
+#    - build
