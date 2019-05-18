@@ -1,5 +1,4 @@
 #![feature(asm, const_fn, lang_items)]
-#![feature(alloc)]
 #![feature(allocator_api)]
 #![feature(compiler_builtins_lib)]
 #![feature(naked_functions)]
