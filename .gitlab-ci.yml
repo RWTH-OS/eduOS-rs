@@ -25,11 +25,11 @@ build:
   stage: build
   script:
     - make
+    - du -hs ./target
   image: ${IMAGE}
   tags:
     - docker
   artifacts:
-    untracked: true
     expire_in: 1 week
     paths:
       - ./target/x86_64-eduos/debug/eduos-rs
