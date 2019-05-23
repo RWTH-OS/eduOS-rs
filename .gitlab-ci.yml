@@ -5,7 +5,7 @@ variables:
 stages:
   - prepare
   - build
-  #- test
+  - test
 
 # Stage: prepare
 ##############################################################################
@@ -25,24 +25,23 @@ build:
   stage: build
   script:
     - make
+    - du -hs ./target
   image: ${IMAGE}
   tags:
     - docker
-  #artifacts:
-  #  untracked: true
-  #  expire_in: 1 week
-  #  paths:
-  #    - ./target
+  artifacts:
+    expire_in: 1 week
+    paths:
+      - ./target/x86_64-eduos/debug/eduos-rs
 
 # Stage: test
 ##############################################################################
-#test:
-#  stage: test
-#  script:
-#    - lscpu
-#    - make test
-#  image: ${IMAGE}
-#  tags:
-#    - docker
-#  dependencies:
-#    - build
+test:
+  stage: test
+  script:
+    - make run
+  image: ${IMAGE}
+  tags:
+    - docker
+  dependencies:
+    - build
