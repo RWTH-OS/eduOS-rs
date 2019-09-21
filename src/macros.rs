@@ -6,7 +6,8 @@
 macro_rules! print {
 	($($arg:tt)*) => ({
 		use core::fmt::Write;
-		$crate::console::CONSOLE.lock().write_fmt(format_args!($($arg)*)).unwrap();
+		let mut console = $crate::console::Console {};
+		console.write_fmt(format_args!($($arg)*)).unwrap();
 	});
 }
 
