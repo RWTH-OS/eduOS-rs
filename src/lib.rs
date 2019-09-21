@@ -6,9 +6,9 @@ extern crate spin;
 extern crate x86;
 
 // These need to be visible to the linker, so we need to export them.
-pub use logging::*;
 #[cfg(target_arch = "x86_64")]
 pub use arch::processor::*;
+pub use logging::*;
 
 #[macro_use]
 pub mod macros;
