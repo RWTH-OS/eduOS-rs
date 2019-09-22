@@ -4,8 +4,8 @@ version = "0.1.0"
 license = "MIT/Apache-2.0"
 authors = ["Stefan Lankes <slankes@eonerc.rwth-aachen.de>"]
 
-[dependencies]
-bootloader = "0.8.*"
+[dependencies.bootloader]
+git = "https://github.com/RWTH-OS/bootloader.git"
 
 [target.'cfg(target_arch = "x86_64")'.dependencies.x86]
 version = "0.24.*"
