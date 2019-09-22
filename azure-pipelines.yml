@@ -40,15 +40,16 @@ jobs:
   - powershell: |
       Invoke-WebRequest -OutFile rustup-init.exe https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe
       ./rustup-init.exe -y --default-toolchain nightly | Out-Null
-      Remove-Item -Path "rustup-init.exe"
-      $env:Path += ";" + $env:UserProfile + "\.cargo\bin"
       Invoke-WebRequest -OutFile qemu-w64-setup.exe https://qemu.weilnetz.de/w64/qemu-w64-setup-20190815.exe
       ./qemu-w64-setup.exe /quiet
+      $env:Path += ";" + $env:UserProfile + "\.cargo\bin" + ";C:\Program File\qemu"
       cargo install cargo-xbuild
       rustup component add rust-src
       rustup component add llvm-tools-preview
       cargo install bootimage
       bootimage build --target x86_64-eduos.json
       bootimage run --target x86_64-eduos.json
+      Remove-Item -Path "rustup-init.exe"
+      Remove-Item -Path "qemu-w64-setup.exe"
     displayName: 'Test eduOS-rs on Windows'
 
