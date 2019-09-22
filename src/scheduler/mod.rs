@@ -9,9 +9,9 @@
 
 //! Interface to the scheduler
 
+mod scheduler;
 /// task control block
 pub mod task;
-mod scheduler;
 
 use errno::*;
 use scheduler::task::TaskPriority;
@@ -26,17 +26,13 @@ pub fn init() {
 }
 
 /// Create a new kernel task
-pub fn spawn(func: extern fn(), prio: TaskPriority) -> Result<task::TaskId> {
-	unsafe {
-		SCHEDULER.as_mut().unwrap().spawn(func, prio)
-	}
+pub fn spawn(func: extern "C" fn(), prio: TaskPriority) -> Result<task::TaskId> {
+	unsafe { SCHEDULER.as_mut().unwrap().spawn(func, prio) }
 }
 
 /// Trigger the scheduler to switch to the next available task
 pub fn reschedule() {
-	unsafe {
-		SCHEDULER.as_mut().unwrap().reschedule()
-	}
+	unsafe { SCHEDULER.as_mut().unwrap().reschedule() }
 }
 
 /// Terminate the current running task
@@ -48,7 +44,5 @@ pub fn do_exit() {
 
 /// Get the TaskID of the current running task
 pub fn get_current_taskid() -> task::TaskId {
-	unsafe {
-		SCHEDULER.as_ref().unwrap().get_current_taskid()
-	}
+	unsafe { SCHEDULER.as_ref().unwrap().get_current_taskid() }
 }

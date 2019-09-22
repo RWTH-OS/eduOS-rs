@@ -8,16 +8,16 @@
 #![allow(dead_code)]
 
 use alloc;
+use alloc::alloc::{alloc, dealloc, Layout};
 use alloc::rc::Rc;
+use collections::{DoublyLinkedList, Node};
+use consts::*;
 use core::cell::RefCell;
 use core::fmt;
-use alloc::alloc::{alloc, dealloc, Layout};
-use collections::{DoublyLinkedList, Node};
 use logging::*;
-use consts::*;
 
-extern {
-    fn get_bootstack() -> *mut u8;
+extern "C" {
+	fn get_bootstack() -> *mut u8;
 }
 
 /// The status of the task - used for scheduling
@@ -28,7 +28,7 @@ pub enum TaskStatus {
 	TaskRunning,
 	TaskBlocked,
 	TaskFinished,
-	TaskIdle
+	TaskIdle,
 }
 
 /// Unique identifier for a task (i.e. `pid`).
@@ -80,13 +80,13 @@ pub const LOW_PRIORITY: TaskPriority = TaskPriority::from(NO_PRIORITIES as u8 - 
 #[repr(align(64))]
 #[repr(C)]
 pub struct Stack {
-	buffer: [u8; STACK_SIZE]
+	buffer: [u8; STACK_SIZE],
 }
 
 impl Stack {
 	pub const fn new() -> Stack {
 		Stack {
-			buffer: [0; STACK_SIZE]
+			buffer: [0; STACK_SIZE],
 		}
 	}
 
@@ -102,13 +102,13 @@ impl Stack {
 pub static mut BOOT_STACK: Stack = Stack::new();
 
 pub struct TaskQueue {
-	queue: DoublyLinkedList<Rc<RefCell<Task>>>
+	queue: DoublyLinkedList<Rc<RefCell<Task>>>,
 }
 
 impl TaskQueue {
 	pub fn new() -> TaskQueue {
 		TaskQueue {
-			queue: Default::default()
+			queue: Default::default(),
 		}
 	}
 
@@ -146,7 +146,9 @@ impl TaskQueue {
 
 impl Default for TaskQueue {
 	fn default() -> Self {
-		Self { queue: Default::default() }
+		Self {
+			queue: Default::default(),
+		}
 	}
 }
 /// A task control block, which identifies either a process or a thread
@@ -171,7 +173,7 @@ impl Task {
 			prio: LOW_PRIORITY,
 			status: TaskStatus::TaskIdle,
 			last_stack_pointer: 0,
-			stack: unsafe { &mut BOOT_STACK }
+			stack: unsafe { &mut BOOT_STACK },
 		}
 	}
 
@@ -185,23 +187,28 @@ impl Task {
 			prio: prio,
 			status: status,
 			last_stack_pointer: 0,
-			stack: stack
+			stack: stack,
 		}
 	}
 }
 
 pub trait TaskFrame {
 	/// Create the initial stack frame for a new task
-	fn create_stack_frame(&mut self, func: extern fn());
+	fn create_stack_frame(&mut self, func: extern "C" fn());
 }
 
 impl Drop for Task {
 	fn drop(&mut self) {
 		if unsafe { self.stack != &mut BOOT_STACK } {
-			debug!("Deallocate stack of task {} (stack at 0x{:x})", self.id, self.stack as usize);
+			debug!(
+				"Deallocate stack of task {} (stack at 0x{:x})",
+				self.id, self.stack as usize
+			);
 
 			// deallocate stack
-			unsafe { dealloc(self.stack as *mut u8, Layout::new::<Stack>()); }
+			unsafe {
+				dealloc(self.stack as *mut u8, Layout::new::<Stack>());
+			}
 		}
 	}
 }

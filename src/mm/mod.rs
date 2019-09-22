@@ -17,7 +17,10 @@ pub fn init() {
 #[lang = "oom"]
 #[no_mangle]
 pub fn rust_oom(layout: Layout) -> ! {
-        println!("[!!!OOM!!!] Memory allocation of {} bytes failed", layout.size());
+	println!(
+		"[!!!OOM!!!] Memory allocation of {} bytes failed",
+		layout.size()
+	);
 
-		loop {}
+	loop {}
 }

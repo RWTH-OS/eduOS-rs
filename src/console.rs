@@ -1,8 +1,8 @@
 //! A wrapper around our serial console.
 
+use arch::serial;
 use core::fmt;
 use spin::Mutex;
-use arch::serial;
 
 pub struct Console;
 

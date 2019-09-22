@@ -11,7 +11,9 @@ pub fn lsb(i: u64) -> u64 {
 	if i == 0 {
 		ret = !0u64;
 	} else {
-		unsafe { asm!("bsf $1, $0" : "=r"(ret) : "r"(i) : "cc" : "volatile"); }
+		unsafe {
+			asm!("bsf $1, $0" : "=r"(ret) : "r"(i) : "cc" : "volatile");
+		}
 	}
 
 	ret
@@ -43,7 +45,7 @@ pub fn cpu_init() {
 	cr0 = cr0 | Cr0::CR0_NUMERIC_ERROR;
 	cr0 = cr0 | Cr0::CR0_MONITOR_COPROCESSOR;
 	// enable cache
-	cr0 = cr0 & !(Cr0::CR0_CACHE_DISABLE|Cr0::CR0_NOT_WRITE_THROUGH);
+	cr0 = cr0 & !(Cr0::CR0_CACHE_DISABLE | Cr0::CR0_NOT_WRITE_THROUGH);
 
 	unsafe { cr0_write(cr0) };
 }

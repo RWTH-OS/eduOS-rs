@@ -8,9 +8,9 @@
 extern crate eduos_rs;
 
 use core::panic::PanicInfo;
-use eduos_rs::arch::processor::{shutdown,halt};
+use eduos_rs::arch::processor::{halt, shutdown};
 use eduos_rs::scheduler;
-use eduos_rs::scheduler::task::{NORMAL_PRIORITY,HIGH_PRIORITY};
+use eduos_rs::scheduler::task::{HIGH_PRIORITY, NORMAL_PRIORITY};
 
 extern "C" fn foo() {
 	for _i in 0..5 {
