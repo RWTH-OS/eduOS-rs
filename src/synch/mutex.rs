@@ -6,10 +6,10 @@
 // copied, modified, or distributed except according to those terms.
 
 use core::cell::UnsafeCell;
-use core::ops::{Drop, Deref, DerefMut};
 use core::marker::Sync;
+use core::ops::{Deref, DerefMut, Drop};
 use scheduler::task::*;
-use scheduler::{wakeup_task,reschedule,block_current_task};
+use scheduler::{block_current_task, reschedule, wakeup_task};
 use synch::spinlock::*;
 
 /// A mutual exclusion primitive useful for protecting shared data
@@ -47,7 +47,7 @@ pub struct Mutex<T: ?Sized> {
 	/// Priority queue of waiting tasks
 	queue: SpinlockIrqSave<PriorityTaskQueue>,
 	/// protected data
-	data: UnsafeCell<T>
+	data: UnsafeCell<T>,
 }
 
 /// A guard to which the protected data can be accessed
@@ -73,7 +73,7 @@ impl<T> Mutex<T> {
 		Mutex {
 			value: SpinlockIrqSave::new(true),
 			queue: SpinlockIrqSave::new(PriorityTaskQueue::new()),
-			data: UnsafeCell::new(user_data)
+			data: UnsafeCell::new(user_data),
 		}
 	}
 
@@ -86,8 +86,7 @@ impl<T> Mutex<T> {
 	}
 }
 
-impl<T: ?Sized> Mutex<T>
-{
+impl<T: ?Sized> Mutex<T> {
 	fn obtain_lock(&self) {
 		loop {
 			let mut count = self.value.lock();
@@ -105,11 +104,9 @@ impl<T: ?Sized> Mutex<T>
 		}
 	}
 
-	pub fn lock(&self) -> MutexGuard<T>
-	{
+	pub fn lock(&self) -> MutexGuard<T> {
 		self.obtain_lock();
-		MutexGuard
-		{
+		MutexGuard {
 			value: &self.value,
 			queue: &self.queue,
 			data: unsafe { &mut *self.data.get() },
@@ -123,22 +120,22 @@ impl<T: ?Sized + Default> Default for Mutex<T> {
 	}
 }
 
-impl<'a, T: ?Sized> Deref for MutexGuard<'a, T>
-{
+impl<'a, T: ?Sized> Deref for MutexGuard<'a, T> {
 	type Target = T;
-	fn deref<'b>(&'b self) -> &'b T { &*self.data }
+	fn deref<'b>(&'b self) -> &'b T {
+		&*self.data
+	}
 }
 
-impl<'a, T: ?Sized> DerefMut for MutexGuard<'a, T>
-{
-	fn deref_mut<'b>(&'b mut self) -> &'b mut T { &mut *self.data }
+impl<'a, T: ?Sized> DerefMut for MutexGuard<'a, T> {
+	fn deref_mut<'b>(&'b mut self) -> &'b mut T {
+		&mut *self.data
+	}
 }
 
-impl<'a, T: ?Sized> Drop for MutexGuard<'a, T>
-{
+impl<'a, T: ?Sized> Drop for MutexGuard<'a, T> {
 	/// The dropping of the MutexGuard will release the lock it was created from.
-	fn drop(&mut self)
-	{
+	fn drop(&mut self) {
 		let mut count = self.value.lock();
 		*count = true;
 
@@ -147,7 +144,7 @@ impl<'a, T: ?Sized> Drop for MutexGuard<'a, T>
 			Some(task) => {
 				wakeup_task(task);
 				return;
-			},
+			}
 			None => {}
 		}
 	}

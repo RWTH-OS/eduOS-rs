@@ -8,23 +8,31 @@
 extern crate eduos_rs;
 
 use core::panic::PanicInfo;
-use eduos_rs::arch::processor::{shutdown,halt};
+use eduos_rs::arch::processor::{halt, shutdown};
 use eduos_rs::scheduler;
+use eduos_rs::scheduler::task::{HIGH_PRIORITY, NORMAL_PRIORITY};
 use eduos_rs::synch::mutex::Mutex;
-use eduos_rs::scheduler::task::{NORMAL_PRIORITY,HIGH_PRIORITY};
 
 static mut COUNTER: Option<Mutex<u64>> = None;
 
 extern "C" fn foo() {
-	let mut guard = unsafe { match COUNTER {
-		Some(ref mut c) => { c.lock() },
-		None => { panic!("Mutex isn't initialized"); }
-	} };
+	let mut guard = unsafe {
+		match COUNTER {
+			Some(ref mut c) => c.lock(),
+			None => {
+				panic!("Mutex isn't initialized");
+			}
+		}
+	};
 
 	for _i in 0..5 {
 		*guard += 1;
 
-		println!("hello from task {}, counter {}", scheduler::get_current_taskid(), 0); //*guard);
+		println!(
+			"hello from task {}, counter {}",
+			scheduler::get_current_taskid(),
+			0
+		); //*guard);
 		scheduler::reschedule();
 	}
 }
@@ -38,7 +46,9 @@ pub extern "C" fn main() -> ! {
 
 	println!("Hello from eduOS-rs!");
 
-	unsafe { COUNTER = Some(Mutex::new(0)); }
+	unsafe {
+		COUNTER = Some(Mutex::new(0));
+	}
 
 	for _i in 0..2 {
 		scheduler::spawn(foo, NORMAL_PRIORITY).unwrap();

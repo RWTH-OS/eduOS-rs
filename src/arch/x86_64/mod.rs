@@ -1,6 +1,6 @@
-pub mod serial;
-pub mod processor;
-pub mod task;
 pub mod irq;
-pub mod switch;
+pub mod processor;
+pub mod serial;
 mod start;
+pub mod switch;
+pub mod task;

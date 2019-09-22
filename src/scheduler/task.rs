@@ -8,16 +8,16 @@
 #![allow(dead_code)]
 
 use alloc;
+use alloc::alloc::{alloc, dealloc, Layout};
 use alloc::rc::Rc;
+use arch::processor::msb;
+use consts::*;
 use core::cell::RefCell;
 use core::fmt;
-use alloc::alloc::{alloc, dealloc, Layout};
-use arch::processor::msb;
 use logging::*;
-use consts::*;
 
-extern {
-    fn get_bootstack() -> *mut u8;
+extern "C" {
+	fn get_bootstack() -> *mut u8;
 }
 
 /// The status of the task - used for scheduling
@@ -28,7 +28,7 @@ pub enum TaskStatus {
 	TaskRunning,
 	TaskBlocked,
 	TaskFinished,
-	TaskIdle
+	TaskIdle,
 }
 
 /// Unique identifier for a task (i.e. `pid`).
@@ -85,21 +85,24 @@ impl QueueHead {
 	pub const fn new() -> Self {
 		QueueHead {
 			head: None,
-			tail: None
+			tail: None,
 		}
 	}
 }
 
 impl Default for QueueHead {
 	fn default() -> Self {
-		Self { head: None, tail: None }
+		Self {
+			head: None,
+			tail: None,
+		}
 	}
 }
 
 /// Realize a priority queue for tasks
 pub struct PriorityTaskQueue {
 	queues: [QueueHead; NO_PRIORITIES],
-	prio_bitmap: u64
+	prio_bitmap: u64,
 }
 
 impl PriorityTaskQueue {
@@ -107,7 +110,7 @@ impl PriorityTaskQueue {
 	pub fn new() -> PriorityTaskQueue {
 		PriorityTaskQueue {
 			queues: Default::default(),
-			prio_bitmap: 0
+			prio_bitmap: 0,
 		}
 	}
 
@@ -123,9 +126,9 @@ impl PriorityTaskQueue {
 				self.queues[i].head = Some(task.clone());
 
 				let mut borrow = task.borrow_mut();
-					borrow.next = None;
+				borrow.next = None;
 				borrow.prev = None;
-			},
+			}
 			Some(ref mut tail) => {
 				// add task at the end of the node
 				tail.borrow_mut().next = Some(task.clone());
@@ -144,12 +147,16 @@ impl PriorityTaskQueue {
 		let task;
 
 		match self.queues[queue_index].head {
-			None => { return None; },
+			None => {
+				return None;
+			}
 			Some(ref mut head) => {
 				let mut borrow = head.borrow_mut();
 
 				match borrow.next {
-					Some(ref mut nhead) => { nhead.borrow_mut().prev = None; },
+					Some(ref mut nhead) => {
+						nhead.borrow_mut().prev = None;
+					}
 					None => {}
 				}
 
@@ -200,7 +207,9 @@ impl PriorityTaskQueue {
 
 		loop {
 			match curr {
-				None => { break; },
+				None => {
+					break;
+				}
 				Some(ref curr_task) => {
 					if Rc::ptr_eq(&curr_task, &task) {
 						let (mut prev, mut next) = {
@@ -209,12 +218,16 @@ impl PriorityTaskQueue {
 						};
 
 						match prev {
-							Some(ref mut t) => { t.borrow_mut().next = next.clone(); },
+							Some(ref mut t) => {
+								t.borrow_mut().next = next.clone();
+							}
 							None => {}
 						};
 
 						match next {
-							Some(ref mut t) => { t.borrow_mut().prev = prev.clone(); },
+							Some(ref mut t) => {
+								t.borrow_mut().prev = prev.clone();
+							}
 							None => {}
 						};
 
@@ -235,16 +248,16 @@ impl PriorityTaskQueue {
 				} else {
 					false
 				}
-			},
-			None => { false }
+			}
+			None => false,
 		};
 
 		if new_head == true {
-				self.queues[i].head = task.borrow().next.clone();
+			self.queues[i].head = task.borrow().next.clone();
 
-				if self.queues[i].head.is_none() {
-					self.prio_bitmap &= !(1 << i as u64);
-				}
+			if self.queues[i].head.is_none() {
+				self.prio_bitmap &= !(1 << i as u64);
+			}
 		}
 	}
 }
@@ -253,13 +266,13 @@ impl PriorityTaskQueue {
 #[repr(align(64))]
 #[repr(C)]
 pub struct Stack {
-	buffer: [u8; STACK_SIZE]
+	buffer: [u8; STACK_SIZE],
 }
 
 impl Stack {
 	pub const fn new() -> Stack {
 		Stack {
-			buffer: [0; STACK_SIZE]
+			buffer: [0; STACK_SIZE],
 		}
 	}
 
@@ -290,7 +303,7 @@ pub struct Task {
 	// next task in queue
 	pub next: Option<Rc<RefCell<Task>>>,
 	// previous task in queue
-	pub prev: Option<Rc<RefCell<Task>>>
+	pub prev: Option<Rc<RefCell<Task>>>,
 }
 
 impl Task {
@@ -302,7 +315,7 @@ impl Task {
 			last_stack_pointer: 0,
 			stack: unsafe { &mut BOOT_STACK },
 			next: None,
-			prev: None
+			prev: None,
 		}
 	}
 
@@ -318,23 +331,28 @@ impl Task {
 			last_stack_pointer: 0,
 			stack: stack,
 			next: None,
-			prev: None
+			prev: None,
 		}
 	}
 }
 
 pub trait TaskFrame {
 	/// Create the initial stack frame for a new task
-	fn create_stack_frame(&mut self, func: extern fn());
+	fn create_stack_frame(&mut self, func: extern "C" fn());
 }
 
 impl Drop for Task {
 	fn drop(&mut self) {
 		if unsafe { self.stack != &mut BOOT_STACK } {
-			debug!("Deallocate stack of task {} (stack at 0x{:x})", self.id, self.stack as usize);
+			debug!(
+				"Deallocate stack of task {} (stack at 0x{:x})",
+				self.id, self.stack as usize
+			);
 
 			// deallocate stack
-			unsafe { dealloc(self.stack as *mut u8, Layout::new::<Stack>()); }
+			unsafe {
+				dealloc(self.stack as *mut u8, Layout::new::<Stack>());
+			}
 		}
 	}
 }

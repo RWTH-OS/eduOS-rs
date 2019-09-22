@@ -7,21 +7,20 @@
 
 /// Enable Interrupts
 pub fn irq_enable() {
-    unsafe { asm!("sti" ::: "memory" : "volatile") };
+	unsafe { asm!("sti" ::: "memory" : "volatile") };
 }
 
 /// Disable Interrupts
 pub fn irq_disable() {
-    unsafe { asm!("cli" ::: "memory" : "volatile") };
+	unsafe { asm!("cli" ::: "memory" : "volatile") };
 }
 
 /// Determines, if the interrupt flags (IF) is set
-pub fn is_irq_enabled() -> bool
-{
+pub fn is_irq_enabled() -> bool {
 	let rflags: u64;
 
 	unsafe { asm!("pushf; pop $0": "=r"(rflags) :: "memory" : "volatile") };
-	if (rflags & (1u64 << 9)) !=  0 {
+	if (rflags & (1u64 << 9)) != 0 {
 		return true;
 	}
 

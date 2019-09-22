@@ -9,14 +9,14 @@
 
 //! Interface to the scheduler
 
+mod scheduler;
 /// task control block
 pub mod task;
-mod scheduler;
 
-use errno::*;
 use alloc::rc::Rc;
 use core::cell::RefCell;
-use scheduler::task::{TaskPriority, Task};
+use errno::*;
+use scheduler::task::{Task, TaskPriority};
 
 static mut SCHEDULER: Option<scheduler::Scheduler> = None;
 
@@ -28,17 +28,13 @@ pub fn init() {
 }
 
 /// Create a new kernel task
-pub fn spawn(func: extern fn(), prio: TaskPriority) -> Result<task::TaskId> {
-	unsafe {
-		SCHEDULER.as_mut().unwrap().spawn(func, prio)
-	}
+pub fn spawn(func: extern "C" fn(), prio: TaskPriority) -> Result<task::TaskId> {
+	unsafe { SCHEDULER.as_mut().unwrap().spawn(func, prio) }
 }
 
 /// Trigger the scheduler to switch to the next available task
 pub fn reschedule() {
-	unsafe {
-		SCHEDULER.as_mut().unwrap().reschedule()
-	}
+	unsafe { SCHEDULER.as_mut().unwrap().reschedule() }
 }
 
 /// Terminate the current running task
@@ -49,20 +45,14 @@ pub fn do_exit() {
 }
 
 pub fn block_current_task() -> Rc<RefCell<Task>> {
-	unsafe {
-		SCHEDULER.as_mut().unwrap().block_current_task()
-	}
+	unsafe { SCHEDULER.as_mut().unwrap().block_current_task() }
 }
 
 pub fn wakeup_task(task: Rc<RefCell<Task>>) {
-	unsafe {
-		SCHEDULER.as_mut().unwrap().wakeup_task(task)
-	}
+	unsafe { SCHEDULER.as_mut().unwrap().wakeup_task(task) }
 }
 
 /// Get the TaskID of the current running task
 pub fn get_current_taskid() -> task::TaskId {
-	unsafe {
-		SCHEDULER.as_ref().unwrap().get_current_taskid()
-	}
+	unsafe { SCHEDULER.as_ref().unwrap().get_current_taskid() }
 }
