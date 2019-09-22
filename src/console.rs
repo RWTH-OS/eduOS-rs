@@ -2,7 +2,6 @@
 
 use arch::serial;
 use core::fmt;
-use synch::spinlock::*;
 
 pub struct Console;
 
@@ -12,5 +11,3 @@ impl fmt::Write for Console {
 		unsafe { serial::COM1.write_str(s) }
 	}
 }
-
-pub static CONSOLE: SpinlockIrqSave<Console> = SpinlockIrqSave::new(Console);
