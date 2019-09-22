@@ -6,8 +6,7 @@ use x86::io::*;
 
 /// Force strict CPU ordering, serializes load and store operations.
 #[inline(always)]
-pub fn mb()
-{
+pub fn mb() {
 	unsafe {
 		asm!("mfence" ::: "memory" : "volatile");
 	}
@@ -18,7 +17,9 @@ pub fn mb()
 pub fn msb(value: u64) -> Option<u64> {
 	if value > 0 {
 		let ret: u64;
-		unsafe { asm!("bsr $1, $0" : "=r"(ret) : "r"(value) : "cc" : "volatile"); }
+		unsafe {
+			asm!("bsr $1, $0" : "=r"(ret) : "r"(value) : "cc" : "volatile");
+		}
 		Some(ret)
 	} else {
 		None
@@ -30,7 +31,9 @@ pub fn msb(value: u64) -> Option<u64> {
 pub fn lsb(value: u64) -> Option<u64> {
 	if value > 0 {
 		let ret: u64;
-		unsafe { asm!("bsf $1, $0" : "=r"(ret) : "r"(value) : "cc" : "volatile"); }
+		unsafe {
+			asm!("bsf $1, $0" : "=r"(ret) : "r"(value) : "cc" : "volatile");
+		}
 		Some(ret)
 	} else {
 		None
@@ -71,7 +74,7 @@ pub fn init() {
 	cr0 = cr0 | Cr0::CR0_NUMERIC_ERROR;
 	cr0 = cr0 | Cr0::CR0_MONITOR_COPROCESSOR;
 	// enable cache
-	cr0 = cr0 & !(Cr0::CR0_CACHE_DISABLE|Cr0::CR0_NOT_WRITE_THROUGH);
+	cr0 = cr0 & !(Cr0::CR0_CACHE_DISABLE | Cr0::CR0_NOT_WRITE_THROUGH);
 
 	debug!("set CR0 to {:?}", cr0);
 
