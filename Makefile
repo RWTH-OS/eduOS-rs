@@ -33,7 +33,7 @@ fmt:
 	rustfmt --write-mode overwrite src/lib.rs
 
 qemu: bootimage.bin
-	@qemu-system-x86_64 -display none -smp 1 -device isa-debug-exit,iobase=0xf4,iosize=0x04 -serial stdio -drive format=raw,file=bootimage.bin || true
+	@bootimage run --target $(target).json || true
 
 run:
 	@ehyve target/$(arch)-eduos/$(rdir)/eduos-rs
