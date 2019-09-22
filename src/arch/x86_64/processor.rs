@@ -1,11 +1,11 @@
 #![allow(dead_code)]
 
+use arch::x86_64::syscall_handler;
 use logging::*;
 use x86::controlregs::*;
-use x86::msr::*;
-use x86::io::*;
 use x86::cpuid::*;
-use arch::x86_64::syscall_handler;
+use x86::io::*;
+use x86::msr::*;
 
 // MSR EFER bits
 const EFER_SCE: u64 = (1 << 0);
@@ -19,8 +19,7 @@ const EFER_TCE: u64 = (1 << 15);
 
 /// Force strict CPU ordering, serializes load and store operations.
 #[inline(always)]
-pub fn mb()
-{
+pub fn mb() {
 	unsafe {
 		asm!("mfence" ::: "memory" : "volatile");
 	}
@@ -31,7 +30,9 @@ pub fn mb()
 pub fn msb(value: u64) -> Option<u64> {
 	if value > 0 {
 		let ret: u64;
-		unsafe { asm!("bsr $1, $0" : "=r"(ret) : "r"(value) : "cc" : "volatile"); }
+		unsafe {
+			asm!("bsr $1, $0" : "=r"(ret) : "r"(value) : "cc" : "volatile");
+		}
 		Some(ret)
 	} else {
 		None
@@ -43,7 +44,9 @@ pub fn msb(value: u64) -> Option<u64> {
 pub fn lsb(value: u64) -> Option<u64> {
 	if value > 0 {
 		let ret: u64;
-		unsafe { asm!("bsf $1, $0" : "=r"(ret) : "r"(value) : "cc" : "volatile"); }
+		unsafe {
+			asm!("bsf $1, $0" : "=r"(ret) : "r"(value) : "cc" : "volatile");
+		}
 		Some(ret)
 	} else {
 		None
@@ -86,7 +89,7 @@ pub fn init() {
 	cr0 = cr0 | Cr0::CR0_NUMERIC_ERROR;
 	cr0 = cr0 | Cr0::CR0_MONITOR_COPROCESSOR;
 	// enable cache
-	cr0 = cr0 & !(Cr0::CR0_CACHE_DISABLE|Cr0::CR0_NOT_WRITE_THROUGH);
+	cr0 = cr0 & !(Cr0::CR0_CACHE_DISABLE | Cr0::CR0_NOT_WRITE_THROUGH);
 
 	debug!("set CR0 to {:?}", cr0);
 
@@ -96,7 +99,7 @@ pub fn init() {
 
 	let has_pge = match cpuid.get_feature_info() {
 		Some(finfo) => finfo.has_pge(),
-		None => false
+		None => false,
 	};
 
 	if has_pge {
@@ -105,7 +108,7 @@ pub fn init() {
 
 	let has_fsgsbase = match cpuid.get_extended_feature_info() {
 		Some(efinfo) => efinfo.has_fsgsbase(),
-		None => false
+		None => false,
 	};
 
 	if has_fsgsbase {
@@ -114,7 +117,7 @@ pub fn init() {
 
 	let has_mce = match cpuid.get_feature_info() {
 		Some(finfo) => finfo.has_mce(),
-		None => false
+		None => false,
 	};
 
 	if has_mce {
@@ -123,7 +126,7 @@ pub fn init() {
 
 	// disable performance monitoring counter
 	// allow the usage of rdtsc in user space
-	cr4 &= !(Cr4::CR4_ENABLE_PPMC|Cr4::CR4_TIME_STAMP_DISABLE);
+	cr4 &= !(Cr4::CR4_ENABLE_PPMC | Cr4::CR4_TIME_STAMP_DISABLE);
 
 	debug!("set CR4 to {:?}", cr4);
 
@@ -131,7 +134,7 @@ pub fn init() {
 
 	let has_syscall = match cpuid.get_extended_function_info() {
 		Some(finfo) => finfo.has_syscall_sysret(),
-		None => false
+		None => false,
 	};
 
 	if has_syscall == false {

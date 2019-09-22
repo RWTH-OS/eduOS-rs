@@ -8,13 +8,13 @@
 extern crate eduos_rs;
 
 use core::panic::PanicInfo;
-use eduos_rs::arch::processor::{shutdown,halt};
 use eduos_rs::arch;
+use eduos_rs::arch::processor::{halt, shutdown};
 use eduos_rs::scheduler;
 use eduos_rs::scheduler::task::NORMAL_PRIORITY;
 use eduos_rs::syscall;
-use eduos_rs::syscall::{SYSNO_WRITE,SYSNO_EXIT};
-use eduos_rs::{LogLevel,LOGGER};
+use eduos_rs::syscall::{SYSNO_EXIT, SYSNO_WRITE};
+use eduos_rs::{LogLevel, LOGGER};
 
 fn user_foo() -> ! {
 	let str = b"Hello from user_foo!\n\0";

@@ -5,14 +5,13 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
-use logging::*;
 use alloc::string::String;
+use logging::*;
 
 #[no_mangle]
-pub extern "C" fn sys_write(s: *mut u8, len: usize) -> isize
-{
+pub extern "C" fn sys_write(s: *mut u8, len: usize) -> isize {
 	debug!("enter syscall write");
-	print!("{}", unsafe {String::from_raw_parts(s, len, len)});
+	print!("{}", unsafe { String::from_raw_parts(s, len, len) });
 
 	len as isize
 }
