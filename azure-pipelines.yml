@@ -48,6 +48,6 @@ jobs:
       rustup component add llvm-tools-preview
       cargo install bootimage
       bootimage build --target x86_64-eduos.json
-      bootimage run --target x86_64-eduos.json || true
+      bootimage run --target x86_64-eduos.json || ([ $$? -eq 1 ] && exit 0) || exit 1
     displayName: 'Test eduOS-rs on Windows'
 
