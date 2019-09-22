@@ -57,6 +57,7 @@ Afterwards the installation of *cargo-xbuild* and the source code of Rust runtim
 ```sh
 $ cargo install cargo-xbuild
 $ rustup component add rust-src
+$ rustup component add llvm-tools-preview
 ```
 
 eduOS-rs is able to run within [QEMU](https://www.qemu.org/), which is a open source machine emulator, or within [ehyve](https://github.com/RWTH-OS/ehyve), which a specialized hypervisor for eduOS-rs.
