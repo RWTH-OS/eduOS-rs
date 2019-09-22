@@ -27,8 +27,6 @@ jobs:
       rustup component add rust-src
       rustup component add llvm-tools-preview
       cargo install bootimage
-      /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-      brew update
       brew install qemu
       make
       make qemu
