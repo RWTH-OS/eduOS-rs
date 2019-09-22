@@ -27,13 +27,13 @@ endif
 all: cargo $(build_wasm)
 
 bootimage.bin:
-	@cargo bootimage --target $(target).json
+	@cargo bootimage $(opt) --target $(target).json
 
 fmt:
 	rustfmt --write-mode overwrite src/lib.rs
 
 qemu: bootimage.bin
-	@bootimage run --target $(target).json || ([ $$? -eq 1 ] && exit 0) || exit 1
+	@bootimage run $(opt) --target $(target).json || ([ $$? -eq 1 ] && exit 0) || exit 1
 
 run:
 	@ehyve target/$(arch)-eduos/$(rdir)/eduos-rs
