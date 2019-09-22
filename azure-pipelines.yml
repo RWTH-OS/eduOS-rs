@@ -5,13 +5,15 @@ jobs:
   steps:
   - script: |
       sudo apt-get -qq update
-      sudo apt-get install -y curl wget nasm make gcc g++ build-essential
+      sudo apt-get install -y curl wget nasm make gcc g++ build-essential qemu-system-x86
       curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
       export PATH=$PATH:~/.cargo/bin
       cargo install cargo-xbuild
-      cargo install --git https://github.com/RWTH-OS/ehyve.git
       rustup component add rust-src
+      rustup component add llvm-tools-preview
+      cargo install bootimage
       make
+      make qemu
       lscpu
     displayName: 'Test eduOS-rs on Ubuntu 16.04'
 - job: macOS
@@ -22,21 +24,29 @@ jobs:
       curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
       export PATH=$PATH:$HOME/.cargo/bin
       cargo install cargo-xbuild
-      cargo install --git https://github.com/RWTH-OS/ehyve.git
       rustup component add rust-src
+      rustup component add llvm-tools-preview
+      cargo install bootimage
+      brew install qemu
       make
+      make qemu
     displayName: 'Test eduOS-rs on macOS'
 - job: Windows
   pool:
     vmImage: 'vs2017-win2016'
   steps:
-  - powershell: |
-      Invoke-WebRequest -OutFile rustup-init.exe https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe
-      ./rustup-init.exe -y --default-toolchain nightly | Out-Null
-      Remove-Item -Path "rustup-init.exe"
-      $env:Path += ";" + $env:UserProfile + "\.cargo\bin"
+  - script: |
+      curl -sSf -o rustup-init.exe https://win.rustup.rs
+      rustup-init.exe -y --default-toolchain nightly
+      echo ##vso[task.setvariable variable=PATH;]%PATH%;%USERPROFILE%\.cargo\bin
+      choco install qemu make --limit-output --no-progress
+      echo ##vso[task.setvariable variable=PATH;]%PATH%;C:\Program Files\qemu
+      set PATH=%PATH%;C:\Program Files\qemu
+      qemu-system-x86_64 --version
       cargo install cargo-xbuild
-      cargo install --git https://github.com/RWTH-OS/ehyve.git
       rustup component add rust-src
-      cargo xbuild --target x86_64-eduos.json
+      rustup component add llvm-tools-preview
+      cargo install bootimage
+      make
+      make qemu
     displayName: 'Test eduOS-rs on Windows'

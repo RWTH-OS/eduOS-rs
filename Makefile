@@ -22,13 +22,13 @@ endif
 all: cargo
 
 bootimage.bin:
-	bootimage build --target $(target).json
+	@cargo bootimage $(opt) --target $(target).json
 
 fmt:
 	rustfmt --write-mode overwrite src/lib.rs
 
 qemu: bootimage.bin
-	@qemu-system-x86_64 -display none -smp 1 -device isa-debug-exit,iobase=0xf4,iosize=0x04 -serial stdio -drive format=raw,file=bootimage.bin || true
+	@bootimage run $(opt) --target $(target).json || ([ $$? -eq 1 ] && exit 0) || exit 1
 
 run:
 	@ehyve target/$(arch)-eduos/$(rdir)/eduos-rs
