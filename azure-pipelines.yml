@@ -1,17 +1,19 @@
 jobs:
 - job: Linux
   pool:
-    vmImage: 'ubuntu-18.04'
+    vmImage: 'ubuntu-16.04'
   steps:
   - script: |
       sudo apt-get -qq update
-      sudo apt-get install -y curl wget nasm make gcc g++ build-essential
+      sudo apt-get install -y curl wget nasm make gcc g++ build-essential qemu-system-x86
       curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
       export PATH=$PATH:~/.cargo/bin
       cargo install cargo-xbuild
-      cargo install --git https://github.com/RWTH-OS/ehyve.git
       rustup component add rust-src
+      rustup component add llvm-tools-preview
+      cargo install bootimage
       make
+      make qemu
       lscpu
     displayName: 'Test eduOS-rs on Ubuntu 16.04'
 - job: macOS
@@ -22,9 +24,11 @@ jobs:
       curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
       export PATH=$PATH:$HOME/.cargo/bin
       cargo install cargo-xbuild
-      cargo install --git https://github.com/RWTH-OS/ehyve.git
       rustup component add rust-src
+      rustup component add llvm-tools-preview
+      cargo install bootimage
       make
+      make qemu
     displayName: 'Test eduOS-rs on macOS'
 - job: Windows
   pool:
@@ -36,8 +40,10 @@ jobs:
       Remove-Item -Path "rustup-init.exe"
       $env:Path += ";" + $env:UserProfile + "\.cargo\bin"
       cargo install cargo-xbuild
-      cargo install --git https://github.com/RWTH-OS/ehyve.git
       rustup component add rust-src
-      cargo xbuild --target x86_64-eduos.json
+      rustup component add llvm-tools-preview
+      cargo install bootimage
+      bootimage build --target x86_64-eduos.json
+      bootimage run --target x86_64-eduos.json
     displayName: 'Test eduOS-rs on Windows'
 
