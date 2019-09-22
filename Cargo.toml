@@ -1,15 +1,14 @@
 [package]
 name = "eduos-rs"
 version = "0.1.0"
-license = "MIT"
+license = "MIT/Apache-2.0"
 authors = ["Stefan Lankes <slankes@eonerc.rwth-aachen.de>"]
 
 [dependencies]
-bootloader = "0.3.4"
+bootloader = "0.8.*"
 
 [target.'cfg(target_arch = "x86_64")'.dependencies.x86]
-git = "https://github.com/hermitcore/rust-x86.git"
-branch = "hermit"
+version = "0.24.*"
 default-features = false
 
 [package.metadata.cargo-xbuild]
@@ -17,15 +16,12 @@ memcpy = true
 
 [package.metadata.bootimage]
 default-target = "x86_64-eduos.json" # This target is used if no `--target` is passed
-output = "bootimage.bin"    # The output file name
-minimum-image-size = 0      # The minimum output file size (in MiB)
 # The command invoked on `bootimage run`
 # (the "{}" will be replaced with the path to the bootable disk image)
-run-command = ["qemu-system-x86_64", "-drive", "format=raw,file={}"]
-
-[package.metadata.bootimage.bootloader]
-name = "bootloader"                 # The bootloader crate name
-target = "x86_64-bootloader.json"   # Target triple for compiling the bootloader
+run-command = ["qemu-system-x86_64", "-display", "none", "-smp", "1", "-device", "isa-debug-exit,iobase=0xf4,iosize=0x04", "-serial", "stdio", "-drive", "format=raw,file={}"]
+# Additional arguments passed to the run command for non-test executables
+# Applies to `bootimage run` and `bootimage runner`
+run-args = []
 
 # The development profile, used for `cargo build`.
 [profile.dev]
