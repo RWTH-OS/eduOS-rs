@@ -5,28 +5,28 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
-use alloc::rc::Rc;
 use alloc::collections::{BTreeMap, VecDeque};
+use alloc::rc::Rc;
+use arch::switch;
 use core::cell::RefCell;
 use core::sync::atomic::{AtomicU32, Ordering};
-use scheduler::task::*;
-use arch::switch;
 use logging::*;
+use scheduler::task::*;
 
 static NO_TASKS: AtomicU32 = AtomicU32::new(0);
 static TID_COUNTER: AtomicU32 = AtomicU32::new(0);
 
 pub struct Scheduler {
 	/// task id which is currently running
-	current_task:  Rc<RefCell<Task>>,
+	current_task: Rc<RefCell<Task>>,
 	/// task id of the idle task
-	idle_task:  Rc<RefCell<Task>>,
+	idle_task: Rc<RefCell<Task>>,
 	/// queue of tasks, which are ready
 	ready_queue: TaskQueue,
 	/// queue of tasks, which are finished and can be released
 	finished_tasks: VecDeque<TaskId>,
 	// map between task id and task controll block
-	tasks: BTreeMap<TaskId, Rc<RefCell<Task>>>
+	tasks: BTreeMap<TaskId, Rc<RefCell<Task>>>,
 }
 
 impl Scheduler {
@@ -42,7 +42,7 @@ impl Scheduler {
 			idle_task: idle_task.clone(),
 			ready_queue: TaskQueue::new(),
 			finished_tasks: VecDeque::<TaskId>::new(),
-			tasks: tasks
+			tasks: tasks,
 		}
 	}
 
@@ -56,7 +56,7 @@ impl Scheduler {
 		}
 	}
 
-	pub fn spawn(&mut self, func: extern fn()) -> TaskId {
+	pub fn spawn(&mut self, func: extern "C" fn()) -> TaskId {
 		// Create the new task.
 		let tid = self.get_tid();
 		let task = Rc::new(RefCell::new(Task::new(tid, TaskStatus::TaskReady)));
@@ -95,14 +95,18 @@ impl Scheduler {
 				if self.tasks.remove(&id).is_none() == true {
 					info!("Unable to drop task {}", id);
 				}
-			},
+			}
 			_ => {}
 		}
 
 		// Get information about the current task.
 		let (old_id, old_stack_pointer, current_status) = {
 			let mut borrowed = self.current_task.borrow_mut();
-			(borrowed.id, &mut borrowed.last_stack_pointer as *mut usize, borrowed.status)
+			(
+				borrowed.id,
+				&mut borrowed.last_stack_pointer as *mut usize,
+				borrowed.status,
+			)
 		};
 
 		// do we have a task, which is ready?
@@ -137,13 +141,18 @@ impl Scheduler {
 					self.finished_tasks.push_back(old_id);
 				}
 
-				debug!("Switching task from {} to {} (stack {:#X} => {:#X})", old_id, new_id,
-					unsafe { *old_stack_pointer }, new_stack_pointer);
+				debug!(
+					"Switching task from {} to {} (stack {:#X} => {:#X})",
+					old_id,
+					new_id,
+					unsafe { *old_stack_pointer },
+					new_stack_pointer
+				);
 
 				self.current_task = new_task;
 
 				switch(old_stack_pointer, new_stack_pointer);
-			},
+			}
 			_ => {}
 		}
 	}
