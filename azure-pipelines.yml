@@ -42,6 +42,9 @@ jobs:
       ./rustup-init.exe -y --default-toolchain nightly | Out-Null
       Remove-Item -Path "rustup-init.exe"
       $env:Path += ";" + $env:UserProfile + "\.cargo\bin"
+      Invoke-WebRequest -OutFile qemu-w64-setup.exe https://qemu.weilnetz.de/w64/qemu-w64-setup-20190815.exe
+      ./qemu-w64-setup.exe
+      Remove-Item -Path "qemu-w64-setup.exe"
       cargo install cargo-xbuild
       rustup component add rust-src
       rustup component add llvm-tools-preview
