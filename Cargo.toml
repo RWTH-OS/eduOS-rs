@@ -1,16 +1,15 @@
 [package]
 name = "eduos-rs"
 version = "0.1.0"
-license = "MIT"
+license = "MIT/Apache-2.0"
 authors = ["Stefan Lankes <slankes@eonerc.rwth-aachen.de>"]
 
 [dependencies]
-spin = "0.4.9"	# Spinlocks.
+spin = "0.5.2"	# Spinlocks.
 bootloader = "0.8.*"
 
 [target.'cfg(target_arch = "x86_64")'.dependencies.x86]
-git = "https://github.com/hermitcore/rust-x86.git"
-branch = "hermit"
+version = "0.24.*"
 default-features = false
 
 [package.metadata.cargo-xbuild]
