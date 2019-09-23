@@ -6,6 +6,7 @@ authors = ["Stefan Lankes <slankes@eonerc.rwth-aachen.de>"]
 
 [dependencies.bootloader]
 git = "https://github.com/RWTH-OS/bootloader.git"
+branch = "stage5"
 
 [target.'cfg(target_arch = "x86_64")'.dependencies.x86]
 version = "0.24.*"
