@@ -39,7 +39,7 @@ run:
 	@ehyve target/$(arch)-eduos/$(rdir)/eduos-rs
 
 clean:
-	$(RM) target bootimage.bin
+	$(RM) target
 
 eduos.wasm: cargo
 	@echo WASM_GC
