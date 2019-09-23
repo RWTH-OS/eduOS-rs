@@ -34,7 +34,7 @@ run:
 	@ehyve target/$(arch)-eduos/$(rdir)/eduos-rs
 
 clean:
-	$(RM) target bootimage.bin
+	$(RM) target
 
 docs:
 	@echo DOC
