@@ -7,6 +7,7 @@ authors = ["Stefan Lankes <slankes@eonerc.rwth-aachen.de>"]
 [dependencies.bootloader]
 git = "https://github.com/RWTH-OS/bootloader.git"
 branch = "stage5"
+default-features = false
 
 [target.'cfg(target_arch = "x86_64")'.dependencies.x86]
 version = "0.24.*"
@@ -23,6 +24,13 @@ run-command = ["qemu-system-x86_64", "-display", "none", "-smp", "1", "-device",
 # Additional arguments passed to the run command for non-test executables
 # Applies to `bootimage run` and `bootimage runner`
 run-args = []
+
+[package.metadata.bootloader]
+# The address at which the kernel stack is placed. If not provided, the bootloader
+# dynamically searches for a location.
+kernel-stack-address = "0x10000000"
+# The size of the kernel stack, given in number of 4KiB pages. Defaults to 512.
+kernel-stack-size = 512
 
 # The development profile, used for `cargo build`.
 [profile.dev]

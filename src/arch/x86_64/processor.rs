@@ -149,6 +149,22 @@ pub fn init() {
 		wrmsr(IA32_FMASK, 1 << 9); // clear IF flag during system call
 	}
 
+	// dirty hack for the demo, only necessary for qemu
+	// => enable access for the user space
+	if unsafe { cr3() == 0x1000 } {
+		let p0 = unsafe { core::slice::from_raw_parts_mut(0x3000 as *mut usize, 512) };
+		for entry in p0 {
+			if *entry != 0 {
+				*entry = *entry | (1 << 2);
+			}
+		}
+
+		unsafe {
+			// flush tlb
+			cr3_write(cr3());
+		}
+	}
+
 	/*print!("Detected processor: ");
 	match cpuid.get_extended_function_info() {
 		Some(exinfo) => {
