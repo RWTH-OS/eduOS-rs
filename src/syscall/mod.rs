@@ -5,13 +5,13 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
-pub mod write;
 pub mod exit;
 pub mod message;
+pub mod write;
 
 use syscall::exit::sys_exit;
-use syscall::write::sys_write;
 use syscall::message::sys_message;
+use syscall::write::sys_write;
 
 /// number of the system call `exit`
 pub const SYSNO_EXIT: usize = 0;
@@ -27,16 +27,18 @@ pub const NO_SYSCALLS: usize = 3;
 
 #[repr(align(64))]
 #[repr(C)]
-pub struct SyscallTable{
-	 handle: [*const usize; NO_SYSCALLS]
+pub struct SyscallTable {
+	handle: [*const usize; NO_SYSCALLS],
 }
 
 impl SyscallTable {
 	pub const fn new() -> Self {
 		SyscallTable {
-			handle:	[sys_exit as *const _,
-					 sys_write as *const _,
-					 sys_message as *const _]
+			handle: [
+				sys_exit as *const _,
+				sys_write as *const _,
+				sys_message as *const _,
+			],
 		}
 	}
 }

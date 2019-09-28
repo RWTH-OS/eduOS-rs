@@ -9,8 +9,7 @@ use logging::*;
 use scheduler::*;
 
 #[no_mangle]
-pub extern "C" fn sys_exit()
-{
+pub extern "C" fn sys_exit() {
 	debug!("enter syscall exit");
 	do_exit();
 }

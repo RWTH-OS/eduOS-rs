@@ -24,31 +24,58 @@ const KERNEL_VIRTUAL_MEMORY_END: usize = 0x1_0000_0000;
 const TASK_VIRTUAL_MEMORY_END: usize = 0x8000_0000_0000;
 
 pub fn init() {
-	let entry = Node::new(
-		FreeListEntry {
-			start: mm::kernel_end_address(),
-			end: KERNEL_VIRTUAL_MEMORY_END
-		}
-	);
-	unsafe { KERNEL_FREE_LIST.list.push(entry); }
+	let entry = Node::new(FreeListEntry {
+		start: mm::kernel_end_address(),
+		end: KERNEL_VIRTUAL_MEMORY_END,
+	});
+	unsafe {
+		KERNEL_FREE_LIST.list.push(entry);
+	}
 }
 
 pub fn allocate(size: usize) -> usize {
 	assert!(size > 0);
-	assert!(size % BasePageSize::SIZE == 0, "Size {:#X} is not a multiple of {:#X}", size, BasePageSize::SIZE);
+	assert!(
+		size % BasePageSize::SIZE == 0,
+		"Size {:#X} is not a multiple of {:#X}",
+		size,
+		BasePageSize::SIZE
+	);
 
 	let _preemption = DisabledPreemption::new();
 	let result = unsafe { KERNEL_FREE_LIST.allocate(size) };
-	assert!(result.is_ok(), "Could not allocate {:#X} bytes of virtual memory", size);
+	assert!(
+		result.is_ok(),
+		"Could not allocate {:#X} bytes of virtual memory",
+		size
+	);
 	result.unwrap()
 }
 
 pub fn deallocate(virtual_address: usize, size: usize) {
-	assert!(virtual_address >= mm::kernel_end_address(), "Virtual address {:#X} is not >= KERNEL_END_ADDRESS", virtual_address);
-	assert!(virtual_address < KERNEL_VIRTUAL_MEMORY_END, "Virtual address {:#X} is not < KERNEL_VIRTUAL_MEMORY_END", virtual_address);
-	assert!(virtual_address % BasePageSize::SIZE == 0, "Virtual address {:#X} is not a multiple of {:#X}", virtual_address, BasePageSize::SIZE);
+	assert!(
+		virtual_address >= mm::kernel_end_address(),
+		"Virtual address {:#X} is not >= KERNEL_END_ADDRESS",
+		virtual_address
+	);
+	assert!(
+		virtual_address < KERNEL_VIRTUAL_MEMORY_END,
+		"Virtual address {:#X} is not < KERNEL_VIRTUAL_MEMORY_END",
+		virtual_address
+	);
+	assert!(
+		virtual_address % BasePageSize::SIZE == 0,
+		"Virtual address {:#X} is not a multiple of {:#X}",
+		virtual_address,
+		BasePageSize::SIZE
+	);
 	assert!(size > 0);
-	assert!(size % BasePageSize::SIZE == 0, "Size {:#X} is not a multiple of {:#X}", size, BasePageSize::SIZE);
+	assert!(
+		size % BasePageSize::SIZE == 0,
+		"Size {:#X} is not a multiple of {:#X}",
+		size,
+		BasePageSize::SIZE
+	);
 
 	let _preemption = DisabledPreemption::new();
 	unsafe {
@@ -58,18 +85,41 @@ pub fn deallocate(virtual_address: usize, size: usize) {
 }
 
 pub fn reserve(virtual_address: usize, size: usize) {
-	assert!(virtual_address >= mm::kernel_end_address(), "Virtual address {:#X} is not >= KERNEL_END_ADDRESS", virtual_address);
-	assert!(virtual_address < KERNEL_VIRTUAL_MEMORY_END, "Virtual address {:#X} is not < KERNEL_VIRTUAL_MEMORY_END", virtual_address);
-	assert!(virtual_address % BasePageSize::SIZE == 0, "Virtual address {:#X} is not a multiple of {:#X}", virtual_address, BasePageSize::SIZE);
+	assert!(
+		virtual_address >= mm::kernel_end_address(),
+		"Virtual address {:#X} is not >= KERNEL_END_ADDRESS",
+		virtual_address
+	);
+	assert!(
+		virtual_address < KERNEL_VIRTUAL_MEMORY_END,
+		"Virtual address {:#X} is not < KERNEL_VIRTUAL_MEMORY_END",
+		virtual_address
+	);
+	assert!(
+		virtual_address % BasePageSize::SIZE == 0,
+		"Virtual address {:#X} is not a multiple of {:#X}",
+		virtual_address,
+		BasePageSize::SIZE
+	);
 	assert!(size > 0);
-	assert!(size % BasePageSize::SIZE == 0, "Size {:#X} is not a multiple of {:#X}", size, BasePageSize::SIZE);
+	assert!(
+		size % BasePageSize::SIZE == 0,
+		"Size {:#X} is not a multiple of {:#X}",
+		size,
+		BasePageSize::SIZE
+	);
 
 	let _preemption = DisabledPreemption::new();
 	let result = unsafe {
 		POOL.maintain();
 		KERNEL_FREE_LIST.reserve(virtual_address, size)
 	};
-	assert!(result.is_ok(), "Could not reserve {:#X} bytes of virtual memory at {:#X}", size, virtual_address);
+	assert!(
+		result.is_ok(),
+		"Could not reserve {:#X} bytes of virtual memory at {:#X}",
+		size,
+		virtual_address
+	);
 }
 
 pub fn task_heap_start() -> usize {

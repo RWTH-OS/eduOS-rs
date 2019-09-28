@@ -1,12 +1,12 @@
 #![allow(dead_code)]
 
-use logging::*;
-use x86::controlregs::*;
-use x86::msr::*;
-use x86::io::*;
-use x86::cpuid::*;
 use arch::x86_64::kernel::syscall_handler;
+use logging::*;
 use scheduler::task::BOOT_STACK;
+use x86::controlregs::*;
+use x86::cpuid::*;
+use x86::io::*;
+use x86::msr::*;
 
 // MSR EFER bits
 const EFER_SCE: u64 = (1 << 0);
@@ -24,8 +24,7 @@ static mut SUPPORTS_1GIB_PAGES: bool = false;
 
 /// Force strict CPU ordering, serializes load and store operations.
 #[inline(always)]
-pub fn mb()
-{
+pub fn mb() {
 	unsafe {
 		asm!("mfence" ::: "memory" : "volatile");
 	}
@@ -36,7 +35,9 @@ pub fn mb()
 pub fn msb(value: u64) -> Option<u64> {
 	if value > 0 {
 		let ret: u64;
-		unsafe { asm!("bsr $1, $0" : "=r"(ret) : "r"(value) : "cc" : "volatile"); }
+		unsafe {
+			asm!("bsr $1, $0" : "=r"(ret) : "r"(value) : "cc" : "volatile");
+		}
 		Some(ret)
 	} else {
 		None
@@ -48,7 +49,9 @@ pub fn msb(value: u64) -> Option<u64> {
 pub fn lsb(value: u64) -> Option<u64> {
 	if value > 0 {
 		let ret: u64;
-		unsafe { asm!("bsf $1, $0" : "=r"(ret) : "r"(value) : "cc" : "volatile"); }
+		unsafe {
+			asm!("bsf $1, $0" : "=r"(ret) : "r"(value) : "cc" : "volatile");
+		}
 		Some(ret)
 	} else {
 		None
@@ -105,7 +108,7 @@ pub fn init() {
 	cr0 = cr0 | Cr0::CR0_NUMERIC_ERROR;
 	cr0 = cr0 | Cr0::CR0_MONITOR_COPROCESSOR;
 	// enable cache
-	cr0 = cr0 & !(Cr0::CR0_CACHE_DISABLE|Cr0::CR0_NOT_WRITE_THROUGH);
+	cr0 = cr0 & !(Cr0::CR0_CACHE_DISABLE | Cr0::CR0_NOT_WRITE_THROUGH);
 
 	debug!("set CR0 to {:?}", cr0);
 
@@ -115,7 +118,7 @@ pub fn init() {
 
 	let has_pge = match cpuid.get_feature_info() {
 		Some(finfo) => finfo.has_pge(),
-		None => false
+		None => false,
 	};
 
 	if has_pge {
@@ -124,7 +127,7 @@ pub fn init() {
 
 	let has_fsgsbase = match cpuid.get_extended_feature_info() {
 		Some(efinfo) => efinfo.has_fsgsbase(),
-		None => false
+		None => false,
 	};
 
 	if has_fsgsbase {
@@ -135,7 +138,7 @@ pub fn init() {
 
 	let has_mce = match cpuid.get_feature_info() {
 		Some(finfo) => finfo.has_mce(),
-		None => false
+		None => false,
 	};
 
 	if has_mce {
@@ -144,7 +147,7 @@ pub fn init() {
 
 	// disable performance monitoring counter
 	// allow the usage of rdtsc in user space
-	cr4 &= !(Cr4::CR4_ENABLE_PPMC|Cr4::CR4_TIME_STAMP_DISABLE);
+	cr4 &= !(Cr4::CR4_ENABLE_PPMC | Cr4::CR4_TIME_STAMP_DISABLE);
 
 	debug!("set CR4 to {:?}", cr4);
 
@@ -152,7 +155,7 @@ pub fn init() {
 
 	let has_syscall = match cpuid.get_extended_function_info() {
 		Some(finfo) => finfo.has_syscall_sysret(),
-		None => false
+		None => false,
 	};
 
 	if has_syscall == false {
@@ -172,10 +175,16 @@ pub fn init() {
 	}
 
 	// determin processor features
-	let extended_function_info = cpuid.get_extended_function_info().expect("CPUID Extended Function Info not available!");
+	let extended_function_info = cpuid
+		.get_extended_function_info()
+		.expect("CPUID Extended Function Info not available!");
 	unsafe {
-		PHYSICAL_ADDRESS_BITS = extended_function_info.physical_address_bits().expect("CPUID Physical Address Bits not available!");
-		LINEAR_ADDRESS_BITS = extended_function_info.linear_address_bits().expect("CPUID Linear Address Bits not available!");
+		PHYSICAL_ADDRESS_BITS = extended_function_info
+			.physical_address_bits()
+			.expect("CPUID Physical Address Bits not available!");
+		LINEAR_ADDRESS_BITS = extended_function_info
+			.linear_address_bits()
+			.expect("CPUID Linear Address Bits not available!");
 		SUPPORTS_1GIB_PAGES = extended_function_info.has_1gib_pages();
 	}
 

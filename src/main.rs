@@ -14,7 +14,7 @@ use eduos_rs::scheduler;
 use eduos_rs::scheduler::task::NORMAL_PRIORITY;
 use eduos_rs::syscall;
 use eduos_rs::syscall::{SYSNO_EXIT, SYSNO_MESSAGE};
-use eduos_rs::{LogLevel,LOGGER};
+use eduos_rs::{LogLevel, LOGGER};
 use x86::controlregs;
 
 extern "C" fn user_foo() -> ! {

@@ -5,16 +5,16 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
+use arch::processor::*;
 use consts::*;
 use logging::*;
-use arch::processor::*;
 use x86::io::*;
 use x86::time::rdtsc;
 
 const CLOCK_TICK_RATE: u32 = 1193182u32; /* 8254 chip's internal oscillator frequency */
 
 unsafe fn wait_some_time() {
- 	let start = rdtsc();
+	let start = rdtsc();
 
 	mb();
 	while rdtsc() - start < 1000000 {
@@ -23,11 +23,10 @@ unsafe fn wait_some_time() {
 }
 
 // initialize the Programmable Interrupt controller
-pub fn init()
-{
+pub fn init() {
 	debug!("initialize timer");
 
-	let latch = ((CLOCK_TICK_RATE + TIMER_FREQ/2) / TIMER_FREQ) as u16;
+	let latch = ((CLOCK_TICK_RATE + TIMER_FREQ / 2) / TIMER_FREQ) as u16;
 
 	unsafe {
 		/*
@@ -47,10 +46,10 @@ pub fn init()
 
 		/* Port 0x40 is for the counter register of channel 0 */
 
-		outb(0x40, (latch & 0xFF) as u8);   /* low byte  */
+		outb(0x40, (latch & 0xFF) as u8); /* low byte  */
 
 		wait_some_time();
 
-		outb(0x40, (latch >> 8) as u8);     /* high byte */
+		outb(0x40, (latch >> 8) as u8); /* high byte */
 	}
 }

@@ -26,13 +26,20 @@ pub struct Node<T> {
 
 impl<T> Node<T> {
 	pub fn new(value: T) -> Rc<RefCell<Self>> {
-		Rc::new(RefCell::new(Self { value: value, prev: None, next: None }))
+		Rc::new(RefCell::new(Self {
+			value: value,
+			prev: None,
+			next: None,
+		}))
 	}
 }
 
 impl<T> DoublyLinkedList<T> {
 	pub const fn new() -> Self {
-		Self { head: None, tail: None }
+		Self {
+			head: None,
+			tail: None,
+		}
 	}
 
 	pub fn head(&self) -> Option<Rc<RefCell<Node<T>>>> {
@@ -56,7 +63,7 @@ impl<T> DoublyLinkedList<T> {
 					// We become the next node of the old list tail and the old list tail becomes our previous node.
 					tail.borrow_mut().next = Some(new_node.clone());
 					new_node_borrowed.prev = Some(tail);
-				},
+				}
 				None => {
 					// No nodes yet, so we become the new list head.
 					self.head = Some(new_node.clone());
@@ -83,7 +90,7 @@ impl<T> DoublyLinkedList<T> {
 					// It is not, so its previous node now becomes our previous node.
 					prev_node.borrow_mut().next = Some(new_node.clone());
 					new_node_borrowed.prev = Some(prev_node);
-				},
+				}
 				None => {
 					// It is, so we become the new list head.
 					self.head = Some(new_node.clone());
@@ -113,7 +120,7 @@ impl<T> DoublyLinkedList<T> {
 					// It is not, so its next node now becomes our next node.
 					next_node.borrow_mut().prev = Some(new_node.clone());
 					new_node_borrowed.next = Some(next_node);
-				},
+				}
 				None => {
 					// It is, so we become the new list tail.
 					self.tail = Some(new_node.clone());
@@ -143,7 +150,7 @@ impl<T> DoublyLinkedList<T> {
 		// If not, the next node becomes the new list head.
 		match prev {
 			Some(ref prev_node) => prev_node.borrow_mut().next = next,
-			None => self.head = next
+			None => self.head = next,
 		};
 
 		// Check the cloned next node.
@@ -151,7 +158,7 @@ impl<T> DoublyLinkedList<T> {
 		// If not, the previous node becomes the new list tail.
 		match next_clone {
 			Some(ref next_node) => next_node.borrow_mut().prev = prev,
-			None => self.tail = prev
+			None => self.tail = prev,
 		};
 	}
 
@@ -160,18 +167,23 @@ impl<T> DoublyLinkedList<T> {
 	}
 
 	pub fn iter(&self) -> Iter<T> {
-		Iter::<T> { current: self.head.as_ref().map(|node| node.clone()) }
+		Iter::<T> {
+			current: self.head.as_ref().map(|node| node.clone()),
+		}
 	}
 }
 
 impl<T> Default for DoublyLinkedList<T> {
 	fn default() -> Self {
-		Self { head: None, tail: None }
+		Self {
+			head: None,
+			tail: None,
+		}
 	}
 }
 
 pub struct Iter<T> {
-	current: Option<Rc<RefCell<Node<T>>>>
+	current: Option<Rc<RefCell<Node<T>>>>,
 }
 
 impl<T> Iterator for Iter<T> {
