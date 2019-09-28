@@ -27,7 +27,7 @@ bootimage.bin:
 fmt:
 	rustfmt --write-mode overwrite src/lib.rs
 
-qemu: bootimage.bin
+qemu:
 	@bootimage run $(opt) --target $(target).json || ([ $$? -eq 1 ] && exit 0) || exit 1
 
 run:
