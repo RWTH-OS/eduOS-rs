@@ -1,6 +1,6 @@
 # eduOS-rs - A teaching operating system written in Rust
 
-[![Build Status](https://dev.azure.com/RWTH-OS/eduOS-rs/_apis/build/status/RWTH-OS.eduOS-rs)](https://dev.azure.com/RWTH-OS/eduOS-rs/_build?definitionId=1)
+[![Build Status](https://dev.azure.com/RWTH-OS/eduOS-rs/_apis/build/status/RWTH-OS.eduOS-rs?branchName=stage0)](https://dev.azure.com/RWTH-OS/eduOS-rs/_build/latest?definitionId=1&branchName=stage0)
 
 ## Introduction
 
