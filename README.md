@@ -1,9 +1,6 @@
 # eduOS-rs - A teaching operating system written in Rust
 
-|   | Build & Test |
-|---|:-----:|
-|**all OS'**|[![Build & Test](https://dev.azure.com/RWTH-OS/eduOS-rs/_apis/build/status/RWTH-OS.eduOS-rs)](https://dev.azure.com/RWTH-OS/eduOS-rs/_build?definitionId=1)|
-|**Linux only**|[![Build & Test](https://git.rwth-aachen.de/os/eduOS-rs/badges/master/pipeline.svg)](https://git.rwth-aachen.de/os/eduOS-rs/pipelines)|
+[![Build Status](https://dev.azure.com/RWTH-OS/eduOS-rs/_apis/build/status/RWTH-OS.eduOS-rs)](https://dev.azure.com/RWTH-OS/eduOS-rs/_build?definitionId=1)
 
 ## Introduction
 
@@ -33,10 +30,23 @@ Following terminal command installs these tools without Apple's IDE Xcode:
 $ xcode-select --install
 ```
 
+It is also recommended to install the packet manager [Homebrew](https://brew.sh).
+eduOS-rs depends on [Qemu](https://www.qemu.org/), which is a open source machine emulator.
+Please use Homebrew to install Qemu as follows:
+
+```sh
+$ brew install qemu
+```
+
 ### Windows
-To build eduOS-rs you have to install a linker, [make](http://gnuwin32.sourceforge.net/packages/make.htm) and a [git client](https://git-scm.com/downloads).
-We tested the eduOS-rs with the linker from Visual Studio.
-Consequently, we suggest installing Visual Studio in addition to [make](http://gnuwin32.sourceforge.net/packages/make.htm) and [git](https://git-scm.com/downloads).
+To build eduOS-rs you have to install a linker, [make](http://gnuwin32.sourceforge.net/packages/make.htm), a [git client](https://git-scm.com/downloads) and the emulator [Qemu](https://www.qemu.org/).
+We tested eduOS-rs with the linker from Visual Studio.
+Consequently, we suggest to install Visual Studio.
+Please install also the packet manager [Chocolatey](https://chocolatey.org) and use it to install the packages for [make](http://gnuwin32.sourceforge.net/packages/make.htm) and [git](https://git-scm.com/downloads).
+
+```sh
+$ choco install qemu make
+```
 
 ### Linux
 Linux users should install common developer tools.
@@ -60,15 +70,12 @@ $ rustup component add rust-src
 $ rustup component add llvm-tools-preview
 ```
 
-eduOS-rs is able to run within [QEMU](https://www.qemu.org/), which is a open source machine emulator, or within [ehyve](https://github.com/RWTH-OS/ehyve), which a specialized hypervisor for eduOS-rs.
-It is recommended to install [ehyve](https://github.com/RWTH-OS/ehyve) and [bootimage](https://github.com/rust-osdev/bootimage) to support both virtualization techniques.
+It is also recommended to install [bootimage](https://github.com/rust-osdev/bootimage) to build a bootable image.
 
 ```sh
 $ cargo install bootimage
-$ cargo install --git https://github.com/RWTH-OS/ehyve.git
 ```
 
-If ehyve is to be used, please check ehyve's [system requirements](https://github.com/RWTH-OS/ehyve).
 
 ## Building
 The final step is to create a copy of the repository and to build the kernel:
@@ -82,13 +89,7 @@ $ # Build kernel
 $ make
 ```
 
-From here, we should be able to run the kernel in ehyve, which is the hypervisor for eduOS-rs:
-
-```sh
-$ make run
-```
-
-In case of QEMU as hypervisor, please run the kernel as follows:
+From here, we should be able to run the kernel in Qemu:
 
 ```sh
 $ make qemu
