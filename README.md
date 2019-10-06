@@ -39,10 +39,10 @@ $ brew install qemu
 ```
 
 ### Windows
-To build eduOS-rs you have to install a linker, [make](http://gnuwin32.sourceforge.net/packages/make.htm), a [git client](https://git-scm.com/downloads) and the emulator [Qemu](https://www.qemu.org/).
+To build eduOS-rs you have to install a linker, the tool [make](http://gnuwin32.sourceforge.net/packages/make.htm), a [git client](https://git-scm.com/downloads) and the emulator [Qemu](https://www.qemu.org/).
 We tested eduOS-rs with the linker from Visual Studio.
 Consequently, we suggest to install Visual Studio.
-Please install also the packet manager [Chocolatey](https://chocolatey.org) and use it to install the packages for [make](http://gnuwin32.sourceforge.net/packages/make.htm) and [git](https://git-scm.com/downloads).
+Please install also the packet manager [Chocolatey](https://chocolatey.org) and use it to install the packages for _make_ and _git_.
 
 ```sh
 $ choco install qemu make
