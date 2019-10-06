@@ -14,7 +14,7 @@ RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
 RUN /root/.cargo/bin/cargo install cargo-xbuild
 RUN /root/.cargo/bin/rustup component add rust-src
 RUN /root/.cargo/bin/rustup component add llvm-tools-preview
-RUN /root/.cargo/bin/cargo install --git https://github.com/RWTH-OS/ehyve.git
+RUN /root/.cargo/bin/cargo install bootimage
 
 ENV PATH="/root/.cargo/bin:${PATH}"
 ENV EDITOR=vim
