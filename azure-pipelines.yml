@@ -5,7 +5,8 @@ jobs:
   steps:
   - script: |
       sudo apt-get -qq update
-      sudo apt-get install -y curl wget nasm make gcc g++ build-essential qemu-system-x86
+      sudo apt-get install -y curl wget nasm make gcc g++ build-essential qemu-system-x86 util-linux
+      lscpu
       curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
       export PATH=$PATH:~/.cargo/bin
       cargo install cargo-xbuild
