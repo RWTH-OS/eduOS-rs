@@ -24,7 +24,7 @@ endif
 
 .PHONY: all fmt clean run debug cargo docs
 
-all: cargo $(build_wasm)
+all: bootimage.bin $(build_wasm)
 
 bootimage.bin:
 	@cargo bootimage $(opt) --target $(target).json
