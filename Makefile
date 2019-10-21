@@ -19,7 +19,7 @@ endif
 
 .PHONY: all fmt clean run debug cargo docs
 
-all: cargo
+all: bootimage.bin
 
 bootimage.bin:
 	@cargo bootimage $(opt) --target $(target).json
