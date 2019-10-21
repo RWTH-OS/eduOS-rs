@@ -39,7 +39,7 @@ build:
 test:
   stage: test
   script:
-    - make run
+    - make qemu
   image: ${IMAGE}
   tags:
     - docker
