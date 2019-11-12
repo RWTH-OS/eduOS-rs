@@ -5,7 +5,7 @@ jobs:
   steps:
   - script: |
       sudo apt-get -qq update
-      sudo apt-get install -y curl wget nasm make gcc g++ build-essential qemu-system-x86 qemu-system-aarch86 util-linux
+      sudo apt-get install -y curl wget nasm make gcc g++ build-essential qemu-system-x86 qemu-system-aarch64 util-linux
       lscpu
       curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
       export PATH=$PATH:~/.cargo/bin
