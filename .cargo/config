@@ -1,0 +1,4 @@
+[target.aarch64-eduos]
+rustflags = [
+  "-C", "link-arg=-Tlink_aarch64.ld"
+]

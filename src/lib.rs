@@ -1,4 +1,5 @@
 #![feature(asm, const_fn, lang_items)]
+#![feature(naked_functions)]
 #![no_std]
 
 extern crate spin;

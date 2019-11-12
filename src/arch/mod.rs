@@ -28,6 +28,9 @@ pub use self::x86_64::{processor, serial};
 #[cfg(target_arch = "wasm32")]
 pub use self::wasm32::serial;
 
+#[cfg(target_arch = "aarch64")]
+pub use self::aarch64::{processor, serial};
+
 // Implementations for x86_64.
 #[cfg(target_arch = "x86_64")]
 pub mod x86_64;
@@ -35,3 +38,7 @@ pub mod x86_64;
 // Implementations for wasm32.
 #[cfg(target_arch = "wasm32")]
 pub mod wasm32;
+
+// Implementations for aarch64.
+#[cfg(target_arch = "aarch64")]
+pub mod aarch64;

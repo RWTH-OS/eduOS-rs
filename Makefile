@@ -22,21 +22,26 @@ else
 RM := rm -rf
 endif
 
-.PHONY: all fmt clean run debug cargo docs
+ifeq ($(arch), x86_64)
+BUILD_COMMAD := cargo bootimage $(opt) --target $(target).json
+RUN_COMMAND := bootimage run $(opt) --target $(target).json || ([ $$? -eq 1 ] && exit 0) || exit 1
+else
+BUILD_COMMAD := cargo xbuild $(opt) --target $(target).json
+RUN_COMMAND := qemu-system-aarch64 -semihosting -M virt -cpu cortex-a53 -m 1G -serial stdio -display none -kernel target/$(arch)-eduos/$(rdir)/eduos-rs || ([ $$? -eq 1 ] && exit 0) || exit 1
+endif
 
-all: bootimage.bin $(build_wasm)
+.PHONY: all build fmt clean run debug cargo docs
 
-bootimage.bin:
-	@cargo bootimage $(opt) --target $(target).json
+all: build $(build_wasm)
+
+build:
+	@$(BUILD_COMMAD)
 
 fmt:
 	rustfmt --write-mode overwrite src/lib.rs
 
 qemu:
-	@bootimage run $(opt) --target $(target).json || ([ $$? -eq 1 ] && exit 0) || exit 1
-
-run:
-	@ehyve target/$(arch)-eduos/$(rdir)/eduos-rs
+	@$(RUN_COMMAND)
 
 clean:
 	$(RM) target
