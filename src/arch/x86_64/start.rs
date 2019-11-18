@@ -5,9 +5,11 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
+#[allow(unused_imports)]
 use scheduler::task::BOOT_STACK;
 
 extern "C" {
+	#[allow(dead_code)]
 	pub fn main();
 }
 
