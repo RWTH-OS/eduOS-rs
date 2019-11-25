@@ -8,6 +8,8 @@
 extern crate eduos_rs;
 
 use core::panic::PanicInfo;
+#[allow(unused_imports)]
+use core::fmt::Write;
 use eduos_rs::arch;
 use eduos_rs::arch::processor::{halt, shutdown};
 use eduos_rs::scheduler;
@@ -20,7 +22,7 @@ fn user_foo() -> ! {
 	let str = b"Hello from user_foo!\n\0";
 
 	/*unsafe {
-		let _ = arch::x86_64::serial::COM1.write_str("Hello from user_foo!\n");
+		let _ = arch::x86_64::serial::COM1.write_str("Hello from COM1!\n");
 	}*/
 
 	syscall!(SYSNO_WRITE, str.as_ptr() as u64, str.len());
