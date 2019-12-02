@@ -17,12 +17,9 @@ else
 RM := rm -rf
 endif
 
-.PHONY: all fmt clean run debug cargo docs
+.PHONY: all fmt clean run debug docs
 
-all: cargo
-
-bootimage.bin:
-	@cargo bootimage $(opt) --target $(target).json
+all: qemu
 
 fmt:
 	rustfmt --write-mode overwrite src/lib.rs
@@ -31,15 +28,14 @@ qemu:
 	@bootimage run $(opt) --target $(target).json || ([ $$? -eq 1 ] && exit 0) || exit 1
 
 run:
+	@echo Build for ehyve
+	@cargo build -Z build-std=core,alloc --no-default-features $(opt) --target $(target).json
+	@echo Run within ehyve
 	@ehyve target/$(arch)-eduos/$(rdir)/eduos-rs
 
 clean:
-	$(RM) target
+	@cargo clean
 
 docs:
 	@echo DOC
 	@cargo doc
-
-cargo:
-	@echo CARGO
-	@cargo xbuild $(opt) --target $(target).json

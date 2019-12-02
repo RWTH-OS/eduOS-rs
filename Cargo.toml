@@ -8,10 +8,14 @@ authors = ["Stefan Lankes <slankes@eonerc.rwth-aachen.de>"]
 git = "https://github.com/RWTH-OS/bootloader.git"
 branch = "stage5"
 default-features = false
+optional = true
 
 [target.'cfg(target_arch = "x86_64")'.dependencies.x86]
 version = "0.24.*"
 default-features = false
+
+[features]
+default = ["bootloader"]
 
 [package.metadata.cargo-xbuild]
 memcpy = true
