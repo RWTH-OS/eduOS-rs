@@ -24,7 +24,7 @@ docker:
 build:
   stage: build
   script:
-    - make
+    - make cargo
     - du -hs ./target
   image: ${IMAGE}
   tags:

@@ -17,7 +17,7 @@ else
 RM := rm -rf
 endif
 
-.PHONY: all fmt clean run debug docs
+.PHONY: all fmt clean run debug docs cargo
 
 all: qemu
 
@@ -27,11 +27,13 @@ fmt:
 qemu:
 	@bootimage run $(opt) --target $(target).json || ([ $$? -eq 1 ] && exit 0) || exit 1
 
-run:
-	@echo Build for ehyve
-	@cargo build -Z build-std=core,alloc --no-default-features $(opt) --target $(target).json
+run: cargo
 	@echo Run within ehyve
 	@ehyve target/$(arch)-eduos/$(rdir)/eduos-rs
+
+cargo:
+	@echo Build for ehyve
+	@cargo build -Z build-std=core,alloc --no-default-features $(opt) --target $(target).json
 
 clean:
 	@cargo clean
