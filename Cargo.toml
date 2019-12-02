@@ -4,15 +4,21 @@ version = "0.1.0"
 license = "MIT/Apache-2.0"
 authors = ["Stefan Lankes <slankes@eonerc.rwth-aachen.de>"]
 
+
 [dependencies]
 spin = "0.5.2"	# Spinlocks.
 
 [target.'cfg(target_arch = "x86_64")'.dependencies.bootloader]
 version = "0.8.*"
+default-features = false
+optional = true
 
 [target.'cfg(target_arch = "x86_64")'.dependencies.x86]
-version = "0.27.*"
+version = "0.28.*"
 default-features = false
+
+[features]
+default = ["bootloader"]
 
 [package.metadata.cargo-xbuild]
 memcpy = true

@@ -26,7 +26,7 @@ version = "0.1.0"
 dependencies = [
  "bootloader 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "spin 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "x86 0.27.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "x86 0.28.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -67,7 +67,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "x86"
-version = "0.27.0"
+version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "bit_field 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -85,4 +85,4 @@ dependencies = [
 "checksum semver 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)" = "1d7eb9ef2c18661902cc47e535f9bc51b78acd254da71d375c2f6720d9a40403"
 "checksum semver-parser 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
 "checksum spin 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)" = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
-"checksum x86 0.27.0 (registry+https://github.com/rust-lang/crates.io-index)" = "271bc2de3f2f7a7c416377205b86e2ed1098eddfbc44098a1e1ac41d50951e7a"
+"checksum x86 0.28.0 (registry+https://github.com/rust-lang/crates.io-index)" = "f705f7554f555fa2d0fea9e3b53f5fd8b4b67270f48aac96a4146a19b5bf7db1"

@@ -17,3 +17,5 @@ pub mod macros;
 pub mod logging;
 pub mod arch;
 pub mod console;
+#[cfg(not(feature = "bootloader"))]
+pub mod rlib;

@@ -10,11 +10,6 @@ opt := --release
 rdir := release
 endif
 
-build_wasm :=
-ifeq ($(arch), wasm32)
-build_wasm := eduos.wasm
-endif
-
 RN :=
 ifdef COMSPEC
 RM := del
@@ -26,13 +21,13 @@ ifeq ($(arch), x86_64)
 BUILD_COMMAD := cargo bootimage $(opt) --target $(target).json
 RUN_COMMAND := bootimage run $(opt) --target $(target).json || ([ $$? -eq 1 ] && exit 0) || exit 1
 else
-BUILD_COMMAD := cargo xbuild $(opt) --target $(target).json
+BUILD_COMMAD := cargo build -Z build-std=core,alloc --no-default-features $(opt) --target $(target).json
 RUN_COMMAND := qemu-system-aarch64 -semihosting -M virt -cpu cortex-a53 -m 1G -serial stdio -display none -kernel target/$(arch)-eduos/$(rdir)/eduos-rs || ([ $$? -eq 1 ] && exit 0) || exit 1
 endif
 
 .PHONY: all build fmt clean run debug cargo docs
 
-all: build $(build_wasm)
+all: qemu
 
 build:
 	@$(BUILD_COMMAD)
@@ -40,20 +35,18 @@ build:
 fmt:
 	rustfmt --write-mode overwrite src/lib.rs
 
-qemu:
-	@$(RUN_COMMAND)
+qemu: build
+	@$(RUN_COMMAND) || ([ $$? -eq 1 ] && exit 0) || exit 1
+
+run:
+	@echo Build for ehyve
+	@cargo build -Z build-std=core,alloc --no-default-features $(opt) --target $(target).json
+	@echo Run within ehyve
+	@ehyve target/$(arch)-eduos/$(rdir)/eduos-rs
 
 clean:
-	$(RM) target
-
-eduos.wasm: cargo
-	@echo WASM_GC
-	@wasm-gc target/$(target)/$(rdir)/eduos_rs.wasm eduos.wasm
+	@cargo clean
 
 docs:
 	@echo DOC
 	@cargo doc
-
-cargo:
-	@echo CARGO
-	@cargo xbuild $(opt) --target $(target).json
