@@ -50,7 +50,7 @@ trait VfsNode: core::fmt::Debug + core::marker::Send + core::marker::Sync {
 /// VfsNodeFile represents a file node of the virtual file system.
 trait VfsNodeFile: VfsNode + core::fmt::Debug + core::marker::Send + core::marker::Sync {
 	/// Create a file handle to the current file
-	fn get_handle(&self, _opt: OpenOptions) -> Result<Box<FileHandle>>;
+	fn get_handle(&self, _opt: OpenOptions) -> Result<Box<dyn FileHandle>>;
 }
 
 /// VfsNodeFile represents a file node of the virtual file system.
@@ -68,7 +68,7 @@ trait VfsNodeDirectory: VfsNode + core::fmt::Debug + core::marker::Send + core::
 	fn traverse_lsdir(&self, _tabs: String) -> Result<()>;
 
 	/// Helper function to open a file
-	fn traverse_open(&mut self, _components: &mut Vec<&str>, _flags: OpenOptions) -> Result<Box<FileHandle>>;
+	fn traverse_open(&mut self, _components: &mut Vec<&str>, _flags: OpenOptions) -> Result<Box<dyn FileHandle>>;
 
 	/// Mound memory region as file
 	fn traverse_mount(&mut self, _components: &mut Vec<&str>, addr: u64, len: u64) -> Result<()>;
@@ -85,7 +85,7 @@ trait Vfs: core::fmt::Debug + core::marker::Send + core::marker::Sync {
 	/// Open a file with the path `path`.
 	/// `path` must be an absolute path to the file, while `flags` defined
 	/// if the file is writeable or created on demand.
-	fn open(&mut self, path: &String, flags: OpenOptions) -> Result<Box<FileHandle>>;
+	fn open(&mut self, path: &String, flags: OpenOptions) -> Result<Box<dyn FileHandle>>;
 
 	/// Mound memory region as file
 	fn mount(&mut self, path: &String, addr: u64, len: u64) -> Result<()>;
@@ -133,7 +133,7 @@ pub fn mkdir(path: &String) -> Result<()> {
 /// Open a file with the path `path`.
 /// `path` must be an absolute path to the file, while `flags` defined
 /// if the file is writeable or created on demand.
-pub fn open(path: &String, flags: OpenOptions) -> Result<Box<FileHandle>> {
+pub fn open(path: &String, flags: OpenOptions) -> Result<Box<dyn FileHandle>> {
 	unsafe { VFS_ROOT.as_mut().unwrap().open(path, flags) }
 }
 

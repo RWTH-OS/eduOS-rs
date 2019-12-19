@@ -13,8 +13,7 @@ spin = "0.5"
 #features = ["spin_no_std"]
 
 [target.'cfg(target_arch = "x86_64")'.dependencies.x86]
-git = "https://github.com/hermitcore/rust-x86.git"
-branch = "hermit"
+version = "0.28.0"
 default-features = false
 
 [dependencies.goblin]
