@@ -85,7 +85,7 @@ pub fn init() {
 				.finish();
 
 		/*
-		 * Create code segment for 32bit user-space applications (ring 3)
+		 * Create data segment for 32bit user-space applications (ring 3)
 		 */
 		GDT[GDT_USER32_DATA] = DescriptorBuilder::data_descriptor(0, 0, DataSegmentType::ReadWrite)
 			.present()
