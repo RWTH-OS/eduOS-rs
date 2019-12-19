@@ -167,7 +167,7 @@ pub fn init() {
 		wrmsr(IA32_FMASK, 1 << 9); // clear IF flag during system call
 
 		// reset GS registers
-		wrmsr(IA32_KERNEL_GS_BASE, 0);
+		wrmsr(IA32_GS_BASE, 0);
 		asm!("wrgsbase $0" :: "r"(BOOT_STACK.top()) :: "volatile");
 	}
 
