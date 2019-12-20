@@ -25,6 +25,8 @@ pub mod errno;
 pub mod mm;
 pub mod scheduler;
 pub mod synch;
+#[cfg(not(feature = "bootloader"))]
+pub mod rlib;
 
 #[global_allocator]
 static ALLOCATOR: &'static mm::allocator::Allocator = &mm::allocator::Allocator;
