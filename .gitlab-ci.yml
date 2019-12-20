@@ -1,5 +1,5 @@
 variables:
-  IMAGE: ubuntu:with-hermitcore
+  IMAGE: ubuntu:ehyve
   GIT_SUBMODULE_STRATEGY: normal
 
 stages:
@@ -24,7 +24,7 @@ docker:
 build:
   stage: build
   script:
-    - make
+    - make build
     - du -hs ./target
   image: ${IMAGE}
   tags:
@@ -36,7 +36,17 @@ build:
 
 # Stage: test
 ##############################################################################
-test:
+test:qemu:
+  stage: test
+  script:
+    - make run
+  image: ${IMAGE}
+  tags:
+    - docker
+  dependencies:
+    - build
+
+test:ehyve:
   stage: test
   script:
     - make run
