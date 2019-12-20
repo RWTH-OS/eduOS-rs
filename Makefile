@@ -38,9 +38,11 @@ fmt:
 qemu: build
 	@$(RUN_COMMAND) || ([ $$? -eq 1 ] && exit 0) || exit 1
 
-run:
+cargo:
 	@echo Build for ehyve
 	@cargo build -Z build-std=core,alloc --no-default-features $(opt) --target $(target).json
+
+run: cargo 
 	@echo Run within ehyve
 	@ehyve target/$(arch)-eduos/$(rdir)/eduos-rs
 
