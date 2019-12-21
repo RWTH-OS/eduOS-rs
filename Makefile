@@ -17,17 +17,12 @@ else
 RM := rm -rf
 endif
 
-.PHONY: all fmt clean run debug cargo docs build
-
-all: qemu
+.PHONY: all build fmt clean run debug docs
 
 build:
 	@cargo bootimage $(opt) --target $(target).json
 
-qemu: build
-	@bootimage run $(opt) --target $(target).json || ([ $$? -eq 1 ] && exit 0) || exit 1
-
-run: cargo
+run: build
 	@ehyve target/$(arch)-eduos/$(rdir)/eduos-rs
 
 cargo:
