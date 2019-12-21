@@ -17,12 +17,15 @@ else
 RM := rm -rf
 endif
 
-.PHONY: all fmt clean run debug docs cargo
+.PHONY: all fmt clean run debug docs cargo build
 
 all: qemu
 
 fmt:
 	rustfmt --write-mode overwrite src/lib.rs
+
+build:
+	@cargo bootimage $(opt) --target $(target).json
 
 qemu:
 	@bootimage run $(opt) --target $(target).json || ([ $$? -eq 1 ] && exit 0) || exit 1
