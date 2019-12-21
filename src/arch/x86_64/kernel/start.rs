@@ -7,7 +7,7 @@
 
 use scheduler::task::BOOT_STACK;
 
-extern {
+extern "C" {
 	pub fn main();
 }
 

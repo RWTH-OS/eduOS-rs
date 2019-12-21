@@ -10,12 +10,11 @@ use alloc::string::String;
 #[repr(C)]
 pub struct IoVec {
 	pub iov_base: *const u8,
-	pub iov_len: usize
+	pub iov_len: usize,
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn sys_writev(_fd: i32, ptr: *const IoVec, cnt: i32) -> isize
-{
+pub unsafe extern "C" fn sys_writev(_fd: i32, ptr: *const IoVec, cnt: i32) -> isize {
 	let mut len: isize = 0;
 	let iovec = core::slice::from_raw_parts(ptr, cnt as usize);
 
@@ -30,8 +29,7 @@ pub unsafe extern "C" fn sys_writev(_fd: i32, ptr: *const IoVec, cnt: i32) -> is
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn sys_write(_fd: i32, s: *const u8, len: usize) -> isize
-{
+pub unsafe extern "C" fn sys_write(_fd: i32, s: *const u8, len: usize) -> isize {
 	let text = core::slice::from_raw_parts(s, len);
 
 	print!("{}", String::from_utf8_lossy(text));

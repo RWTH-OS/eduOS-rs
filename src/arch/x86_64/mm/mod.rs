@@ -9,8 +9,8 @@ pub mod paging;
 pub mod physicalmem;
 pub mod virtualmem;
 
+use self::paging::{BasePageSize, PageSize, PageTableEntryFlags};
 use arch::x86_64::kernel::get_memfile;
-use self::paging::{PageSize,BasePageSize,PageTableEntryFlags};
 
 pub fn init() {
 	paging::init();
@@ -20,12 +20,16 @@ pub fn init() {
 	let (start, len) = get_memfile();
 	if len > 0 {
 		// Map file into the kernel space
-		paging::map::<BasePageSize>(align_down!(start as usize, BasePageSize::SIZE),
+		paging::map::<BasePageSize>(
 			align_down!(start as usize, BasePageSize::SIZE),
-			align_up!(len as usize, BasePageSize::SIZE)/BasePageSize::SIZE,
-			PageTableEntryFlags::GLOBAL|PageTableEntryFlags::EXECUTE_DISABLE);
+			align_down!(start as usize, BasePageSize::SIZE),
+			align_up!(len as usize, BasePageSize::SIZE) / BasePageSize::SIZE,
+			PageTableEntryFlags::GLOBAL | PageTableEntryFlags::EXECUTE_DISABLE,
+		);
 
-		virtualmem::reserve(align_down!(start as usize, BasePageSize::SIZE),
-			align_up!(len as usize, BasePageSize::SIZE));
+		virtualmem::reserve(
+			align_down!(start as usize, BasePageSize::SIZE),
+			align_up!(len as usize, BasePageSize::SIZE),
+		);
 	}
 }

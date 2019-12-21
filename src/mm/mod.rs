@@ -10,11 +10,11 @@ pub mod freelist;
 mod nodepool;
 
 use alloc::alloc::Layout;
+use arch;
 use arch::mm::paging::{BasePageSize, PageSize, PageTableEntryFlags};
+use logging::*;
 use mm::nodepool::NodePool;
 use scheduler::DisabledPreemption;
-use logging::*;
-use arch;
 
 extern "C" {
 	static kernel_start: u8;
@@ -63,7 +63,10 @@ pub fn deallocate(virtual_address: usize, size: usize) {
 		arch::mm::virtualmem::deallocate(virtual_address, size);
 		arch::mm::physicalmem::deallocate(entry.address(), size);
 	} else {
-		panic!("No page table entry for virtual address {:#X}", virtual_address);
+		panic!(
+			"No page table entry for virtual address {:#X}",
+			virtual_address
+		);
 	}
 }
 
@@ -73,8 +76,14 @@ pub fn init() {
 	// Calculate the start and end addresses of the 2 MiB page(s) that map the kernel.
 	unsafe {
 		image_size = &kernel_end as *const u8 as usize - &kernel_start as *const u8 as usize;
-		KERNEL_START_ADDRESS = align_down!(&kernel_start as *const u8 as usize, arch::mm::paging::LargePageSize::SIZE);
-		KERNEL_END_ADDRESS = align_up!(&kernel_end as *const u8 as usize, arch::mm::paging::LargePageSize::SIZE);
+		KERNEL_START_ADDRESS = align_down!(
+			&kernel_start as *const u8 as usize,
+			arch::mm::paging::LargePageSize::SIZE
+		);
+		KERNEL_END_ADDRESS = align_up!(
+			&kernel_end as *const u8 as usize,
+			arch::mm::paging::LargePageSize::SIZE
+		);
 	}
 
 	info!("Memory size {} MByte", arch::get_memory_size() >> 20);
@@ -90,7 +99,10 @@ pub fn init() {
 #[lang = "oom"]
 #[no_mangle]
 pub fn rust_oom(layout: Layout) -> ! {
-        println!("[!!!OOM!!!] Memory allocation of {} bytes failed", layout.size());
+	println!(
+		"[!!!OOM!!!] Memory allocation of {} bytes failed",
+		layout.size()
+	);
 
-		loop {}
+	loop {}
 }

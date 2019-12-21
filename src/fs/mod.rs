@@ -9,16 +9,16 @@
 
 #![allow(dead_code)]
 
-mod vfs;
 mod initrd;
+mod vfs;
 
-use logging::*;
-use errno::*;
-use arch;
-use fs::vfs::Fs;
-use alloc::vec::Vec;
 use alloc::boxed::Box;
 use alloc::string::String;
+use alloc::vec::Vec;
+use arch;
+use errno::*;
+use fs::vfs::Fs;
+use logging::*;
 
 /// Type of the VfsNode
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -26,7 +26,7 @@ pub enum NodeKind {
 	/// Node represent a file
 	File,
 	/// Node represent a directory
-	Directory
+	Directory,
 }
 
 bitflags! {
@@ -68,7 +68,11 @@ trait VfsNodeDirectory: VfsNode + core::fmt::Debug + core::marker::Send + core::
 	fn traverse_lsdir(&self, _tabs: String) -> Result<()>;
 
 	/// Helper function to open a file
-	fn traverse_open(&mut self, _components: &mut Vec<&str>, _flags: OpenOptions) -> Result<Box<dyn FileHandle>>;
+	fn traverse_open(
+		&mut self,
+		_components: &mut Vec<&str>,
+		_flags: OpenOptions,
+	) -> Result<Box<dyn FileHandle>>;
 
 	/// Mound memory region as file
 	fn traverse_mount(&mut self, _components: &mut Vec<&str>, addr: u64, len: u64) -> Result<()>;
@@ -105,7 +109,7 @@ pub enum SeekFrom {
 	///
 	/// It is possible to seek beyond the end of an object, but it's an error to
 	/// seek before byte 0.
-	Current(i64)
+	Current(i64),
 }
 
 /// The trait `FileHandle` defines all functions hat can be applied to the file.
@@ -143,7 +147,7 @@ pub fn mount(path: &String, addr: u64, len: u64) -> Result<()> {
 }
 
 /// Help function to check if the argument is an abolute path
-fn check_path(path: &String) -> bool{
+fn check_path(path: &String) -> bool {
 	if let Some(pos) = path.find('/') {
 		if pos == 0 {
 			return true;
@@ -162,7 +166,8 @@ pub fn init() {
 	let (addr, len) = arch::get_memfile();
 	if len > 0 {
 		info!("Found mountable file at 0x{:x} (len 0x{:x})", addr, len);
-		root.mount(&String::from("/bin/demo"), addr, len).expect("Unable to mount file");
+		root.mount(&String::from("/bin/demo"), addr, len)
+			.expect("Unable to mount file");
 	}
 
 	//root.lsdir().unwrap();

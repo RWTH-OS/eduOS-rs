@@ -6,13 +6,12 @@
 // copied, modified, or distributed except according to those terms.
 
 use collections::{DoublyLinkedList, Node};
-use mm::freelist::FreeListEntry;
 use logging::*;
+use mm::freelist::FreeListEntry;
 
 /// A deallocation operation in a Free List may need a node from the pool.
 /// As we use two free lists (for physical and virtual memories), we always need to guarantee a minimum of 2 nodes in the pool for any deallocation operation.
 const MINIMUM_POOL_ENTRIES: usize = 2;
-
 
 pub struct NodePool {
 	pub list: DoublyLinkedList<FreeListEntry>,
@@ -61,13 +60,8 @@ impl NodePool {
 				}
 			}
 
-			for _j in 0..(MINIMUM_POOL_ENTRIES-i) {
-				let entry = Node::new(
-					FreeListEntry {
-						start: 0,
-						end: 0
-					}
-				);
+			for _j in 0..(MINIMUM_POOL_ENTRIES - i) {
+				let entry = Node::new(FreeListEntry { start: 0, end: 0 });
 				self.list.push(entry);
 			}
 

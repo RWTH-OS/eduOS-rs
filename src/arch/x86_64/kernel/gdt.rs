@@ -7,14 +7,14 @@
 
 #![allow(dead_code)]
 
+use consts::*;
 use core::mem;
 use x86::bits64::segmentation::*;
 use x86::bits64::task::*;
+use x86::controlregs::{cr3, cr3_write};
+use x86::dtables::{self, DescriptorTablePointer};
 use x86::segmentation::*;
 use x86::Ring;
-use x86::dtables::{self, DescriptorTablePointer};
-use x86::controlregs::{cr3,cr3_write};
-use consts::*;
 //use logging::*;
 use scheduler;
 
@@ -28,7 +28,7 @@ const GDT_FIRST_TSS: usize = 6;
 
 // fox x86_64 is a TSS descriptor twice larger than a code/data descriptor
 const TSS_ENTRIES: usize = 2;
-const GDT_ENTRIES: usize = (GDT_FIRST_TSS+TSS_ENTRIES);
+const GDT_ENTRIES: usize = (GDT_FIRST_TSS + TSS_ENTRIES);
 
 /// We use IST1 through IST4.
 /// Each critical exception (NMI, Double Fault, Machine Check) gets a dedicated one while IST1 is shared for all other
@@ -39,7 +39,7 @@ const IST_ENTRIES: usize = 4;
 // change depending on the current thread.
 static mut GDT: [Descriptor; GDT_ENTRIES] = [Descriptor::NULL; GDT_ENTRIES];
 static mut TSS: Tss = Tss::from(TaskStateSegment::new());
-static IST: [u8; IST_ENTRIES*STACK_SIZE] = [0; IST_ENTRIES*STACK_SIZE];
+static IST: [u8; IST_ENTRIES * STACK_SIZE] = [0; IST_ENTRIES * STACK_SIZE];
 
 // workaround to use the new repr(align) feature
 // currently, it is only supported by structs
@@ -61,19 +61,19 @@ impl Tss {
 /// pointer, set up the entries in our GDT, and then
 /// finally to load the new GDT and to update the
 /// new segment registers
-pub fn init()
-{
+pub fn init() {
 	unsafe {
 		// The NULL descriptor is always the first entry.
 		GDT[GDT_NULL] = Descriptor::NULL;
 
 		// The second entry is a 64-bit Code Segment in kernel-space (Ring 0).
 		// All other parameters are ignored.
-		GDT[GDT_KERNEL_CODE] = DescriptorBuilder::code_descriptor(0, 0, CodeSegmentType::ExecuteRead)
-            .present()
-            .dpl(Ring::Ring0)
-			.l()
-            .finish();
+		GDT[GDT_KERNEL_CODE] =
+			DescriptorBuilder::code_descriptor(0, 0, CodeSegmentType::ExecuteRead)
+				.present()
+				.dpl(Ring::Ring0)
+				.l()
+				.finish();
 
 		// The third entry is a 64-bit Data Segment in kernel-space (Ring 0).
 		// All other parameters are ignored.
@@ -85,10 +85,11 @@ pub fn init()
 		/*
 		 * Create code segment for 32bit user-space applications (ring 3)
 		 */
-		GDT[GDT_USER32_CODE] = DescriptorBuilder::code_descriptor(0, 0, CodeSegmentType::ExecuteRead)
-			.present()
-			.dpl(Ring::Ring3)
-			.finish();
+		GDT[GDT_USER32_CODE] =
+			DescriptorBuilder::code_descriptor(0, 0, CodeSegmentType::ExecuteRead)
+				.present()
+				.dpl(Ring::Ring3)
+				.finish();
 
 		/*
 		 * Create code segment for 32bit user-space applications (ring 3)
@@ -101,26 +102,34 @@ pub fn init()
 		/*
 		 * Create code segment for 64bit user-space applications (ring 3)
 		 */
-		GDT[GDT_USER64_CODE] = DescriptorBuilder::code_descriptor(0, 0, CodeSegmentType::ExecuteRead)
-            .present()
-            .dpl(Ring::Ring3)
-			.l()
-            .finish();
+		GDT[GDT_USER64_CODE] =
+			DescriptorBuilder::code_descriptor(0, 0, CodeSegmentType::ExecuteRead)
+				.present()
+				.dpl(Ring::Ring3)
+				.l()
+				.finish();
 
 		/*
 		 * Create TSS for each core (we use these segments for task switching)
 		 */
 		let base = &TSS.0 as *const _ as u64;
-		let tss_descriptor: Descriptor64 = <DescriptorBuilder as GateDescriptorBuilder<u64>>::tss_descriptor(base,
-				base + mem::size_of::<TaskStateSegment>() as u64 - 1, true)
-				.present()
-				.dpl(Ring::Ring0)
-				.finish();
-		GDT[GDT_FIRST_TSS..GDT_FIRST_TSS+TSS_ENTRIES].copy_from_slice(&mem::transmute::<Descriptor64, [Descriptor; 2]>(tss_descriptor));
+		let tss_descriptor: Descriptor64 =
+			<DescriptorBuilder as GateDescriptorBuilder<u64>>::tss_descriptor(
+				base,
+				base + mem::size_of::<TaskStateSegment>() as u64 - 1,
+				true,
+			)
+			.present()
+			.dpl(Ring::Ring0)
+			.finish();
+		GDT[GDT_FIRST_TSS..GDT_FIRST_TSS + TSS_ENTRIES]
+			.copy_from_slice(&mem::transmute::<Descriptor64, [Descriptor; 2]>(
+				tss_descriptor,
+			));
 
 		// Allocate all ISTs for this core.
 		for i in 0..IST_ENTRIES {
-			TSS.0.ist[i] = &IST[i*STACK_SIZE] as *const _ as u64 + STACK_SIZE as u64 - 0x10;
+			TSS.0.ist[i] = &IST[i * STACK_SIZE] as *const _ as u64 + STACK_SIZE as u64 - 0x10;
 		}
 
 		// load GDT
@@ -136,14 +145,12 @@ pub fn init()
 }
 
 #[inline(always)]
-unsafe fn set_kernel_stack(stack: usize)
-{
+unsafe fn set_kernel_stack(stack: usize) {
 	TSS.0.rsp[0] = stack as u64;
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn set_current_kernel_stack()
-{
+pub unsafe extern "C" fn set_current_kernel_stack() {
 	let root = scheduler::get_root_page_table() as u64;
 	if root != cr3() {
 		cr3_write(root);

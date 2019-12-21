@@ -8,7 +8,6 @@
 use scheduler::*;
 
 #[no_mangle]
-pub extern "C" fn sys_exit(_status: i32)
-{
+pub extern "C" fn sys_exit(_status: i32) {
 	do_exit();
 }

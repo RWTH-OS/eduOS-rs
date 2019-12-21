@@ -6,10 +6,10 @@
 // copied, modified, or distributed except according to those terms.
 
 use alloc::rc::Rc;
-use core::cell::RefCell;
 use collections::{DoublyLinkedList, Node};
-use mm;
+use core::cell::RefCell;
 use logging::*;
+use mm;
 
 pub struct FreeListEntry {
 	pub start: usize,
@@ -22,17 +22,25 @@ pub struct FreeList {
 
 impl FreeList {
 	pub const fn new() -> Self {
-		Self { list: DoublyLinkedList::new() }
+		Self {
+			list: DoublyLinkedList::new(),
+		}
 	}
 
 	pub fn allocate(&mut self, size: usize) -> Result<usize, ()> {
-		debug!("Allocating {} bytes from Free List {:#X}", size, self as *const Self as usize);
+		debug!(
+			"Allocating {} bytes from Free List {:#X}",
+			size, self as *const Self as usize
+		);
 
 		// Find a region in the Free List that has at least the requested size.
 		for node in self.list.iter() {
 			let (region_start, region_size) = {
 				let borrowed = node.borrow();
-				(borrowed.value.start, borrowed.value.end - borrowed.value.start)
+				(
+					borrowed.value.start,
+					borrowed.value.end - borrowed.value.start,
+				)
 			};
 
 			if region_size > size {
@@ -44,7 +52,9 @@ impl FreeList {
 				// We have found a region that has exactly the requested size.
 				// Return the address to the beginning of that region and move the node into the pool for deletion or reuse.
 				self.list.remove(node.clone());
-				unsafe { mm::POOL.list.push(node); }
+				unsafe {
+					mm::POOL.list.push(node);
+				}
 				return Ok(region_start);
 			}
 		}
@@ -53,7 +63,12 @@ impl FreeList {
 	}
 
 	#[inline]
-	fn allocate_address_for_node(&mut self, address: usize, end: usize, node: Rc<RefCell<Node<FreeListEntry>>>) -> bool {
+	fn allocate_address_for_node(
+		&mut self,
+		address: usize,
+		end: usize,
+		node: Rc<RefCell<Node<FreeListEntry>>>,
+	) -> bool {
 		let (region_start, region_end) = {
 			let borrowed = node.borrow();
 			(borrowed.value.start, borrowed.value.end)
@@ -64,7 +79,9 @@ impl FreeList {
 			// We found free space that has exactly the address and size of the block we want to allocate.
 			// Remove it.
 			self.list.remove(node.clone());
-			unsafe { mm::POOL.list.push(node); }
+			unsafe {
+				mm::POOL.list.push(node);
+			}
 			return true;
 		} else if region_start < address && region_end == end {
 			// We found free space in which the block we want to allocate lies right-aligned.
@@ -81,8 +98,15 @@ impl FreeList {
 			// Resize the free space to end at our block and add another free space entry that begins where our block ends.
 			node.borrow_mut().value.end = address;
 
-			let new_node = unsafe { mm::POOL.list.head().expect("Pool is empty when reserving memory") };
-			unsafe { mm::POOL.list.remove(new_node.clone()); }
+			let new_node = unsafe {
+				mm::POOL
+					.list
+					.head()
+					.expect("Pool is empty when reserving memory")
+			};
+			unsafe {
+				mm::POOL.list.remove(new_node.clone());
+			}
 
 			{
 				let mut new_node_borrowed = new_node.borrow_mut();
@@ -98,7 +122,10 @@ impl FreeList {
 	}
 
 	pub fn allocate_aligned(&mut self, size: usize, alignment: usize) -> Result<usize, ()> {
-		debug!("Allocating {} bytes from Free List {:#X} aligned to {} bytes", size, self as *const Self as usize, alignment);
+		debug!(
+			"Allocating {} bytes from Free List {:#X} aligned to {} bytes",
+			size, self as *const Self as usize, alignment
+		);
 
 		for node in self.list.iter() {
 			// Align up the start address of the current node in the list to the desired alignment.
@@ -114,7 +141,10 @@ impl FreeList {
 	}
 
 	pub fn reserve(&mut self, address: usize, size: usize) -> Result<(), ()> {
-		debug!("Reserving {} bytes at address {:#X} in Free List {:#X}", size, address, self as *const Self as usize);
+		debug!(
+			"Reserving {} bytes at address {:#X} in Free List {:#X}",
+			size, address, self as *const Self as usize
+		);
 		let end = address + size;
 
 		for node in self.list.iter() {
@@ -130,7 +160,10 @@ impl FreeList {
 	}
 
 	pub fn deallocate(&mut self, address: usize, size: usize) {
-		debug!("Deallocating {} bytes at {:#X} from Free List {:#X}", size, address, self as *const Self as usize);
+		debug!(
+			"Deallocating {} bytes at {:#X} from Free List {:#X}",
+			size, address, self as *const Self as usize
+		);
 
 		let end = address + size;
 		let mut iter = self.list.iter();
@@ -159,7 +192,9 @@ impl FreeList {
 						// into the pool for deletion or reuse.
 						node.borrow_mut().value.end = next_region_end;
 						self.list.remove(next_node.clone());
-						unsafe { mm::POOL.list.push(next_node); }
+						unsafe {
+							mm::POOL.list.push(next_node);
+						}
 						return;
 					}
 				}
@@ -172,8 +207,15 @@ impl FreeList {
 				// Get that entry from the node pool.
 				// We search the list from low to high addresses and insert us before the first entry that has a
 				// higher address than us.
-				let new_node = unsafe { mm::POOL.list.head().expect("Pool is empty when attempting insert_before") };
-				unsafe { mm::POOL.list.remove(new_node.clone()); }
+				let new_node = unsafe {
+					mm::POOL
+						.list
+						.head()
+						.expect("Pool is empty when attempting insert_before")
+				};
+				unsafe {
+					mm::POOL.list.remove(new_node.clone());
+				}
 
 				{
 					let mut new_node_borrowed = new_node.borrow_mut();
@@ -188,8 +230,15 @@ impl FreeList {
 
 		// We could not find an entry with a higher address than us.
 		// So we become the new last entry in the list. Get that entry from the node pool.
-		let new_node = unsafe { mm::POOL.list.head().expect("Pool is empty when attempting insert_after") };
-		unsafe { mm::POOL.list.remove(new_node.clone()); }
+		let new_node = unsafe {
+			mm::POOL
+				.list
+				.head()
+				.expect("Pool is empty when attempting insert_after")
+		};
+		unsafe {
+			mm::POOL.list.remove(new_node.clone());
+		}
 
 		{
 			let mut new_node_borrowed = new_node.borrow_mut();

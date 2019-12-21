@@ -10,8 +10,7 @@ use scheduler::*;
 
 #[no_mangle]
 #[naked]
-pub unsafe extern "C" fn sys_invalid()
-{
+pub unsafe extern "C" fn sys_invalid() {
 	let mut rax: i64 = 0;
 
 	asm!("push %rax; pop $0" : "=r"(rax));

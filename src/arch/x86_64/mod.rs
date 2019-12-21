@@ -9,22 +9,22 @@ pub mod kernel;
 pub mod mm;
 
 use alloc::string::String;
+use alloc::vec::Vec;
 use core::ptr::write_bytes;
 use errno::*;
-use alloc::vec::Vec;
-use goblin::{elf,elf64};
-use goblin::elf::program_header::{PT_LOAD,PT_GNU_RELRO,PT_DYNAMIC};
-use goblin::elf64::dyn::{DT_RELA,DT_RELASZ};
-use goblin::elf64::reloc::{R_386_RELATIVE,R_386_GLOB_DAT};
+use goblin::elf::program_header::{PT_DYNAMIC, PT_GNU_RELRO, PT_LOAD};
+use goblin::elf64::dyn::{DT_RELA, DT_RELASZ};
+use goblin::elf64::reloc::{R_386_GLOB_DAT, R_386_RELATIVE};
+use goblin::{elf, elf64};
 //use goblin::elf::header::{EM_X86_64,ET_EXEC};
 //use goblin::elf64::section_header::{SHT_RELA,SHT_REL};
-use logging::*;
-use fs;
-use consts::*;
-use self::mm::physicalmem;
 use self::mm::paging;
-use self::mm::paging::{BasePageSize,PageSize,PageTableEntryFlags};
+use self::mm::paging::{BasePageSize, PageSize, PageTableEntryFlags};
+use self::mm::physicalmem;
+use consts::*;
 use core::slice;
+use fs;
+use logging::*;
 use x86::controlregs;
 
 pub fn load_application(path: &String) -> Result<()> {
@@ -40,17 +40,19 @@ pub fn load_application(path: &String) -> Result<()> {
 	file.read(&mut buffer)?;
 	let elf = match elf::Elf::parse(&buffer) {
 		Ok(n) => n,
-		_ => return Err(Error::InvalidArgument)
+		_ => return Err(Error::InvalidArgument),
 	};
-    debug!("elf information: {:#?}", &elf);
+	debug!("elf information: {:#?}", &elf);
 
-	if elf.is_lib == false ||
-	   elf.is_64 == false {
-		   return Err(Error::InvalidArgument);
+	if elf.is_lib == false || elf.is_64 == false {
+		return Err(Error::InvalidArgument);
 	}
 
 	if elf.libraries.len() > 0 {
-		error!("Error: file depends on following libraries: {:?}", elf.libraries);
+		error!(
+			"Error: file depends on following libraries: {:?}",
+			elf.libraries
+		);
 		return Err(Error::InvalidArgument);
 	}
 
@@ -63,7 +65,10 @@ pub fn load_application(path: &String) -> Result<()> {
 				vstart = i.p_vaddr as usize;
 			}*/
 
-			exec_size = align_up!(i.p_vaddr as usize - vstart + i.p_memsz as usize, BasePageSize::SIZE);
+			exec_size = align_up!(
+				i.p_vaddr as usize - vstart + i.p_memsz as usize,
+				BasePageSize::SIZE
+			);
 		}
 	}
 	debug!("Virtual start address 0x{:x}", vstart);
@@ -75,12 +80,15 @@ pub fn load_application(path: &String) -> Result<()> {
 	}
 
 	let physical_address = physicalmem::allocate(exec_size);
-	paging::map::<BasePageSize>(USER_SPACE_START,
-		physical_address, exec_size / BasePageSize::SIZE,
-		PageTableEntryFlags::WRITABLE | PageTableEntryFlags::USER_ACCESSIBLE);
-	
+	paging::map::<BasePageSize>(
+		USER_SPACE_START,
+		physical_address,
+		exec_size / BasePageSize::SIZE,
+		PageTableEntryFlags::WRITABLE | PageTableEntryFlags::USER_ACCESSIBLE,
+	);
+
 	unsafe {
-		write_bytes(USER_SPACE_START as *mut u8, 0x00, exec_size); 
+		write_bytes(USER_SPACE_START as *mut u8, 0x00, exec_size);
 	}
 
 	let mut rela_addr: u64 = 0;
@@ -94,10 +102,13 @@ pub fn load_application(path: &String) -> Result<()> {
 			let mem_slice = unsafe { slice::from_raw_parts_mut(mem, i.p_filesz as usize) };
 
 			mem_slice[0..i.p_filesz as usize].clone_from_slice(
-				&buffer[(i.p_offset as usize)..(i.p_offset+i.p_filesz) as usize]
+				&buffer[(i.p_offset as usize)..(i.p_offset + i.p_filesz) as usize],
 			);
 		} else if i.p_type == PT_GNU_RELRO {
-			debug!("PT_GNU_RELRO at 0x{:x} (size 0x{:x})", i.p_vaddr, i.p_filesz);
+			debug!(
+				"PT_GNU_RELRO at 0x{:x} (size 0x{:x})",
+				i.p_vaddr, i.p_filesz
+			);
 		} else if i.p_type == PT_DYNAMIC {
 			debug!("PT_DYNAMIC at 0x{:x} (size 0x{:x})", i.p_vaddr, i.p_filesz);
 
@@ -110,14 +121,15 @@ pub fn load_application(path: &String) -> Result<()> {
 				} else if j.d_tag == DT_RELASZ {
 					relasz = j.d_val;
 				} /*else if j.d_tag == DT_RELAENT {
-					relaent = j.d_val;
-				}*/
+					 relaent = j.d_val;
+				 }*/
 			}
 		}
 	}
 
-	let rela = unsafe { elf64::reloc::from_raw_rela(rela_addr as *const elf64::reloc::Rela,
-		relasz as usize) };
+	let rela = unsafe {
+		elf64::reloc::from_raw_rela(rela_addr as *const elf64::reloc::Rela, relasz as usize)
+	};
 	for j in rela {
 		let offset = (USER_SPACE_START - vstart + j.r_offset as usize) as *mut u64;
 

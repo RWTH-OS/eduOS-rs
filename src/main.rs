@@ -5,18 +5,18 @@
 
 #[macro_use]
 extern crate eduos_rs;
+extern crate alloc;
 #[cfg(target_arch = "x86_64")]
 extern crate x86;
-extern crate alloc;
 
+use alloc::string::String;
 use eduos_rs::arch;
-use eduos_rs::mm;
+use eduos_rs::arch::load_application;
 use eduos_rs::fs;
+use eduos_rs::mm;
 use eduos_rs::scheduler;
 use eduos_rs::scheduler::task::NORMAL_PRIORITY;
-use eduos_rs::{LogLevel,LOGGER};
-use eduos_rs::arch::load_application;
-use alloc::string::String;
+use eduos_rs::{LogLevel, LOGGER};
 
 extern "C" fn create_user_foo() {
 	let path = String::from("/bin/demo");

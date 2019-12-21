@@ -5,15 +5,15 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
-mod write;
 mod exit;
 mod invalid;
 mod nothing;
+mod write;
 
 use syscall::exit::sys_exit;
-use syscall::write::{sys_write,sys_writev};
 use syscall::invalid::sys_invalid;
 use syscall::nothing::sys_nothing;
+use syscall::write::{sys_write, sys_writev};
 
 /// number of the system call `write`
 pub const SYSNO_WRITE: usize = 1;
@@ -41,14 +41,14 @@ pub const NO_SYSCALLS: usize = 400;
 
 #[repr(align(64))]
 #[repr(C)]
-pub struct SyscallTable{
-	 handle: [*const usize; NO_SYSCALLS]
+pub struct SyscallTable {
+	handle: [*const usize; NO_SYSCALLS],
 }
 
 impl SyscallTable {
 	pub const fn new() -> Self {
 		let mut table = SyscallTable {
-			handle:	[sys_invalid as *const _; NO_SYSCALLS]
+			handle: [sys_invalid as *const _; NO_SYSCALLS],
 		};
 
 		table.handle[SYSNO_WRITE] = sys_write as *const _;

@@ -5,33 +5,33 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
-use alloc::rc::Rc;
 use alloc::collections::{BTreeMap, VecDeque};
+use alloc::rc::Rc;
+use arch::drop_user_space;
+use arch::irq::{irq_nested_disable, irq_nested_enable};
+use arch::switch;
+use consts::*;
 use core::cell::RefCell;
 use core::sync::atomic::{AtomicU32, Ordering};
-use arch::drop_user_space;
-use arch::irq::{irq_nested_enable,irq_nested_disable};
-use arch::switch;
-use scheduler::task::*;
-use logging::*;
-use synch::spinlock::*;
-use consts::*;
 use errno::*;
+use logging::*;
+use scheduler::task::*;
+use synch::spinlock::*;
 
 static NO_TASKS: AtomicU32 = AtomicU32::new(0);
 static TID_COUNTER: AtomicU32 = AtomicU32::new(0);
 
 pub struct Scheduler {
 	/// task id which is currently running
-	current_task:  Rc<RefCell<Task>>,
+	current_task: Rc<RefCell<Task>>,
 	/// task id of the idle task
-	idle_task:  Rc<RefCell<Task>>,
+	idle_task: Rc<RefCell<Task>>,
 	/// queue of tasks, which are ready
 	ready_queue: SpinlockIrqSave<PriorityTaskQueue>,
 	/// queue of tasks, which are finished and can be released
 	finished_tasks: SpinlockIrqSave<VecDeque<TaskId>>,
 	// map between task id and task controll block
-	tasks: SpinlockIrqSave<BTreeMap<TaskId, Rc<RefCell<Task>>>>
+	tasks: SpinlockIrqSave<BTreeMap<TaskId, Rc<RefCell<Task>>>>,
 }
 
 impl Scheduler {
@@ -47,7 +47,7 @@ impl Scheduler {
 			idle_task: idle_task.clone(),
 			ready_queue: SpinlockIrqSave::new(PriorityTaskQueue::new()),
 			finished_tasks: SpinlockIrqSave::new(VecDeque::<TaskId>::new()),
-			tasks: tasks
+			tasks: tasks,
 		}
 	}
 
@@ -61,7 +61,7 @@ impl Scheduler {
 		}
 	}
 
-	pub fn spawn(&mut self, func: extern fn(), prio: TaskPriority) -> Result<TaskId> {
+	pub fn spawn(&mut self, func: extern "C" fn(), prio: TaskPriority) -> Result<TaskId> {
 		let prio_number = prio.into() as usize;
 
 		if prio_number >= NO_PRIORITIES {
@@ -167,14 +167,19 @@ impl Scheduler {
 				if self.tasks.lock().remove(&id).is_none() == true {
 					info!("Unable to drop task {}", id);
 				}
-			},
+			}
 			_ => {}
 		}
 
 		// Get information about the current task.
 		let (current_id, current_stack_pointer, current_prio, current_status) = {
 			let mut borrowed = self.current_task.borrow_mut();
-			(borrowed.id, &mut borrowed.last_stack_pointer as *mut usize, borrowed.prio, borrowed.status)
+			(
+				borrowed.id,
+				&mut borrowed.last_stack_pointer as *mut usize,
+				borrowed.prio,
+				borrowed.status,
+			)
 		};
 
 		// do we have a task, which is ready?
@@ -215,13 +220,18 @@ impl Scheduler {
 					self.finished_tasks.lock().push_back(current_id);
 				}
 
-				debug!("Switching task from {} to {} (stack {:#X} => {:#X})", current_id, new_id,
-					unsafe { *current_stack_pointer }, new_stack_pointer);
+				debug!(
+					"Switching task from {} to {} (stack {:#X} => {:#X})",
+					current_id,
+					new_id,
+					unsafe { *current_stack_pointer },
+					new_stack_pointer
+				);
 
 				self.current_task = new_task;
 
 				switch(current_stack_pointer, new_stack_pointer);
-			},
+			}
 			_ => {}
 		}
 	}

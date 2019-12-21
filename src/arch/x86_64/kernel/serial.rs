@@ -5,13 +5,15 @@ use x86::io::*;
 pub struct ComPort {
 	/// COM ports are identified by the base address of their associated
 	/// I/O registers.
-	base_addr: u16
+	base_addr: u16,
 }
 
 impl ComPort {
 	/// Create a new COM port with the specified base address.
 	const fn new(base_addr: u16) -> ComPort {
-		ComPort { base_addr: base_addr }
+		ComPort {
+			base_addr: base_addr,
+		}
 	}
 }
 

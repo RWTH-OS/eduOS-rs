@@ -5,20 +5,20 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
-pub mod serial;
-pub mod processor;
-pub mod task;
-pub mod irq;
-pub mod switch;
 mod gdt;
+pub mod irq;
 mod pit;
+pub mod processor;
+pub mod serial;
 mod start;
+pub mod switch;
 mod syscall;
+pub mod task;
 
-use core::ptr::read_volatile;
-use consts::*;
-use logging::*;
 pub use arch::x86_64::kernel::syscall::syscall_handler;
+use consts::*;
+use core::ptr::read_volatile;
+use logging::*;
 
 #[repr(C)]
 struct KernelHeader {
@@ -27,7 +27,7 @@ struct KernelHeader {
 	mem_limit: u64,
 	num_cpus: u32,
 	file_addr: u64,
-	file_length: u64
+	file_length: u64,
 }
 
 /// Kernel header to announce machine features
@@ -38,7 +38,7 @@ static KERNEL_HEADER: KernelHeader = KernelHeader {
 	mem_limit: 0,
 	num_cpus: 1,
 	file_addr: 0,
-	file_length: 0
+	file_length: 0,
 };
 
 pub fn get_memfile() -> (u64, u64) {
@@ -54,19 +54,20 @@ pub fn get_memfile() -> (u64, u64) {
 }
 
 pub fn get_memory_size() -> usize {
-		unsafe { read_volatile(&KERNEL_HEADER.mem_limit) as usize }
+	unsafe { read_volatile(&KERNEL_HEADER.mem_limit) as usize }
 }
 
 pub fn register_task() {
 	let sel: u16 = 6u16 << 3;
 
-	unsafe { asm!("ltr $0" :: "r"(sel) :: "volatile"); }
+	unsafe {
+		asm!("ltr $0" :: "r"(sel) :: "volatile");
+	}
 }
 
 #[inline(never)]
 #[naked]
-pub fn jump_to_user_land(entry: u64) -> !
-{
+pub fn jump_to_user_land(entry: u64) -> ! {
 	let ds = 0x23u64;
 	let cs = 0x2bu64;
 	let stack = USER_STACK - 0x100;
@@ -87,29 +88,67 @@ pub fn jump_to_user_land(entry: u64) -> !
 /// This macro can be used to call system functions from user-space
 #[macro_export]
 macro_rules! syscall {
-	($arg0:expr)
-		=> ( arch::x86_64::kernel::syscall0($arg0 as u64) );
+	($arg0:expr) => {
+		arch::x86_64::kernel::syscall0($arg0 as u64)
+	};
 
-	($arg0:expr, $arg1:expr)
-		=> ( arch::x86_64::kernel::syscall1($arg0 as u64, $arg1 as u64) );
+	($arg0:expr, $arg1:expr) => {
+		arch::x86_64::kernel::syscall1($arg0 as u64, $arg1 as u64)
+	};
 
-	($arg0:expr, $arg1:expr, $arg2:expr)
-		=> ( arch::x86_64::kernel::syscall2($arg0 as u64, $arg1 as u64, $arg2 as u64) );
+	($arg0:expr, $arg1:expr, $arg2:expr) => {
+		arch::x86_64::kernel::syscall2($arg0 as u64, $arg1 as u64, $arg2 as u64)
+	};
 
-	($arg0:expr, $arg1:expr, $arg2:expr, $arg3:expr)
-		=> ( arch::x86_64::kernel::syscall3($arg0 as u64, $arg1 as u64, $arg2 as u64, $arg3 as u64) );
+	($arg0:expr, $arg1:expr, $arg2:expr, $arg3:expr) => {
+		arch::x86_64::kernel::syscall3($arg0 as u64, $arg1 as u64, $arg2 as u64, $arg3 as u64)
+	};
 
-	($arg0:expr, $arg1:expr, $arg2:expr, $arg3:expr, $arg4:expr)
-		=> ( arch::x86_64::kernel::syscall4($arg0 as u64, $arg1 as u64, $arg2 as u64, $arg3 as u64, $arg4 as u64) );
+	($arg0:expr, $arg1:expr, $arg2:expr, $arg3:expr, $arg4:expr) => {
+		arch::x86_64::kernel::syscall4(
+			$arg0 as u64,
+			$arg1 as u64,
+			$arg2 as u64,
+			$arg3 as u64,
+			$arg4 as u64,
+			)
+	};
 
-	($arg0:expr, $arg1:expr, $arg2:expr, $arg3:expr, $arg4:expr, $arg5:expr)
-		=> ( arch::x86_64::kernel::syscall5($arg0 as u64, $arg1 as u64, $arg2 as u64, $arg3 as u64, $arg4 as u64, $arg5 as u64) );
+	($arg0:expr, $arg1:expr, $arg2:expr, $arg3:expr, $arg4:expr, $arg5:expr) => {
+		arch::x86_64::kernel::syscall5(
+			$arg0 as u64,
+			$arg1 as u64,
+			$arg2 as u64,
+			$arg3 as u64,
+			$arg4 as u64,
+			$arg5 as u64,
+			)
+	};
 
-	($arg0:expr, $arg1:expr, $arg2:expr, $arg3:expr, $arg4:expr, $arg5:expr, $arg6:expr)
-		=> ( arch::x86_64::kernel::syscall6($arg0 as u64, $arg1 as u64, $arg2 as u64, $arg3 as u64, $arg4 as u64, $arg5 as u64, $arg6 as u64) );
+	($arg0:expr, $arg1:expr, $arg2:expr, $arg3:expr, $arg4:expr, $arg5:expr, $arg6:expr) => {
+		arch::x86_64::kernel::syscall6(
+			$arg0 as u64,
+			$arg1 as u64,
+			$arg2 as u64,
+			$arg3 as u64,
+			$arg4 as u64,
+			$arg5 as u64,
+			$arg6 as u64,
+			)
+	};
 
-	($arg0:expr, $arg1:expr, $arg2:expr, $arg3:expr, $arg4:expr, $arg5:expr, $arg6:expr, $arg7:expr)
-		=> ( arch::x86_64::kernel::syscall7($arg0 as u64, $arg1 as u64, $arg2 as u64, $arg3 as u64, $arg4 as u64, $arg5 as u64, $arg6 as u64, $arg7 as u64) );
+	($arg0:expr, $arg1:expr, $arg2:expr, $arg3:expr, $arg4:expr, $arg5:expr, $arg6:expr, $arg7:expr) => {
+		arch::x86_64::kernel::syscall7(
+			$arg0 as u64,
+			$arg1 as u64,
+			$arg2 as u64,
+			$arg3 as u64,
+			$arg4 as u64,
+			$arg5 as u64,
+			$arg6 as u64,
+			$arg7 as u64,
+			)
+	};
 }
 
 #[inline(always)]
@@ -181,13 +220,15 @@ pub fn syscall5(arg0: u64, arg1: u64, arg2: u64, arg3: u64, arg4: u64, arg5: u64
 
 #[inline(always)]
 #[allow(unused_mut)]
-pub fn syscall6(arg0: u64,
+pub fn syscall6(
+	arg0: u64,
 	arg1: u64,
 	arg2: u64,
 	arg3: u64,
 	arg4: u64,
 	arg5: u64,
-	arg6: u64) -> u64 {
+	arg6: u64,
+) -> u64 {
 	let mut ret: u64;
 	unsafe {
 		asm!("syscall"	: "={rax}" (ret) : "{rax}" (arg0), "{rdi}" (arg1), "{rsi}" (arg2),

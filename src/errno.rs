@@ -7,12 +7,12 @@
 
 //! Basic error handling
 
-use core::{result, fmt};
+use core::{fmt, result};
 
 pub type Result<T> = result::Result<T, Error>;
 
 /// Possible errors of eduOS-rs
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub enum Error {
 	/// Usage of a invalid priority
 	BadPriority,
@@ -31,7 +31,7 @@ impl fmt::Display for Error {
 			Error::BadFsOperation => write!(f, "Bad file system operation"),
 			Error::BadFsPermission => write!(f, "Bad file permission"),
 			Error::InvalidFsPath => write!(f, "Invalid file system path"),
-			Error::InvalidArgument => write!(f, "Inavlid argument")
+			Error::InvalidArgument => write!(f, "Inavlid argument"),
 		}
 	}
 }

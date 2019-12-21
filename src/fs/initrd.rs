@@ -7,12 +7,12 @@
 
 //! Implements basic functions to realize a simple in-memory file system
 
+use alloc::sync::Arc;
+use alloc::vec::Vec;
+use core::ops::{Deref, DerefMut};
+use core::slice;
 use errno::*;
 use fs::{OpenOptions, SeekFrom};
-use alloc::vec::Vec;
-use alloc::sync::Arc;
-use core::ops::{Deref,DerefMut};
-use core::slice;
 use spin::RwLock;
 use synch::spinlock::*;
 
@@ -21,21 +21,21 @@ pub struct RomHandle {
 	/// Position within the file
 	pos: Spinlock<usize>,
 	/// File content
-	data: Arc<RwLock<&'static [u8]>>
+	data: Arc<RwLock<&'static [u8]>>,
 }
 
 impl RomHandle {
 	pub fn new(addr: *const u8, len: usize) -> Self {
 		RomHandle {
 			pos: Spinlock::new(0),
-			data: Arc::new(RwLock::new(unsafe { slice::from_raw_parts(addr, len) } ))
+			data: Arc::new(RwLock::new(unsafe { slice::from_raw_parts(addr, len) })),
 		}
 	}
 
 	pub fn get_handle(&self, _opt: OpenOptions) -> RomHandle {
 		RomHandle {
 			pos: Spinlock::new(0),
-			data: self.data.clone()
+			data: self.data.clone(),
 		}
 	}
 
@@ -45,7 +45,7 @@ impl RomHandle {
 		let pos = *pos_guard;
 
 		if pos >= vec.len() {
-			return Ok(0)
+			return Ok(0);
 		}
 
 		let len;
@@ -101,7 +101,7 @@ impl Clone for RomHandle {
 	fn clone(&self) -> Self {
 		RomHandle {
 			pos: Spinlock::new(*self.pos.lock()),
-			data: self.data.clone()
+			data: self.data.clone(),
 		}
 	}
 }
@@ -113,7 +113,7 @@ pub struct RamHandle {
 	/// Position within the file
 	pos: Spinlock<usize>,
 	/// File content
-	data: Arc<RwLock<Vec<u8>>>
+	data: Arc<RwLock<Vec<u8>>>,
 }
 
 impl RamHandle {
@@ -121,7 +121,7 @@ impl RamHandle {
 		RamHandle {
 			writeable: writeable,
 			pos: Spinlock::new(0),
-			data: Arc::new(RwLock::new(Vec::new()))
+			data: Arc::new(RwLock::new(Vec::new())),
 		}
 	}
 
@@ -132,7 +132,7 @@ impl RamHandle {
 		let pos = *pos_guard;
 
 		if pos >= vec.len() {
-			return Ok(0)
+			return Ok(0);
 		}
 
 		let len;
@@ -223,7 +223,7 @@ impl RamHandle {
 		RamHandle {
 			writeable: opt.contains(OpenOptions::READWRITE),
 			pos: Spinlock::new(0),
-			data: self.data.clone()
+			data: self.data.clone(),
 		}
 	}
 
@@ -239,7 +239,7 @@ impl Clone for RamHandle {
 		RamHandle {
 			writeable: self.writeable,
 			pos: Spinlock::new(*self.pos.lock()),
-			data: self.data.clone()
+			data: self.data.clone(),
 		}
 	}
 }
