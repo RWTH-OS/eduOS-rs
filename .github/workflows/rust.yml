@@ -1,0 +1,15 @@
+name: Rust
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Build
+      run: cargo build -Z build-std=core,alloc --no-default-features --target x86_64-eduos.json --verbose
+    - name: Run tests
+      run: cargo test --verbose
