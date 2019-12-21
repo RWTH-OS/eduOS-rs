@@ -36,17 +36,7 @@ build:
 
 # Stage: test
 ##############################################################################
-test:qemu:
-  stage: test
-  script:
-    - make qemu
-  image: ${IMAGE}
-  tags:
-    - docker
-  dependencies:
-    - build
-
-test:ehyve:
+test:
   stage: test
   script:
     - make run
