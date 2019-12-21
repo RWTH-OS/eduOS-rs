@@ -11,7 +11,7 @@ jobs:
       export PATH=$PATH:~/.cargo/bin:~/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/bin
       rustup component add rust-src
       rustup component add llvm-tools-preview
-      rustup target add aarch64-unknown-linux-gnu
+      cargo install --git https://github.com/RWTH-OS/ehyve.git
       make build
     displayName: 'Test eduOS-rs on Ubuntu 16.04'
 - job: macOS
@@ -23,6 +23,7 @@ jobs:
       export PATH=$PATH:$HOME/.cargo/bin:~/.rustup/toolchains/nightly-x86_64-apple-darwin/lib/rustlib/x86_64-apple-darwin/bin
       rustup component add rust-src
       rustup component add llvm-tools-preview
+      cargo install --git https://github.com/RWTH-OS/ehyve.git
       make build
     displayName: 'Test eduOS-rs on macOS'
 - job: Windows
@@ -39,6 +40,8 @@ jobs:
       rustup component add rust-src
       rustup component add llvm-tools-preview
       echo ##vso[task.setvariable variable=PATH;]%PATH%;%USERPROFILE%\.rustup\toolchains\nightly-x86_64-pc-windows-msvc\lib\rustlib\x86_64-pc-windows-msvc\bin
+      cargo install --git https://github.com/RWTH-OS/ehyve.git
+      dir %USERPROFILE%\.rustup\toolchains
       make build
     displayName: 'Test eduOS-rs on Windows'
 
