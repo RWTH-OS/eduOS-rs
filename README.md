@@ -5,7 +5,7 @@
 ## Introduction
 
 eduOS-rs is a Unix-like operating system based on a monolithic architecture for educational purposes.
-It is developed for the course [Operating Systems][acsos] at RWTH Aachen University and supports x86 and aarch64 processors (thanks to Leonard Rapp).
+It is developed for the course [Operating Systems][acsos] at RWTH Aachen University and includes a modified hypervisor that simplifies the boot process to increase the intelligibility of the OS.
 eduOS-rs is derived from following tutorials and software distributions:
 
 1. Philipp Oppermann's [excellent series of blog posts][opp].
@@ -85,7 +85,7 @@ $ # Build kernel
 $ make
 ```
 
-From here, we should be able to run the kernel in Qemu:
+From here, we should be able to run the kernel in ehyve:
 
 ```sh
 $ make run
