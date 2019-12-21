@@ -9,6 +9,7 @@ pub mod kernel;
 pub mod mm;
 
 use alloc::string::String;
+use core::ptr::write_bytes;
 use errno::*;
 use alloc::vec::Vec;
 use goblin::{elf,elf64};
@@ -23,7 +24,6 @@ use consts::*;
 use self::mm::physicalmem;
 use self::mm::paging;
 use self::mm::paging::{BasePageSize,PageSize,PageTableEntryFlags};
-use compiler_builtins::mem::memset;
 use core::slice;
 use x86::controlregs;
 
@@ -78,7 +78,10 @@ pub fn load_application(path: &String) -> Result<()> {
 	paging::map::<BasePageSize>(USER_SPACE_START,
 		physical_address, exec_size / BasePageSize::SIZE,
 		PageTableEntryFlags::WRITABLE | PageTableEntryFlags::USER_ACCESSIBLE);
-	unsafe { memset(USER_SPACE_START as *mut u8, 0x00, exec_size); }
+	
+	unsafe {
+		write_bytes(USER_SPACE_START as *mut u8, 0x00, exec_size); 
+	}
 
 	let mut rela_addr: u64 = 0;
 	let mut relasz: u64 = 0;

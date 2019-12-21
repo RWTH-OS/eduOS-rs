@@ -7,13 +7,13 @@
 
 #![allow(dead_code)]
 
-use compiler_builtins::mem::memset;
 use arch::x86_64::mm::physicalmem;
 use arch::x86_64::mm::virtualmem;
 use arch::x86_64::kernel::processor;
 use arch::x86_64::kernel::irq;
 use core::mem::size_of;
 use core::marker::PhantomData;
+use core::ptr::write_bytes;
 use num_traits::CheckedShr;
 use mm;
 use scheduler;
@@ -581,7 +581,7 @@ pub extern "x86-interrupt" fn page_fault_handler(stack_frame: &mut irq::Exceptio
 
 		unsafe {
 			// clear new page
-			memset(virtual_address as *mut u8, 0x00, BasePageSize::SIZE);
+			write_bytes(virtual_address as *mut u8, 0x00, BasePageSize::SIZE);
 
 			// clear cr2 to signalize that the pagefault is solved by the pagefault handler
 			controlregs::cr2_write(0);
@@ -696,7 +696,7 @@ pub fn create_usr_pgd() -> usize {
 		map::<BasePageSize>(user_page_table, physical_address, 1,
 			PageTableEntryFlags::WRITABLE | PageTableEntryFlags::EXECUTE_DISABLE);
 
-		memset(user_page_table as *mut u8, 0x00, BasePageSize::SIZE);
+		write_bytes(user_page_table as *mut u8, 0x00, BasePageSize::SIZE);
 
 		let pml4 = user_page_table as *mut PageTableEntry;
 		(*pml4).set(kernel_page_table + BasePageSize::SIZE, PageTableEntryFlags::WRITABLE
@@ -715,8 +715,8 @@ pub fn init() {
 	unsafe {
 		let root_page_table = get_kernel_root_page_table();
 
-		memset(root_page_table as *mut u8, 0x00, 3*BasePageSize::SIZE);
-
+		write_bytes(root_page_table as *mut u8, 0x00, 3 * BasePageSize::SIZE);
+		
 		let pml4 = root_page_table as *mut PageTableEntry;
 		(*pml4).set(root_page_table + BasePageSize::SIZE, PageTableEntryFlags::WRITABLE);
 		let pml4 = (root_page_table + BasePageSize::SIZE - size_of::<usize>()) as *mut PageTableEntry;

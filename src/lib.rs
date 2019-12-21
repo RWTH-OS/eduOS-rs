@@ -35,6 +35,7 @@ pub mod errno;
 pub mod synch;
 pub mod syscall;
 pub mod fs;
+pub mod rlib;
 
 #[global_allocator]
 static ALLOCATOR: &'static mm::allocator::Allocator = &mm::allocator::Allocator;

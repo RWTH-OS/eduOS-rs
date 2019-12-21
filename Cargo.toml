@@ -1,7 +1,7 @@
 [package]
 name = "eduos-rs"
 version = "0.1.0"
-license = "MIT"
+license = "MIT/Apache-2.0"
 authors = ["Stefan Lankes <slankes@eonerc.rwth-aachen.de>"]
 
 [dependencies]
@@ -28,9 +28,6 @@ features = ["elf64", "elf32", "endian_fd"]
 [dependencies.num-traits]
 version = "0.2"
 default-features = false
-
-[package.metadata.cargo-xbuild]
-memcpy = true
 
 # The development profile, used for `cargo build`.
 [profile.dev]
