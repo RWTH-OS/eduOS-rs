@@ -22,8 +22,8 @@ pub mod collections;
 pub mod console;
 pub mod consts;
 pub mod mm;
-pub mod scheduler;
 pub mod rlib;
+pub mod scheduler;
 
 #[global_allocator]
 static ALLOCATOR: &'static mm::allocator::Allocator = &mm::allocator::Allocator;
