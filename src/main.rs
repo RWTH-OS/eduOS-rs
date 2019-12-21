@@ -7,9 +7,9 @@
 #[macro_use]
 extern crate eduos_rs;
 
-use core::panic::PanicInfo;
 #[allow(unused_imports)]
 use core::fmt::Write;
+use core::panic::PanicInfo;
 use eduos_rs::arch;
 use eduos_rs::arch::processor::{halt, shutdown};
 use eduos_rs::scheduler;

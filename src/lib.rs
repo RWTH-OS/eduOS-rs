@@ -23,10 +23,10 @@ pub mod console;
 pub mod consts;
 pub mod errno;
 pub mod mm;
+pub mod rlib;
 pub mod scheduler;
 pub mod synch;
 pub mod syscall;
-pub mod rlib;
 
 #[global_allocator]
 static ALLOCATOR: &'static mm::allocator::Allocator = &mm::allocator::Allocator;
