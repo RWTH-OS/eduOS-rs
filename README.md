@@ -57,7 +57,8 @@ This is queried during installation and should be answered as appropriate.
 Afterwards the installation the source code of Rust runtime and the llvm tools are required to build the kernel:
 
 ```sh
-$ rustup component add rust-src
+$ rustup component add rust-srs
+$ rustup component add llvm-tools-preview
 ```
 
 eduOS-rs is able to run within [ehyve](https://github.com/RWTH-OS/ehyve), which a specialized hypervisor for eduOS-rs.
