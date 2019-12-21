@@ -7,13 +7,13 @@
 
 //! Architecture dependent interface to initialize a task
 
-use core::mem::size_of;
-use core::ptr::write_bytes;
-use scheduler::task::*;
-use scheduler::{do_exit, get_current_taskid};
 use arch::processor::halt;
 use consts::*;
+use core::mem::size_of;
+use core::ptr::write_bytes;
 use logging::*;
+use scheduler::task::*;
+use scheduler::{do_exit, get_current_taskid};
 
 #[repr(C, packed)]
 struct State {
@@ -56,7 +56,7 @@ struct State {
 	/// status flags
 	rflags: u64,
 	/// instruction pointer
-	rip: u64
+	rip: u64,
 }
 
 extern "C" fn leave_task() -> ! {
@@ -70,8 +70,7 @@ extern "C" fn leave_task() -> ! {
 }
 
 impl TaskFrame for Task {
-    fn create_stack_frame(&mut self, func: extern fn())
-	{
+	fn create_stack_frame(&mut self, func: extern "C" fn()) {
 		unsafe {
 			let mut stack: *mut u64 = ((*self.stack).top()) as *mut u64;
 
@@ -85,8 +84,8 @@ impl TaskFrame for Task {
 			//TODO: add arguments
 
 			/* and the "caller" we shall return to.
-	 		 * This procedure cleans the task after exit. */
-			*stack = (leave_task as *const()) as u64;
+			 * This procedure cleans the task after exit. */
+			*stack = (leave_task as *const ()) as u64;
 			stack = (stack as usize - size_of::<State>()) as *mut u64;
 
 			let state: *mut State = stack as *mut State;
@@ -96,11 +95,11 @@ impl TaskFrame for Task {
 			(*state).rbp = (*state).rsp + size_of::<u64>() as u64;
 			(*state).gs = ((*self.stack).top()) as u64;
 
-			(*state).rip = (func as *const()) as u64;
+			(*state).rip = (func as *const ()) as u64;
 			(*state).rflags = 0x1202u64;
 
 			/* Set the task's stack pointer entry to the stack we have crafted right now. */
-			self.last_stack_pointer =  stack as usize;
+			self.last_stack_pointer = stack as usize;
 		}
 	}
 }

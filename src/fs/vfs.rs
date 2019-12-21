@@ -7,29 +7,31 @@
 
 //! Implements a simple virtual file system
 
-use logging::*;
-use errno::*;
-use fs::{NodeKind, VfsNode, VfsNodeFile, VfsNodeDirectory, Vfs,
-		OpenOptions, FileHandle, SeekFrom, check_path};
-use fs::initrd::{RomHandle,RamHandle};
 use alloc::boxed::Box;
-use alloc::vec::Vec;
-use alloc::string::String;
 use alloc::collections::BTreeMap;
+use alloc::string::String;
+use alloc::vec::Vec;
 use core::any::Any;
 use core::fmt;
+use errno::*;
+use fs::initrd::{RamHandle, RomHandle};
+use fs::{
+	check_path, FileHandle, NodeKind, OpenOptions, SeekFrom, Vfs, VfsNode, VfsNodeDirectory,
+	VfsNodeFile,
+};
+use logging::*;
 use synch::spinlock::*;
 
 #[derive(Debug)]
 struct VfsDirectory {
 	/// in principle, a map with all entries of the current directory
-	children: BTreeMap<String, Box<dyn Any + core::marker::Send + core::marker::Sync>>
+	children: BTreeMap<String, Box<dyn Any + core::marker::Send + core::marker::Sync>>,
 }
 
 impl VfsDirectory {
 	pub fn new() -> Self {
 		VfsDirectory {
-			children: BTreeMap::new()
+			children: BTreeMap::new(),
 		}
 	}
 
@@ -92,7 +94,11 @@ impl VfsNodeDirectory for VfsDirectory {
 		Ok(())
 	}
 
-	fn traverse_open(&mut self, components: &mut Vec<&str>, flags: OpenOptions) -> Result<Box<dyn FileHandle>> {
+	fn traverse_open(
+		&mut self,
+		components: &mut Vec<&str>,
+		flags: OpenOptions,
+	) -> Result<Box<dyn FileHandle>> {
 		if let Some(component) = components.pop() {
 			let node_name = String::from(component);
 
@@ -151,30 +157,29 @@ impl VfsNodeDirectory for VfsDirectory {
 	}
 }
 
-
 /// Enumeration of possible methods to seek within an I/O object.
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 enum DataHandle {
 	RAM(RamHandle),
-	ROM(RomHandle)
+	ROM(RomHandle),
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 struct VfsFile {
 	/// File content
-	data: DataHandle
+	data: DataHandle,
 }
 
 impl VfsFile {
 	pub fn new() -> Self {
 		VfsFile {
-			data: DataHandle::RAM(RamHandle::new(true))
+			data: DataHandle::RAM(RamHandle::new(true)),
 		}
 	}
 
 	pub fn new_from_rom(addr: u64, len: u64) -> Self {
 		VfsFile {
-			data: DataHandle::ROM(RomHandle::new(addr as *const u8, len as usize))
+			data: DataHandle::ROM(RomHandle::new(addr as *const u8, len as usize)),
 		}
 	}
 }
@@ -188,16 +193,12 @@ impl VfsNode for VfsFile {
 impl VfsNodeFile for VfsFile {
 	fn get_handle(&self, opt: OpenOptions) -> Result<Box<dyn FileHandle>> {
 		match self.data {
-			DataHandle::RAM(ref data) => { Ok(Box::new(VfsFile
-				{
-					data: DataHandle::RAM(data.get_handle(opt))
-				}))
-			},
-			DataHandle::ROM(ref data) => { Ok(Box::new(VfsFile
-				{
-					data: DataHandle::ROM(data.get_handle(opt))
-				}))
-			}
+			DataHandle::RAM(ref data) => Ok(Box::new(VfsFile {
+				data: DataHandle::RAM(data.get_handle(opt)),
+			})),
+			DataHandle::ROM(ref data) => Ok(Box::new(VfsFile {
+				data: DataHandle::ROM(data.get_handle(opt)),
+			})),
 		}
 	}
 }
@@ -205,8 +206,8 @@ impl VfsNodeFile for VfsFile {
 impl fmt::Write for VfsFile {
 	fn write_str(&mut self, s: &str) -> core::fmt::Result {
 		match self.data {
-			DataHandle::RAM(ref mut data) => { data.write_str(s) },
-			_ => Err(core::fmt::Error)
+			DataHandle::RAM(ref mut data) => data.write_str(s),
+			_ => Err(core::fmt::Error),
 		}
 	}
 }
@@ -214,29 +215,29 @@ impl fmt::Write for VfsFile {
 impl FileHandle for VfsFile {
 	fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
 		match self.data {
-			DataHandle::RAM(ref mut data) => { data.read(buf) },
-			DataHandle::ROM(ref mut data) => { data.read(buf) }
+			DataHandle::RAM(ref mut data) => data.read(buf),
+			DataHandle::ROM(ref mut data) => data.read(buf),
 		}
 	}
 
 	fn write(&mut self, buf: &[u8]) -> Result<usize> {
 		match self.data {
-			DataHandle::RAM(ref mut data) => { data.write(buf) },
-			_ => Err(Error::BadFsOperation)
+			DataHandle::RAM(ref mut data) => data.write(buf),
+			_ => Err(Error::BadFsOperation),
 		}
 	}
 
 	fn seek(&mut self, style: SeekFrom) -> Result<u64> {
 		match self.data {
-			DataHandle::RAM(ref mut data) => { data.seek(style) },
-			DataHandle::ROM(ref mut data) => { data.seek(style) }
+			DataHandle::RAM(ref mut data) => data.seek(style),
+			DataHandle::ROM(ref mut data) => data.seek(style),
 		}
 	}
 
 	fn len(&self) -> usize {
 		match self.data {
-			DataHandle::RAM(ref data) => { data.len() },
-			DataHandle::ROM(ref data) => { data.len() }
+			DataHandle::RAM(ref data) => data.len(),
+			DataHandle::ROM(ref data) => data.len(),
 		}
 	}
 }
@@ -250,7 +251,7 @@ pub struct Fs {
 impl Fs {
 	pub fn new() -> Fs {
 		Fs {
-			handle: Spinlock::new(VfsDirectory::new())
+			handle: Spinlock::new(VfsDirectory::new()),
 		}
 	}
 }
@@ -296,7 +297,9 @@ impl Vfs for Fs {
 			components.reverse();
 			components.pop();
 
-			self.handle.lock().traverse_mount(&mut components, addr, len)
+			self.handle
+				.lock()
+				.traverse_mount(&mut components, addr, len)
 		} else {
 			Err(Error::InvalidFsPath)
 		}

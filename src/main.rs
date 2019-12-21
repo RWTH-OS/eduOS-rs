@@ -5,19 +5,19 @@
 
 #[macro_use]
 extern crate eduos_rs;
+extern crate alloc;
 #[cfg(target_arch = "x86_64")]
 extern crate x86;
-extern crate alloc;
 
+use alloc::string::String;
 use eduos_rs::arch;
-use eduos_rs::mm;
 use eduos_rs::fs;
+use eduos_rs::mm;
 use eduos_rs::scheduler;
 use eduos_rs::scheduler::task::NORMAL_PRIORITY;
 use eduos_rs::syscall;
 use eduos_rs::syscall::{SYSNO_EXIT, SYSNO_MESSAGE};
-use eduos_rs::{LogLevel,LOGGER};
-use alloc::string::String;
+use eduos_rs::{LogLevel, LOGGER};
 use x86::controlregs;
 
 extern "C" fn user_foo() -> ! {
@@ -49,12 +49,19 @@ extern "C" fn foo() {
 	println!("hello from task {}", tid);
 
 	// read data from file
-	let mut file = fs::open(&String::from("/bin/bla.txt"),
-		fs::OpenOptions::READWRITE|fs::OpenOptions::READONLY).expect("Unable to open file");
+	let mut file = fs::open(
+		&String::from("/bin/bla.txt"),
+		fs::OpenOptions::READWRITE | fs::OpenOptions::READONLY,
+	)
+	.expect("Unable to open file");
 	let mut buffer = [0; 20];
 	// read up to 20 bytes
 	file.read(&mut buffer).unwrap();
-	println!("File content: {} (read from task {})", String::from_utf8_lossy(&buffer), tid);
+	println!(
+		"File content: {} (read from task {})",
+		String::from_utf8_lossy(&buffer),
+		tid
+	);
 }
 
 /// This function is the entry point, since the linker looks for a function
@@ -70,8 +77,11 @@ pub extern "C" fn main() -> ! {
 	println!("Hello from eduOS-rs!");
 
 	// write data into file
-	let mut file = fs::open(&String::from("/bin/bla.txt"),
-		fs::OpenOptions::READWRITE|fs::OpenOptions::CREATE).expect("Unable to open file");
+	let mut file = fs::open(
+		&String::from("/bin/bla.txt"),
+		fs::OpenOptions::READWRITE | fs::OpenOptions::CREATE,
+	)
+	.expect("Unable to open file");
 	write!(file, "Hello World!!!").expect("Unable to write data");
 
 	info!("Print file system:");
