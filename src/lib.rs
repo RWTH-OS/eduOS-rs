@@ -23,7 +23,6 @@ pub mod console;
 pub mod consts;
 pub mod mm;
 pub mod scheduler;
-#[cfg(not(feature = "bootloader"))]
 pub mod rlib;
 
 #[global_allocator]
