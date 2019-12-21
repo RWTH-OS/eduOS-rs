@@ -19,13 +19,10 @@ endif
 
 .PHONY: all build fmt clean run debug docs
 
-build:
-	@cargo bootimage $(opt) --target $(target).json
-
 run: build
 	@ehyve target/$(arch)-eduos/$(rdir)/eduos-rs
 
-cargo:
+build:
 	@echo Build for ehyve
 	@cargo build -Z build-std=core,alloc --no-default-features $(opt) --target $(target).json
 
