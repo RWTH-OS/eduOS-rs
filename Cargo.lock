@@ -19,12 +19,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf1de2fe8c75bc145a2f577add951f8134889b4795d47466a54a5c846d691693"
 
 [[package]]
-name = "bootloader"
-version = "0.8.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d596849a47f28abdea62d7a6a25c4f6e69c3d9b09b0a2877db6e9cda004ca993"
-
-[[package]]
 name = "cc"
 version = "1.0.48"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -35,7 +29,6 @@ name = "eduos-rs"
 version = "0.1.0"
 dependencies = [
  "bitflags",
- "bootloader",
  "num-traits",
  "x86",
 ]

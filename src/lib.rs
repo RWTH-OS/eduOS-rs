@@ -32,7 +32,6 @@ pub mod mm;
 pub mod scheduler;
 pub mod synch;
 pub mod syscall;
-#[cfg(not(feature = "bootloader"))]
 pub mod rlib;
 
 #[global_allocator]
