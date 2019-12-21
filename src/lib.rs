@@ -1,7 +1,6 @@
 #![feature(asm, const_fn, lang_items)]
 #![feature(allocator_api)]
 #![feature(panic_info_message)]
-#![feature(compiler_builtins_lib)]
 #![feature(naked_functions)]
 #![feature(abi_x86_interrupt)]
 #![feature(specialization)]
@@ -30,11 +29,13 @@ pub mod arch;
 pub mod console;
 pub mod mm;
 pub mod collections;
+pub mod fs;
 pub mod scheduler;
 pub mod errno;
 pub mod synch;
 pub mod syscall;
-pub mod fs;
+#[cfg(not(feature = "bootloader"))]
+pub mod rlib;
 
 #[global_allocator]
 static ALLOCATOR: &'static mm::allocator::Allocator = &mm::allocator::Allocator;

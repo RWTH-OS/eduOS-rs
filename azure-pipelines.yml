@@ -5,14 +5,14 @@ jobs:
   steps:
   - script: |
       sudo apt-get -qq update
-      sudo apt-get install -y curl wget nasm make gcc g++ build-essential
-      curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
-      export PATH=$PATH:~/.cargo/bin
-      cargo install cargo-xbuild
-      cargo install --git https://github.com/RWTH-OS/ehyve.git
-      rustup component add rust-src
-      make
+      sudo apt-get install -y curl wget nasm make gcc g++ build-essential qemu-system-x86 qemu-system-aarch64 util-linux
       lscpu
+      curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
+      export PATH=$PATH:~/.cargo/bin:~/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/bin
+      rustup component add rust-src
+      rustup component add llvm-tools-preview
+      cargo install --git https://github.com/RWTH-OS/ehyve.git
+      make build
     displayName: 'Test eduOS-rs on Ubuntu 16.04'
 - job: macOS
   pool:
@@ -20,23 +20,26 @@ jobs:
   steps:
   - script: |
       curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
-      export PATH=$PATH:$HOME/.cargo/bin
-      cargo install cargo-xbuild
-      cargo install --git https://github.com/RWTH-OS/ehyve.git
+      export PATH=$PATH:$HOME/.cargo/bin:~/.rustup/toolchains/nightly-x86_64-apple-darwin/lib/rustlib/x86_64-apple-darwin/bin
       rustup component add rust-src
-      make
+      rustup component add llvm-tools-preview
+      cargo install --git https://github.com/RWTH-OS/ehyve.git
+      make build
     displayName: 'Test eduOS-rs on macOS'
 - job: Windows
   pool:
     vmImage: 'vs2017-win2016'
   steps:
-  - powershell: |
-      Invoke-WebRequest -OutFile rustup-init.exe https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe
-      ./rustup-init.exe -y --default-toolchain nightly | Out-Null
-      Remove-Item -Path "rustup-init.exe"
-      $env:Path += ";" + $env:UserProfile + "\.cargo\bin"
-      cargo install cargo-xbuild
-      cargo install --git https://github.com/RWTH-OS/ehyve.git
+  - script: |
+      curl -sSf -o rustup-init.exe https://win.rustup.rs
+      rustup-init.exe -y --default-toolchain nightly
+      set PATH=%PATH%;%USERPROFILE%\.cargo\bin
+      choco install qemu make --limit-output --no-progress
+      set PATH=%PATH%;C:\Program Files\qemu
       rustup component add rust-src
-      cargo xbuild --target x86_64-eduos.json
+      rustup component add llvm-tools-preview
+      set PATH=%PATH%;%USERPROFILE%\.rustup\toolchains\nightly-x86_64-pc-windows-msvc\lib\rustlib\x86_64-pc-windows-msvc\bin
+      cargo install --git https://github.com/RWTH-OS/ehyve.git
+      make build
     displayName: 'Test eduOS-rs on Windows'
+
