@@ -1,6 +1,6 @@
 arch ?= x86_64
 target ?= $(arch)-eduos
-release ?= 0
+release ?=
 
 opt :=
 rdir := debug
@@ -17,26 +17,28 @@ else
 RM := rm -rf
 endif
 
-.PHONY: all fmt clean run debug docs cargo build
+#ifeq ($(arch), x86_64)
+#BUILD_COMMAD := cargo bootimage $(opt) --target $(target).json
+#RUN_COMMAND := bootimage run $(opt) --target $(target).json || ([ $$? -eq 1 ] && exit 0) || exit 1
+#else
+#BUILD_COMMAD := cargo build -Z build-std=core,alloc --no-default-features $(opt) --target $(target).json
+#RUN_COMMAND := qemu-system-aarch64 -semihosting -M virt -cpu cortex-a53 -m 1G -serial stdio -display none -kernel target/$(arch)-eduos/$(rdir)/eduos-rs || ([ $$? -eq 1 ] && exit 0) || exit 1
+#endif
 
-all: qemu
+.PHONY: all build fmt clean run debug docs
+
+all: run
 
 fmt:
 	rustfmt --write-mode overwrite src/lib.rs
 
 build:
-	@cargo bootimage $(opt) --target $(target).json
-
-qemu:
-	@bootimage run $(opt) --target $(target).json || ([ $$? -eq 1 ] && exit 0) || exit 1
-
-run: cargo
-	@echo Run within ehyve
-	@ehyve target/$(arch)-eduos/$(rdir)/eduos-rs
-
-cargo:
 	@echo Build for ehyve
 	@cargo build -Z build-std=core,alloc --no-default-features $(opt) --target $(target).json
+
+run: build
+	@echo Run within ehyve
+	@ehyve target/$(arch)-eduos/$(rdir)/eduos-rs
 
 clean:
 	@cargo clean
