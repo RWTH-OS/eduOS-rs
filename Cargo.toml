@@ -4,37 +4,9 @@ version = "0.1.0"
 license = "MIT/Apache-2.0"
 authors = ["Stefan Lankes <slankes@eonerc.rwth-aachen.de>"]
 
-[target.'cfg(target_arch = "x86_64")'.dependencies.bootloader]
-git = "https://github.com/RWTH-OS/bootloader.git"
-branch = "stage5"
-default-features = false
-optional = true
-
 [target.'cfg(target_arch = "x86_64")'.dependencies.x86]
 version = "0.24.*"
 default-features = false
-
-[features]
-default = ["bootloader"]
-
-[package.metadata.cargo-xbuild]
-memcpy = true
-
-[package.metadata.bootimage]
-default-target = "x86_64-eduos.json" # This target is used if no `--target` is passed
-# The command invoked on `bootimage run`
-# (the "{}" will be replaced with the path to the bootable disk image)
-run-command = ["qemu-system-x86_64", "-display", "none", "-smp", "1", "-device", "isa-debug-exit,iobase=0xf4,iosize=0x04", "-serial", "stdio", "-drive", "format=raw,file={}"]
-# Additional arguments passed to the run command for non-test executables
-# Applies to `bootimage run` and `bootimage runner`
-run-args = []
-
-[package.metadata.bootloader]
-# The address at which the kernel stack is placed. If not provided, the bootloader
-# dynamically searches for a location.
-kernel-stack-address = "0x10000000"
-# The size of the kernel stack, given in number of 4KiB pages. Defaults to 512.
-kernel-stack-size = 512
 
 # The development profile, used for `cargo build`.
 [profile.dev]
