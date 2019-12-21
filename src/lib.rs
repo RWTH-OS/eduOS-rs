@@ -31,7 +31,6 @@ pub mod consts;
 pub mod errno;
 pub mod fs;
 pub mod mm;
-#[cfg(not(feature = "bootloader"))]
 pub mod rlib;
 pub mod scheduler;
 pub mod synch;
