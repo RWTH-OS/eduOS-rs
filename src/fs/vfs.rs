@@ -23,7 +23,7 @@ use synch::spinlock::*;
 #[derive(Debug)]
 struct VfsDirectory {
 	/// in principle, a map with all entries of the current directory
-	children: BTreeMap<String, Box<Any + core::marker::Send + core::marker::Sync>>
+	children: BTreeMap<String, Box<dyn Any + core::marker::Send + core::marker::Sync>>
 }
 
 impl VfsDirectory {
@@ -92,7 +92,7 @@ impl VfsNodeDirectory for VfsDirectory {
 		Ok(())
 	}
 
-	fn traverse_open(&mut self, components: &mut Vec<&str>, flags: OpenOptions) -> Result<Box<FileHandle>> {
+	fn traverse_open(&mut self, components: &mut Vec<&str>, flags: OpenOptions) -> Result<Box<dyn FileHandle>> {
 		if let Some(component) = components.pop() {
 			let node_name = String::from(component);
 
@@ -186,7 +186,7 @@ impl VfsNode for VfsFile {
 }
 
 impl VfsNodeFile for VfsFile {
-	fn get_handle(&self, opt: OpenOptions) -> Result<Box<FileHandle>> {
+	fn get_handle(&self, opt: OpenOptions) -> Result<Box<dyn FileHandle>> {
 		match self.data {
 			DataHandle::RAM(ref data) => { Ok(Box::new(VfsFile
 				{
@@ -275,7 +275,7 @@ impl Vfs for Fs {
 		self.handle.lock().traverse_lsdir(String::from(""))
 	}
 
-	fn open(&mut self, path: &String, flags: OpenOptions) -> Result<Box<FileHandle>> {
+	fn open(&mut self, path: &String, flags: OpenOptions) -> Result<Box<dyn FileHandle>> {
 		if check_path(path) {
 			let mut components: Vec<&str> = path.split("/").collect();
 

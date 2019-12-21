@@ -7,7 +7,6 @@
 
 #![allow(dead_code)]
 
-use compiler_builtins::mem::memset;
 use arch::x86_64::mm::physicalmem;
 use arch::x86_64::mm::virtualmem;
 use arch::x86_64::kernel::processor;
@@ -16,14 +15,12 @@ use core::mem::size_of;
 use core::marker::PhantomData;
 use consts::*;
 use core::ptr::write_bytes;
-use logging::*;
 use mm;
 use num_traits::CheckedShr;
 use scheduler;
 use x86::controlregs;
 use x86::irq::*;
 use logging::*;
-use consts::*;
 
 /// Pointer to the root page table (PML4)
 const PML4_ADDRESS: *mut PageTable<PML4> = 0xFFFF_FFFF_FFFF_F000 as *mut PageTable<PML4>;

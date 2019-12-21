@@ -8,7 +8,7 @@
 //! Architecture dependent interface to initialize a task
 
 use core::mem::size_of;
-use compiler_builtins::mem::memset;
+use core::ptr::write_bytes;
 use scheduler::task::*;
 use scheduler::{do_exit, get_current_taskid};
 use arch::processor::halt;
@@ -75,7 +75,7 @@ impl TaskFrame for Task {
 		unsafe {
 			let mut stack: *mut u64 = ((*self.stack).top()) as *mut u64;
 
-			memset((*self.stack).bottom() as *mut u8, 0xCD, STACK_SIZE);
+			write_bytes((*self.stack).bottom() as *mut u8, 0xCD, STACK_SIZE);
 
 			/* Only marker for debugging purposes, ... */
 			*stack = 0xDEADBEEFu64;
@@ -90,7 +90,7 @@ impl TaskFrame for Task {
 			stack = (stack as usize - size_of::<State>()) as *mut u64;
 
 			let state: *mut State = stack as *mut State;
-			memset(state as *mut u8, 0x00, size_of::<State>());
+			write_bytes(state, 0x00, 1);
 
 			(*state).rsp = (stack as usize + size_of::<State>()) as u64;
 			(*state).rbp = (*state).rsp + size_of::<u64>() as u64;
