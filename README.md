@@ -56,6 +56,7 @@ Afterwards the installation the source code of Rust runtime and the llvm tools a
 
 ```sh
 $ rustup component add rust-src
+$ rustup component add llvm-tools-preview
 ```
 
 eduOS-rs is able to run within [ehyve](https://github.com/RWTH-OS/ehyve), which a specialized hypervisor for eduOS-rs.
