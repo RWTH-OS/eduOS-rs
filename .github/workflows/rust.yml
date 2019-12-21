@@ -11,6 +11,8 @@ jobs:
     - uses: actions/checkout@v1
     - name: Check CPU
       run: lscpu
+    - name: Check rustup
+      run: which rustup
     - name: Install rust-src
       run: rustup component add rust-src
     - name: Build
