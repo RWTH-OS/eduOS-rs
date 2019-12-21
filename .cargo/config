@@ -1,4 +1,4 @@
-[build]
+[target.x86_64-eduos]
 rustflags = [
   "-C", "link-arg=-Tsrc/arch/x86_64/linker.ld"
 ]
