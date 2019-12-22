@@ -93,7 +93,7 @@ $ git clone https://github.com/RWTH-OS/eduOS-rs.git
 $ cd eduOS-rs
 
 $ # Build kernel
-$ make
+$ make build
 ```
 
 From here, we should be able to run the kernel in ehyve:
