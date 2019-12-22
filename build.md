@@ -5,9 +5,11 @@ sidebar_link: true
 ---
 
 ## Requirements to build eduOS-rs
+
 eduOS-rs is tested under Linux, macOS, and Windows.
 
 ### macOS
+
 Apple's *Command Line Tools* must be installed.
 The Command Line Tool package gives macOS terminal users many commonly used tools and compilers, that are usually found in default Linux installations.
 Following terminal command installs these tools without Apple's IDE Xcode:
@@ -17,16 +19,18 @@ $ xcode-select --install
 ```
 
 ### Windows
+
 To build eduOS-rs you have to install a linker, [make](http://gnuwin32.sourceforge.net/packages/make.htm) and a [git client](https://git-scm.com/downloads).
 We tested the eduOS-rs with the linker from Visual Studio.
 Consequently, we suggest installing Visual Studio in addition to [make](http://gnuwin32.sourceforge.net/packages/make.htm) and [git](https://git-scm.com/downloads).
 
 ### Linux
+
 Linux users should install common developer tools.
 For instance, on Ubuntu 18.04 the following command installs the required tools:
 
 ```sh
-$ apt-get install -y curl wget nasm make autotools-dev gcc g++ build-essential
+$ apt-get install -y git curl wget nasm make autotools-dev gcc g++ build-essential lld-8
 ```
 
 ### Common for macOS, Windows and Linux
@@ -35,11 +39,11 @@ Please visit the [Rust website](https://www.rust-lang.org/) and follow the insta
 It is important that the *nightly channel* is used to install the toolchain.
 This is queried during installation and should be answered as appropriate.
 
-Afterwards the installation of *cargo-xbuild* and the source code of Rust runtime are required to build the kernel:
+Afterwards the installation the source code of Rust runtime and the llvm tools are required to build the kernel:
 
 ```sh
-$ cargo install cargo-xbuild
 $ rustup component add rust-src
+$ rustup component add llvm-tools-preview
 ```
 
 eduOS-rs is able to run within [ehyve](https://github.com/RWTH-OS/ehyve), which a specialized hypervisor for eduOS-rs.
@@ -51,7 +55,15 @@ $ cargo install --git https://github.com/RWTH-OS/ehyve.git
 
 Please check if your system fullfil ehyve's [system requirements](https://github.com/RWTH-OS/ehyve).
 
+To build the kernel, it is important to add the path to *llvm-tools* to the environment variable `PATH`.
+Depening on the operating systems, the tools are located at:
+
+* Linux: `~/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/bin`
+* MacOS: `~/.rustup/toolchains/nightly-x86_64-apple-darwin/lib/rustlib/x86_64-apple-darwin/bin`
+* Windows: `%USERPROFILE%\.rustup\toolchains\nightly-x86_64-pc-windows-msvc\lib\rustlib\x86_64-pc-windows-msvc\bin`
+
 ## Building
+
 The final step is to create a copy of the repository and to build the kernel:
 
 ```sh
