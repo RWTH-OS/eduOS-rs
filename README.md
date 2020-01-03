@@ -1,6 +1,5 @@
 # eduOS-rs - A teaching operating system written in Rust
 
-=======
 ## Status
 
 |   | Build & Test |
