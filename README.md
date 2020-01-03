@@ -1,6 +1,12 @@
 # eduOS-rs - A teaching operating system written in Rust
 
-[![Build Status](https://dev.azure.com/RWTH-OS/eduOS-rs/_apis/build/status/RWTH-OS.eduOS-rs?branchName=stage0)](https://dev.azure.com/RWTH-OS/eduOS-rs/_build/latest?definitionId=1&branchName=stage0)
+=======
+## Status
+
+|   | Build & Test |
+|---|:-----:|
+|**all OS'**|![Actions Status](https://github.com/RWTH-OS/ehyve/workflows/Build/badge.svg)|
+|**Linux only**|[![Build & Test](https://git.rwth-aachen.de/os/eduOS-rs/badges/master/pipeline.svg)](https://git.rwth-aachen.de/os/eduOS-rs/pipelines)|
 
 ## Introduction
 
