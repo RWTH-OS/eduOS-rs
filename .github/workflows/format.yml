@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - master
+      - stage8
   pull_request:
     branches:
       - master
+      - stage8
 
 jobs:
   build:
