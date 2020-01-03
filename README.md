@@ -4,7 +4,7 @@
 
 |   | Build & Test |
 |---|:-----:|
-|**all OS'**|[![Build & Test](https://dev.azure.com/RWTH-OS/eduOS-rs/_apis/build/status/RWTH-OS.eduOS-rs)](https://dev.azure.com/RWTH-OS/eduOS-rs/_build?definitionId=1)|
+|**all OS'**|![Actions Status](https://github.com/RWTH-OS/ehyve/workflows/Build/badge.svg)|
 |**Linux only**|[![Build & Test](https://git.rwth-aachen.de/os/eduOS-rs/badges/master/pipeline.svg)](https://git.rwth-aachen.de/os/eduOS-rs/pipelines)|
 
 ## Introduction
