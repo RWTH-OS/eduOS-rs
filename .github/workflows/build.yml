@@ -3,10 +3,10 @@ name: Build
 on:
   push:
     branches:
-      - master
+      - stage0
   pull_request:
     branches:
-      - master
+      - stage0
   schedule:
     - cron: '0 0 * * 6'
 
