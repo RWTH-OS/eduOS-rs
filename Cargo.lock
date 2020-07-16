@@ -20,12 +20,12 @@ name = "eduos-rs"
 version = "0.1.0"
 dependencies = [
  "spin 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "x86 0.28.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "x86 0.34.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "raw-cpuid"
-version = "7.0.3"
+version = "8.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "bitflags 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -61,21 +61,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "x86"
-version = "0.28.0"
+version = "0.34.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "bit_field 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "bitflags 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "raw-cpuid 7.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "raw-cpuid 8.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [metadata]
 "checksum bit_field 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)" = "a165d606cf084741d4ac3a28fb6e9b1eb0bd31f6cd999098cfddb0b2ab381dc0"
 "checksum bitflags 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "cf1de2fe8c75bc145a2f577add951f8134889b4795d47466a54a5c846d691693"
 "checksum cc 1.0.47 (registry+https://github.com/rust-lang/crates.io-index)" = "aa87058dce70a3ff5621797f1506cb837edd02ac4c0ae642b4542dce802908b8"
-"checksum raw-cpuid 7.0.3 (registry+https://github.com/rust-lang/crates.io-index)" = "b4a349ca83373cfa5d6dbb66fd76e58b2cca08da71a5f6400de0a0a6a9bceeaf"
+"checksum raw-cpuid 8.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "0cee2c7710d96f9f90f56824fca5438b301dc0fb49ece4cf9dfa044e54067e10"
 "checksum rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "138e3e0acb6c9fb258b19b67cb8abd63c00679d2851805ea151465464fe9030a"
 "checksum semver 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)" = "1d7eb9ef2c18661902cc47e535f9bc51b78acd254da71d375c2f6720d9a40403"
 "checksum semver-parser 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
 "checksum spin 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)" = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
-"checksum x86 0.28.0 (registry+https://github.com/rust-lang/crates.io-index)" = "f705f7554f555fa2d0fea9e3b53f5fd8b4b67270f48aac96a4146a19b5bf7db1"
+"checksum x86 0.34.0 (registry+https://github.com/rust-lang/crates.io-index)" = "c146cbc47471e076987378c159a7aa8fa434680c6fbddca59fe6f40f1591c819"

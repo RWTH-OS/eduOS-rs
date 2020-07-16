@@ -1,4 +1,4 @@
-#![feature(asm, const_fn, lang_items)]
+#![feature(llvm_asm, const_fn, lang_items)]
 #![feature(naked_functions)]
 #![no_std]
 
