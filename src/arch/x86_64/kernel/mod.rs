@@ -61,7 +61,7 @@ pub fn register_task() {
 	let sel: u16 = 6u16 << 3;
 
 	unsafe {
-		asm!("ltr $0" :: "r"(sel) :: "volatile");
+		llvm_asm!("ltr $0" :: "r"(sel) :: "volatile");
 	}
 }
 
@@ -75,7 +75,7 @@ pub fn jump_to_user_land(entry: u64) -> ! {
 	debug!("Set user space stack to 0x{:x}", stack);
 
 	unsafe {
-		asm!("swapgs; mov $0, %ds; mov $0, %es; push $0; push $3; pushfq; push $1; push $2; iretq"
+		llvm_asm!("swapgs; mov $0, %ds; mov $0, %es; push $0; push $3; pushfq; push $1; push $2; iretq"
 			:: "r"(ds), "r"(cs), "r"(entry as u64), "r"(stack)
 			:: "volatile");
 	}
@@ -156,7 +156,7 @@ macro_rules! syscall {
 pub fn syscall0(arg0: u64) -> u64 {
 	let mut ret: u64;
 	unsafe {
-		asm!("syscall" : "={rax}" (ret) : "{rax}" (arg0) : "rcx", "r11", "memory" : "volatile");
+		llvm_asm!("syscall" : "={rax}" (ret) : "{rax}" (arg0) : "rcx", "r11", "memory" : "volatile");
 	}
 	ret
 }
@@ -166,7 +166,7 @@ pub fn syscall0(arg0: u64) -> u64 {
 pub fn syscall1(arg0: u64, arg1: u64) -> u64 {
 	let mut ret: u64;
 	unsafe {
-		asm!("syscall"	: "={rax}" (ret) : "{rax}" (arg0), "{rdi}" (arg1)
+		llvm_asm!("syscall"	: "={rax}" (ret) : "{rax}" (arg0), "{rdi}" (arg1)
 						: "rcx", "r11", "memory" : "volatile");
 	}
 	ret
@@ -177,7 +177,7 @@ pub fn syscall1(arg0: u64, arg1: u64) -> u64 {
 pub fn syscall2(arg0: u64, arg1: u64, arg2: u64) -> u64 {
 	let mut ret: u64;
 	unsafe {
-		asm!("syscall"	: "={rax}" (ret) : "{rax}" (arg0), "{rdi}" (arg1), "{rsi}" (arg2)
+		llvm_asm!("syscall"	: "={rax}" (ret) : "{rax}" (arg0), "{rdi}" (arg1), "{rsi}" (arg2)
 						: "rcx", "r11", "memory" : "volatile");
 	}
 	ret
@@ -188,7 +188,7 @@ pub fn syscall2(arg0: u64, arg1: u64, arg2: u64) -> u64 {
 pub fn syscall3(arg0: u64, arg1: u64, arg2: u64, arg3: u64) -> u64 {
 	let mut ret: u64;
 	unsafe {
-		asm!("syscall"	: "={rax}" (ret) : "{rax}" (arg0), "{rdi}" (arg1), "{rsi}" (arg2),
+		llvm_asm!("syscall"	: "={rax}" (ret) : "{rax}" (arg0), "{rdi}" (arg1), "{rsi}" (arg2),
 						"{rdx}" (arg3) : "rcx", "r11", "memory" : "volatile");
 	}
 	ret
@@ -199,7 +199,7 @@ pub fn syscall3(arg0: u64, arg1: u64, arg2: u64, arg3: u64) -> u64 {
 pub fn syscall4(arg0: u64, arg1: u64, arg2: u64, arg3: u64, arg4: u64) -> u64 {
 	let mut ret: u64;
 	unsafe {
-		asm!("syscall"	: "={rax}" (ret)
+		llvm_asm!("syscall"	: "={rax}" (ret)
 						: "{rax}"  (arg0), "{rdi}"  (arg1), "{rsi}"  (arg2), "{rdx}"  (arg3),
 						"{r10}"  (arg4) : "rcx", "r11", "memory" : "volatile");
 	}
@@ -211,7 +211,7 @@ pub fn syscall4(arg0: u64, arg1: u64, arg2: u64, arg3: u64, arg4: u64) -> u64 {
 pub fn syscall5(arg0: u64, arg1: u64, arg2: u64, arg3: u64, arg4: u64, arg5: u64) -> u64 {
 	let mut ret: u64;
 	unsafe {
-		asm!("syscall"	: "={rax}" (ret)
+		llvm_asm!("syscall"	: "={rax}" (ret)
 						: "{rax}" (arg0), "{rdi}" (arg1), "{rsi}" (arg2), "{rdx}" (arg3),
 						"{r10}" (arg4), "{r8}" (arg5) : "rcx", "r11", "memory" : "volatile");
 	}
@@ -231,7 +231,7 @@ pub fn syscall6(
 ) -> u64 {
 	let mut ret: u64;
 	unsafe {
-		asm!("syscall"	: "={rax}" (ret) : "{rax}" (arg0), "{rdi}" (arg1), "{rsi}" (arg2),
+		llvm_asm!("syscall"	: "={rax}" (ret) : "{rax}" (arg0), "{rdi}" (arg1), "{rsi}" (arg2),
 						"{rdx}" (arg3), "{r10}" (arg4), "{r8}" (arg5), "{r9}" (arg6)
 						: "rcx", "r11", "memory" : "volatile");
 	}

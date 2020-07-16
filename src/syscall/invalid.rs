@@ -13,7 +13,7 @@ use scheduler::*;
 pub unsafe extern "C" fn sys_invalid() {
 	let mut rax: i64 = 0;
 
-	asm!("push %rax; pop $0" : "=r"(rax));
+	llvm_asm!("push %rax; pop $0" : "=r"(rax));
 
 	error!("Invalid syscall {}", rax);
 	do_exit();
