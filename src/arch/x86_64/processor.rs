@@ -8,7 +8,7 @@ use x86::io::*;
 #[inline(always)]
 pub fn mb() {
 	unsafe {
-		asm!("mfence" ::: "memory" : "volatile");
+		llvm_asm!("mfence" ::: "memory" : "volatile");
 	}
 }
 
@@ -18,7 +18,7 @@ pub fn msb(value: u64) -> Option<u64> {
 	if value > 0 {
 		let ret: u64;
 		unsafe {
-			asm!("bsr $1, $0" : "=r"(ret) : "r"(value) : "cc" : "volatile");
+			llvm_asm!("bsr $1, $0" : "=r"(ret) : "r"(value) : "cc" : "volatile");
 		}
 		Some(ret)
 	} else {
@@ -32,7 +32,7 @@ pub fn lsb(value: u64) -> Option<u64> {
 	if value > 0 {
 		let ret: u64;
 		unsafe {
-			asm!("bsf $1, $0" : "=r"(ret) : "r"(value) : "cc" : "volatile");
+			llvm_asm!("bsf $1, $0" : "=r"(ret) : "r"(value) : "cc" : "volatile");
 		}
 		Some(ret)
 	} else {
@@ -42,13 +42,13 @@ pub fn lsb(value: u64) -> Option<u64> {
 
 pub fn halt() {
 	unsafe {
-		asm!("hlt" :::: "volatile");
+		llvm_asm!("hlt" :::: "volatile");
 	}
 }
 
 pub fn pause() {
 	unsafe {
-		asm!("pause" :::: "volatile");
+		llvm_asm!("pause" :::: "volatile");
 	}
 }
 
