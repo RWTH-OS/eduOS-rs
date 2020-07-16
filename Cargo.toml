@@ -5,7 +5,7 @@ license = "MIT/Apache-2.0"
 authors = ["Stefan Lankes <slankes@eonerc.rwth-aachen.de>"]
 
 [target.'cfg(target_arch = "x86_64")'.dependencies.x86]
-version = "0.24.*"
+version = "0.34.*"
 default-features = false
 
 # The development profile, used for `cargo build`.

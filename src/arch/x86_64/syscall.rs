@@ -8,7 +8,7 @@
 #[no_mangle]
 #[naked]
 pub unsafe extern "C" fn syscall_handler() {
-	asm!(
+	llvm_asm!(
 		// save context, see x86_64 ABI
 		"push %rcx\n\t\
 		push %rdx\n\t\
