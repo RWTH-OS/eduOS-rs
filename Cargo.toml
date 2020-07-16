@@ -8,7 +8,7 @@ authors = ["Stefan Lankes <slankes@eonerc.rwth-aachen.de>"]
 spin = "0.5.2"	# Spinlocks.
 
 [target.'cfg(target_arch = "x86_64")'.dependencies.x86]
-version = "0.28.*"
+version = "0.34.*"
 default-features = false
 
 # The development profile, used for `cargo build`.

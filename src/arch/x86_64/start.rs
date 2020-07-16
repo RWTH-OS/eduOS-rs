@@ -18,7 +18,7 @@ extern "C" {
 #[naked]
 pub unsafe extern "C" fn _start() {
 	// be sure that rsp is a valid stack pointer
-	asm!("mov $0, %rsp" :: "r"(BOOT_STACK.top()) :: "volatile");
+	llvm_asm!("mov $0, %rsp" :: "r"(BOOT_STACK.top()) :: "volatile");
 
 	main();
 
