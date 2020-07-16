@@ -24,19 +24,19 @@ const KERNEL_CODE_SELECTOR: SegmentSelector = SegmentSelector::new(1, Ring::Ring
 
 /// Enable Interrupts
 pub fn irq_enable() {
-	unsafe { asm!("sti" ::: "memory" : "volatile") };
+	unsafe { llvm_asm!("sti" ::: "memory" : "volatile") };
 }
 
 /// Disable Interrupts
 pub fn irq_disable() {
-	unsafe { asm!("cli" ::: "memory" : "volatile") };
+	unsafe { llvm_asm!("cli" ::: "memory" : "volatile") };
 }
 
 /// Determines, if the interrupt flags (IF) is set
 pub fn is_irq_enabled() -> bool {
 	let rflags: u64;
 
-	unsafe { asm!("pushf; pop $0": "=r"(rflags) :: "memory" : "volatile") };
+	unsafe { llvm_asm!("pushf; pop $0": "=r"(rflags) :: "memory" : "volatile") };
 	if (rflags & (1u64 << 9)) != 0 {
 		return true;
 	}

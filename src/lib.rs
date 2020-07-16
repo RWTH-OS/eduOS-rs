@@ -1,4 +1,4 @@
-#![feature(asm, const_fn, lang_items)]
+#![feature(llvm_asm, const_fn, lang_items)]
 #![feature(allocator_api)]
 #![feature(panic_info_message)]
 #![feature(naked_functions)]

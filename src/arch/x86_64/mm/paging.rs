@@ -238,7 +238,7 @@ impl<S: PageSize> Page<S> {
 	#[inline(always)]
 	fn flush_from_tlb(&self) {
 		unsafe {
-			asm!("invlpg ($0)" :: "r"(self.virtual_address) : "memory" : "volatile");
+			llvm_asm!("invlpg ($0)" :: "r"(self.virtual_address) : "memory" : "volatile");
 		}
 	}
 
