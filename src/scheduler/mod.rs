@@ -13,8 +13,8 @@ mod scheduler;
 /// task control block
 pub mod task;
 
-use errno::*;
-use scheduler::task::TaskPriority;
+use crate::errno::*;
+use crate::scheduler::task::TaskPriority;
 
 static mut SCHEDULER: Option<scheduler::Scheduler> = None;
 
