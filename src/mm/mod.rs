@@ -9,12 +9,12 @@ pub mod allocator;
 pub mod freelist;
 mod nodepool;
 
+use crate::arch;
+use crate::arch::mm::paging::{BasePageSize, PageSize, PageTableEntryFlags};
+use crate::logging::*;
+use crate::mm::nodepool::NodePool;
+use crate::scheduler::DisabledPreemption;
 use alloc::alloc::Layout;
-use arch;
-use arch::mm::paging::{BasePageSize, PageSize, PageTableEntryFlags};
-use logging::*;
-use mm::nodepool::NodePool;
-use scheduler::DisabledPreemption;
 
 extern "C" {
 	static kernel_start: u8;
