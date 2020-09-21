@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use logging::*;
+use crate::logging::*;
 use x86::controlregs::*;
 use x86::io::*;
 

@@ -5,12 +5,12 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
+use crate::scheduler::task::*;
+use crate::scheduler::{block_current_task, reschedule, wakeup_task};
+use crate::synch::spinlock::*;
 use core::cell::UnsafeCell;
 use core::marker::Sync;
 use core::ops::{Deref, DerefMut, Drop};
-use scheduler::task::*;
-use scheduler::{block_current_task, reschedule, wakeup_task};
-use synch::spinlock::*;
 
 /// A mutual exclusion primitive useful for protecting shared data
 ///

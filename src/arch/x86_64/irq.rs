@@ -7,10 +7,10 @@
 
 #![allow(dead_code)]
 
+use crate::logging::*;
+use crate::scheduler::*;
+use crate::synch::spinlock::*;
 use core::fmt;
-use logging::*;
-use scheduler::*;
-use synch::spinlock::*;
 use x86::bits64::paging::VAddr;
 use x86::dtables::{lidt, DescriptorTablePointer};
 use x86::io::*;

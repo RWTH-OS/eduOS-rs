@@ -7,7 +7,7 @@
 
 #![allow(dead_code)]
 
-use consts::*;
+use crate::consts::*;
 use core::mem;
 use x86::bits64::segmentation::*;
 use x86::bits64::task::*;
@@ -15,7 +15,7 @@ use x86::dtables::{self, DescriptorTablePointer};
 use x86::segmentation::*;
 use x86::Ring;
 //use logging::*;
-use scheduler;
+use crate::scheduler;
 
 const GDT_NULL: usize = 0;
 const GDT_KERNEL_CODE: usize = 1;
