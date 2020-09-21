@@ -6,7 +6,7 @@
 // copied, modified, or distributed except according to those terms.
 
 use alloc::string::String;
-use logging::*;
+use crate::logging::*;
 
 #[no_mangle]
 pub extern "C" fn sys_write(s: *mut u8, len: usize) -> isize {

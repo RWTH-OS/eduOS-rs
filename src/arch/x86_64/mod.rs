@@ -8,7 +8,7 @@ pub mod switch;
 mod syscall;
 pub mod task;
 
-pub use arch::x86_64::syscall::syscall_handler;
+pub use crate::arch::x86_64::syscall::syscall_handler;
 
 pub fn register_task() {
 	let sel: u16 = 6u16 << 3;

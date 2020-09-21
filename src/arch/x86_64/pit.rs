@@ -5,9 +5,9 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
-use arch::processor::*;
-use consts::*;
-use logging::*;
+use crate::arch::processor::*;
+use crate::consts::*;
+use crate::logging::*;
 use x86::io::*;
 use x86::time::rdtsc;
 

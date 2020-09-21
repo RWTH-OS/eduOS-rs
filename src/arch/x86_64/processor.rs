@@ -1,21 +1,21 @@
 #![allow(dead_code)]
 
-use arch::x86_64::syscall_handler;
-use logging::*;
+use crate::arch::x86_64::syscall_handler;
+use crate::logging::*;
 use x86::controlregs::*;
 use x86::cpuid::*;
 use x86::io::*;
 use x86::msr::*;
 
 // MSR EFER bits
-const EFER_SCE: u64 = (1 << 0);
-const EFER_LME: u64 = (1 << 8);
-const EFER_LMA: u64 = (1 << 10);
-const EFER_NXE: u64 = (1 << 11);
-const EFER_SVME: u64 = (1 << 12);
-const EFER_LMSLE: u64 = (1 << 13);
-const EFER_FFXSR: u64 = (1 << 14);
-const EFER_TCE: u64 = (1 << 15);
+const EFER_SCE: u64 = 1 << 0;
+const EFER_LME: u64 = 1 << 8;
+const EFER_LMA: u64 = 1 << 10;
+const EFER_NXE: u64 = 1 << 11;
+const EFER_SVME: u64 = 1 << 12;
+const EFER_LMSLE: u64 = 1 << 13;
+const EFER_FFXSR: u64 = 1 << 14;
+const EFER_TCE: u64 = 1 << 15;
 
 /// Force strict CPU ordering, serializes load and store operations.
 #[inline(always)]
