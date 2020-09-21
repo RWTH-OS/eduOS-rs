@@ -5,13 +5,13 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
+use crate::arch::switch;
+use crate::logging::*;
+use crate::scheduler::task::*;
 use alloc::collections::{BTreeMap, VecDeque};
 use alloc::rc::Rc;
-use arch::switch;
 use core::cell::RefCell;
 use core::sync::atomic::{AtomicU32, Ordering};
-use logging::*;
-use scheduler::task::*;
 
 static NO_TASKS: AtomicU32 = AtomicU32::new(0);
 static TID_COUNTER: AtomicU32 = AtomicU32::new(0);

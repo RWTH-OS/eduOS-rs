@@ -7,13 +7,13 @@
 
 //! Architecture dependent interface to initialize a task
 
-use arch::processor::halt;
-use consts::*;
+use crate::arch::processor::halt;
+use crate::consts::*;
+use crate::logging::*;
+use crate::scheduler::task::*;
+use crate::scheduler::{do_exit, get_current_taskid};
 use core::mem::size_of;
 use core::ptr::write_bytes;
-use logging::*;
-use scheduler::task::*;
-use scheduler::{do_exit, get_current_taskid};
 
 #[repr(C, packed)]
 struct State {
