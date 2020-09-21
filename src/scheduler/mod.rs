@@ -13,10 +13,10 @@ mod scheduler;
 /// task control block
 pub mod task;
 
+use crate::errno::*;
+use crate::scheduler::task::{Task, TaskPriority};
 use alloc::rc::Rc;
 use core::cell::RefCell;
-use errno::*;
-use scheduler::task::{Task, TaskPriority};
 
 static mut SCHEDULER: Option<scheduler::Scheduler> = None;
 

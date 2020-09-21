@@ -1,6 +1,6 @@
 //! A wrapper around our serial console.
 
-use arch::serial;
+use crate::arch::serial;
 use core::fmt;
 
 pub struct Console;

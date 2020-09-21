@@ -6,7 +6,7 @@
 // copied, modified, or distributed except according to those terms.
 
 #[allow(unused_imports)]
-use scheduler::task::BOOT_STACK;
+use crate::scheduler::task::BOOT_STACK;
 
 extern "C" {
 	#[allow(dead_code)]

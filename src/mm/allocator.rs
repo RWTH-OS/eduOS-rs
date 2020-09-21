@@ -14,10 +14,10 @@
 //! preallocated space, along with an index variable.
 //! Freed memory is never reused, but this can be neglected for bootstrapping.
 
+use crate::consts::*;
+use crate::logging::*;
 use alloc::alloc::Layout;
-use consts::*;
 use core::alloc::GlobalAlloc;
-use logging::*;
 
 /// Size of the preallocated space for the Bootstrap Allocator.
 const BOOTSTRAP_HEAP_SIZE: usize = 2 * 1024 * 1024;
