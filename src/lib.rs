@@ -1,4 +1,5 @@
 #![feature(llvm_asm, const_fn, lang_items)]
+#![feature(linked_list_cursors)]
 #![feature(allocator_api)]
 #![feature(naked_functions)]
 #![no_std]
@@ -18,7 +19,6 @@ pub mod macros;
 #[macro_use]
 pub mod logging;
 pub mod arch;
-pub mod collections;
 pub mod console;
 pub mod consts;
 pub mod errno;

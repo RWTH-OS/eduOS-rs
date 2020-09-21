@@ -9,8 +9,8 @@
 
 use alloc;
 use alloc::alloc::{alloc, dealloc, Layout};
+use alloc::collections::LinkedList;
 use alloc::rc::Rc;
-use collections::{DoublyLinkedList, Node};
 use consts::*;
 use core::cell::RefCell;
 use core::fmt;
@@ -102,7 +102,7 @@ impl Stack {
 pub static mut BOOT_STACK: Stack = Stack::new();
 
 pub struct TaskQueue {
-	queue: DoublyLinkedList<Rc<RefCell<Task>>>,
+	queue: LinkedList<Rc<RefCell<Task>>>,
 }
 
 impl TaskQueue {
@@ -112,19 +112,14 @@ impl TaskQueue {
 		}
 	}
 
-	/// Add a task by its priority to the queue
+	/// Add a task to the queue
 	pub fn push(&mut self, task: Rc<RefCell<Task>>) {
-		self.queue.push(Node::new(task));
+		self.queue.push_back(task);
 	}
 
 	/// Pop the task from the queue
 	pub fn pop(&mut self) -> Option<Rc<RefCell<Task>>> {
-		let first_task = self.queue.head();
-		first_task.map(|task| {
-			self.queue.remove(task.clone());
-
-			task.borrow().value.clone()
-		})
+		self.queue.pop_front()
 	}
 
 	#[inline(always)]
@@ -134,9 +129,13 @@ impl TaskQueue {
 
 	/// Remove a specific task from the priority queue.
 	pub fn remove(&mut self, task: Rc<RefCell<Task>>) {
-		for node in self.queue.iter() {
-			if Rc::ptr_eq(&node.borrow().value, &task) {
-				self.queue.remove(node.clone());
+		let mut cursor = self.queue.cursor_front_mut();
+
+		// Loop through all blocked tasks to find it.
+		while let Some(node) = cursor.current() {
+			if Rc::ptr_eq(&node, &task) {
+				// Remove it from the list
+				cursor.remove_current();
 
 				break;
 			}
