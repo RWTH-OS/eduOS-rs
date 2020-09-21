@@ -11,9 +11,9 @@ pub mod mm;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::ptr::write_bytes;
-use errno::*;
+use crate::errno::*;
 use goblin::elf::program_header::{PT_DYNAMIC, PT_GNU_RELRO, PT_LOAD};
-use goblin::elf64::dyn::{DT_RELA, DT_RELASZ};
+use goblin::elf64::r#dyn::{DT_RELA, DT_RELASZ};
 use goblin::elf64::reloc::{R_386_GLOB_DAT, R_386_RELATIVE};
 use goblin::{elf, elf64};
 //use goblin::elf::header::{EM_X86_64,ET_EXEC};
@@ -21,10 +21,10 @@ use goblin::{elf, elf64};
 use self::mm::paging;
 use self::mm::paging::{BasePageSize, PageSize, PageTableEntryFlags};
 use self::mm::physicalmem;
-use consts::*;
+use crate::consts::*;
 use core::slice;
-use fs;
-use logging::*;
+use crate::fs;
+use crate::logging::*;
 use x86::controlregs;
 
 pub fn load_application(path: &String) -> Result<()> {
@@ -113,9 +113,9 @@ pub fn load_application(path: &String) -> Result<()> {
 			debug!("PT_DYNAMIC at 0x{:x} (size 0x{:x})", i.p_vaddr, i.p_filesz);
 
 			let mem = (USER_SPACE_START + i.p_vaddr as usize - vstart) as *mut u8;
-			let dyn = unsafe { elf::dyn::dyn64::from_raw(0, mem as usize) };
+			let r#dyn = unsafe { elf::r#dyn::dyn64::from_raw(0, mem as usize) };
 
-			for j in dyn {
+			for j in r#dyn {
 				if j.d_tag == DT_RELA {
 					rela_addr = USER_SPACE_START as u64 + j.d_val;
 				} else if j.d_tag == DT_RELASZ {

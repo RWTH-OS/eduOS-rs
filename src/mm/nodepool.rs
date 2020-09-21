@@ -5,23 +5,23 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
-use collections::{DoublyLinkedList, Node};
-use logging::*;
-use mm::freelist::FreeListEntry;
+use crate::logging::*;
+use crate::mm::freelist::FreeListEntry;
+use alloc::collections::LinkedList;
 
 /// A deallocation operation in a Free List may need a node from the pool.
 /// As we use two free lists (for physical and virtual memories), we always need to guarantee a minimum of 2 nodes in the pool for any deallocation operation.
 const MINIMUM_POOL_ENTRIES: usize = 2;
 
 pub struct NodePool {
-	pub list: DoublyLinkedList<FreeListEntry>,
+	pub list: LinkedList<FreeListEntry>,
 	maintenance_in_progress: bool,
 }
 
 impl NodePool {
 	pub const fn new() -> Self {
 		Self {
-			list: DoublyLinkedList::new(),
+			list: LinkedList::new(),
 			maintenance_in_progress: false,
 		}
 	}
@@ -38,18 +38,22 @@ impl NodePool {
 		// Keep the desired minimum number of entries in the pool and move the rest into the local nodes_to_remove list.
 		// Note that our node pool changes during node removal, so we definitely want to work on a local list.
 		let mut i = 0;
-		let mut nodes_to_remove = DoublyLinkedList::<FreeListEntry>::new();
-		for node in self.list.iter() {
+		let mut cursor = self.list.cursor_front_mut();
+		let mut nodes_to_remove = LinkedList::<FreeListEntry>::new();
+		while cursor.current().is_some() {
 			if i >= MINIMUM_POOL_ENTRIES {
-				self.list.remove(node.clone());
-				nodes_to_remove.push(node);
+				if let Some(node) = cursor.remove_current() {
+					nodes_to_remove.push_back(node);
+				}
+			} else {
+				cursor.move_next();
 			}
 
 			i += 1;
 		}
 
 		// Loop through all nodes in the nodes_to_remove list.
-		let mut nodes_to_remove_iter = nodes_to_remove.iter();
+		let mut cursor = nodes_to_remove.cursor_front_mut();
 		loop {
 			// Before deallocating memory for any node, ensure that the minimum number of entries is in the node pool.
 			let mut i = 0;
@@ -61,17 +65,14 @@ impl NodePool {
 			}
 
 			for _j in 0..(MINIMUM_POOL_ENTRIES - i) {
-				let entry = Node::new(FreeListEntry { start: 0, end: 0 });
-				self.list.push(entry);
+				let entry = FreeListEntry { start: 0, end: 0 };
+				self.list.push_back(entry);
 			}
 
-			// Now check if there is a node to remove.
-			if let Some(node) = nodes_to_remove_iter.next() {
-				// There is, so let Rust deallocate its memory by removing it from the list.
-				// This calls our deallocation routine again, which itself tries another Pool Maintenance.
-				// But as we set maintenance_in_progress to true, no infinite recursion takes place.
-				nodes_to_remove.remove(node);
-			} else {
+			// There is, so let Rust deallocate its memory by removing it from the list.
+			// This calls our deallocation routine again, which itself tries another Pool Maintenance.
+			// But as we set maintenance_in_progress to true, no infinite recursion takes place.
+			if cursor.remove_current().is_none() {
 				// There are no more nodes to remove and the pool contains at least the minimum number of entries.
 				break;
 			}

@@ -7,14 +7,14 @@
 
 //! Implements basic functions to realize a simple in-memory file system
 
+use crate::errno::*;
+use crate::fs::{OpenOptions, SeekFrom};
+use crate::spin::RwLock;
+use crate::synch::spinlock::*;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::ops::{Deref, DerefMut};
 use core::slice;
-use errno::*;
-use fs::{OpenOptions, SeekFrom};
-use spin::RwLock;
-use synch::spinlock::*;
 
 #[derive(Debug)]
 pub struct RomHandle {

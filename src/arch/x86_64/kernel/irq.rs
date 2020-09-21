@@ -7,11 +7,11 @@
 
 #![allow(dead_code)]
 
-use arch::x86_64::mm::paging::page_fault_handler;
+use crate::arch::x86_64::mm::paging::page_fault_handler;
+use crate::logging::*;
+use crate::scheduler::*;
+use crate::synch::spinlock::*;
 use core::fmt;
-use logging::*;
-use scheduler::*;
-use synch::spinlock::*;
 use x86::bits64::paging::VAddr;
 use x86::dtables::{lidt, DescriptorTablePointer};
 use x86::io::*;

@@ -5,7 +5,7 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
-use scheduler::*;
+use crate::scheduler::*;
 
 #[no_mangle]
 pub extern "C" fn sys_exit(_status: i32) {

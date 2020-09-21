@@ -4,6 +4,7 @@
 #![feature(naked_functions)]
 #![feature(abi_x86_interrupt)]
 #![feature(specialization)]
+#![feature(linked_list_cursors)]
 #![no_std]
 
 extern crate alloc;
@@ -26,7 +27,6 @@ pub mod macros;
 #[macro_use]
 pub mod logging;
 pub mod arch;
-pub mod collections;
 pub mod console;
 pub mod consts;
 pub mod errno;

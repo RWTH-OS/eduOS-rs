@@ -15,10 +15,9 @@ pub mod switch;
 mod syscall;
 pub mod task;
 
-pub use arch::x86_64::kernel::syscall::syscall_handler;
-use consts::*;
+pub use crate::arch::x86_64::kernel::syscall::syscall_handler;
 use core::ptr::read_volatile;
-use logging::*;
+use crate::logging::*;
 
 #[repr(C)]
 struct KernelHeader {

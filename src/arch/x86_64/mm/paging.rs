@@ -7,18 +7,18 @@
 
 #![allow(dead_code)]
 
-use arch::x86_64::kernel::irq;
-use arch::x86_64::kernel::processor;
-use arch::x86_64::mm::physicalmem;
-use arch::x86_64::mm::virtualmem;
-use consts::*;
+use crate::arch::x86_64::kernel::irq;
+use crate::arch::x86_64::kernel::processor;
+use crate::arch::x86_64::mm::physicalmem;
+use crate::arch::x86_64::mm::virtualmem;
+use crate::consts::*;
+use crate::logging::*;
+use crate::mm;
+use crate::scheduler;
 use core::marker::PhantomData;
 use core::mem::size_of;
 use core::ptr::write_bytes;
-use logging::*;
-use mm;
 use num_traits::CheckedShr;
-use scheduler;
 use x86::controlregs;
 use x86::irq::*;
 
@@ -252,7 +252,7 @@ impl<S: PageSize> Page<S> {
 	/// Although we could make this check depend on the actual linear address width from the CPU,
 	/// any extension above 48-bit would require a new page table level, which we don't implement.
 	fn is_valid_address(virtual_address: usize) -> bool {
-		(virtual_address < 0x8000_0000_0000 || virtual_address >= 0xFFFF_8000_0000_0000)
+		virtual_address < 0x8000_0000_0000 || virtual_address >= 0xFFFF_8000_0000_0000
 	}
 
 	/// Returns a Page including the given virtual address.

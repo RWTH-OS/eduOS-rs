@@ -12,13 +12,13 @@
 mod initrd;
 mod vfs;
 
+use crate::arch;
+use crate::errno::*;
+use crate::fs::vfs::Fs;
+use crate::logging::*;
 use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::vec::Vec;
-use arch;
-use errno::*;
-use fs::vfs::Fs;
-use logging::*;
 
 /// Type of the VfsNode
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
