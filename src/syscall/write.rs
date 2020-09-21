@@ -5,8 +5,8 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
+use crate::logging::*;
 use alloc::string::String;
-use logging::*;
 
 #[no_mangle]
 pub extern "C" fn sys_write(s: *mut u8, len: usize) -> isize {

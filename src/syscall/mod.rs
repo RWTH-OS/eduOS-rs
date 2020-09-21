@@ -9,9 +9,9 @@ pub mod exit;
 pub mod message;
 pub mod write;
 
-use syscall::exit::sys_exit;
-use syscall::message::sys_message;
-use syscall::write::sys_write;
+use crate::syscall::exit::sys_exit;
+use crate::syscall::message::sys_message;
+use crate::syscall::write::sys_write;
 
 /// number of the system call `exit`
 pub const SYSNO_EXIT: usize = 0;

@@ -7,16 +7,15 @@
 
 #![allow(dead_code)]
 
-use alloc;
+use crate::arch;
+use crate::arch::processor::msb;
+use crate::arch::{BasePageSize, PageSize};
+use crate::consts::*;
+use crate::logging::*;
 use alloc::alloc::{alloc, dealloc, Layout};
 use alloc::rc::Rc;
-use arch;
-use arch::processor::msb;
-use arch::{BasePageSize, PageSize};
-use consts::*;
 use core::cell::RefCell;
 use core::fmt;
-use logging::*;
 
 extern "C" {
 	fn get_bootstack() -> *mut u8;

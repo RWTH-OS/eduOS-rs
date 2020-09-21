@@ -3,6 +3,7 @@ name = "eduos-rs"
 version = "0.1.0"
 license = "MIT/Apache-2.0"
 authors = ["Stefan Lankes <slankes@eonerc.rwth-aachen.de>"]
+edition = "2018"
 
 [dependencies]
 bitflags = "1.0"

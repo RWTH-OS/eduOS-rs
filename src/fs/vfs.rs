@@ -7,20 +7,20 @@
 
 //! Implements a simple virtual file system
 
+use crate::errno::*;
+use crate::fs::initrd::{RamHandle, RomHandle};
+use crate::fs::{
+	check_path, FileHandle, NodeKind, OpenOptions, SeekFrom, Vfs, VfsNode, VfsNodeDirectory,
+	VfsNodeFile,
+};
+use crate::logging::*;
+use crate::synch::spinlock::*;
 use alloc::boxed::Box;
 use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::any::Any;
 use core::fmt;
-use errno::*;
-use fs::initrd::{RamHandle, RomHandle};
-use fs::{
-	check_path, FileHandle, NodeKind, OpenOptions, SeekFrom, Vfs, VfsNode, VfsNodeDirectory,
-	VfsNodeFile,
-};
-use logging::*;
-use synch::spinlock::*;
 
 #[derive(Debug)]
 struct VfsDirectory {
