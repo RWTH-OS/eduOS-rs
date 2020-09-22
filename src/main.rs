@@ -18,24 +18,22 @@ use eduos_rs::syscall;
 use eduos_rs::syscall::{SYSNO_EXIT, SYSNO_WRITE};
 use eduos_rs::{LogLevel, LOGGER};
 
-fn user_foo() -> ! {
+extern "C" fn user_foo() {
 	let str = b"Hello from user_foo!\n\0";
 
 	/*unsafe {
-		let _ = arch::x86_64::serial::COM1.write_str("Hello from COM1!\n");
+		let _ = crate::arch::x86_64::serial::COM1.write_str("Hello from COM1!\n");
 	}*/
 
 	syscall!(SYSNO_WRITE, str.as_ptr() as u64, str.len());
 	syscall!(SYSNO_EXIT);
-
-	loop {
-		arch::processor::halt();
-	}
 }
 
 extern "C" fn create_user_foo() {
 	debug!("jump to user land");
-	arch::jump_to_user_land(user_foo);
+	unsafe {
+		arch::jump_to_user_land(user_foo);
+	}
 }
 
 extern "C" fn foo() {

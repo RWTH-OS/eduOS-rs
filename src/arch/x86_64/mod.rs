@@ -10,6 +10,8 @@ pub mod task;
 
 pub use crate::arch::x86_64::syscall::syscall_handler;
 
+global_asm!(include_str!("user_land.s"));
+
 pub fn register_task() {
 	let sel: u16 = 6u16 << 3;
 
@@ -18,21 +20,8 @@ pub fn register_task() {
 	}
 }
 
-#[inline(never)]
-#[naked]
-pub fn jump_to_user_land(func: fn() -> !) -> ! {
-	let ds = 0x23u64;
-	let cs = 0x2bu64;
-
-	unsafe {
-		llvm_asm!("mov $0, %ds; mov $0, %es; push $0; push %rsp; addq $$16, (%rsp); pushfq; push $1; push $2; iretq"
-			:: "r"(ds), "r"(cs), "r"(func as u64)
-			:: "volatile");
-	}
-
-	loop {
-		processor::halt();
-	}
+extern "C" {
+	pub fn jump_to_user_land(func: extern "C" fn()) -> !;
 }
 
 #[macro_export]
