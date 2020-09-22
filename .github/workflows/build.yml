@@ -48,3 +48,4 @@ jobs:
     - name: Build
       run:
          cargo build -Z build-std=core,alloc --no-default-features --target x86_64-eduos.json
+      continue-on-error: ${{ matrix.os == 'macOS-latest' }}
