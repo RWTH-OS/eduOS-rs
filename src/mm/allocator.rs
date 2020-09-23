@@ -16,8 +16,6 @@
 
 use crate::arch::{BasePageSize, PageSize};
 use crate::consts::*;
-use crate::consts::*;
-use crate::logging::*;
 use crate::logging::*;
 use crate::mm;
 use alloc::alloc::Layout;

@@ -16,7 +16,6 @@ mod syscall;
 pub mod task;
 
 pub use crate::arch::x86_64::kernel::syscall::syscall_handler;
-use crate::consts::*;
 use core::ptr::read_volatile;
 
 global_asm!(include_str!("user_land.s"));
