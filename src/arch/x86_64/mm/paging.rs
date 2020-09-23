@@ -782,7 +782,7 @@ pub fn get_kernel_root_page_table() -> usize {
 	unsafe { &ROOT_PAGE_TABLES as *const _ as usize }
 }
 
-pub fn map_usr_entry(func: extern "C" fn() -> !) {
+pub fn map_usr_entry(func: extern "C" fn()) {
 	let addr = align_down!((func as *const ()) as usize, BasePageSize::SIZE);
 
 	map::<BasePageSize>(
