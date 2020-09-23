@@ -17,7 +17,8 @@ pub mod task;
 
 pub use crate::arch::x86_64::kernel::syscall::syscall_handler;
 use core::ptr::read_volatile;
-use crate::logging::*;
+
+global_asm!(include_str!("user_land.s"));
 
 #[repr(C)]
 struct KernelHeader {
@@ -64,24 +65,9 @@ pub fn register_task() {
 	}
 }
 
-#[inline(never)]
-#[naked]
-pub fn jump_to_user_land(entry: u64) -> ! {
-	let ds = 0x23u64;
-	let cs = 0x2bu64;
-	let stack = USER_STACK - 0x100;
-
-	debug!("Set user space stack to 0x{:x}", stack);
-
-	unsafe {
-		llvm_asm!("swapgs; mov $0, %ds; mov $0, %es; push $0; push $3; pushfq; push $1; push $2; iretq"
-			:: "r"(ds), "r"(cs), "r"(entry as u64), "r"(stack)
-			:: "volatile");
-	}
-
-	loop {
-		processor::halt();
-	}
+extern "C" {
+	#[no_mangle]
+	pub fn jump_to_user_land(entry: u64);
 }
 
 /// This macro can be used to call system functions from user-space

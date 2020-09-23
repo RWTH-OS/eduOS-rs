@@ -83,7 +83,7 @@ pub fn deallocate(virtual_address: usize, size: usize) {
 	}
 }
 
-/*pub fn reserve(virtual_address: usize, size: usize) {
+pub fn reserve(virtual_address: usize, size: usize) {
 	assert!(
 		virtual_address >= mm::kernel_end_address(),
 		"Virtual address {:#X} is not >= KERNEL_END_ADDRESS",
@@ -119,7 +119,7 @@ pub fn deallocate(virtual_address: usize, size: usize) {
 		size,
 		virtual_address
 	);
-}*/
+}
 
 pub fn task_heap_start() -> usize {
 	KERNEL_VIRTUAL_MEMORY_END

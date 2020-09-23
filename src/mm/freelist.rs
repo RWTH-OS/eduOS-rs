@@ -88,6 +88,52 @@ impl FreeList {
 		Err(())
 	}
 
+	pub fn reserve(&mut self, address: usize, size: usize) -> Result<(), ()> {
+		debug!(
+			"Reserving {} bytes at address {:#X} in Free List {:#X}",
+			size, address, self as *const Self as usize
+		);
+		let end = address + size;
+
+		let mut cursor = self.list.cursor_front_mut();
+		while let Some(node) = cursor.current() {
+			let (region_start, region_end) = (node.start, node.end);
+
+			// There are 4 possible cases of finding the free space we want to reserve.
+			if region_start == address && region_end == end {
+				// We found free space that has exactly the address and size of the block we want to allocate.
+				// Remove it.
+				cursor.remove_current();
+				return Ok(());
+			} else if region_start < address && region_end == end {
+				// We found free space in which the block we want to allocate lies right-aligned.
+				// Resize the free space to end at our block.
+				node.end = address;
+				return Ok(());
+			} else if region_start == address && region_end > end {
+				// We found free space in which the block we want to allocate lies left-aligned.
+				// Resize the free space to begin where our block ends.
+				node.start = end;
+				return Ok(());
+			} else if region_start < address && region_end > end {
+				// We found free space that covers the block we want to allocate.
+				// Resize the free space to end at our block and add another free space entry that begins where our block ends.
+				node.end = address;
+
+				let new_entry = FreeListEntry::new(end, region_end);
+				cursor.insert_after(new_entry);
+			
+				return Ok(());
+			}
+
+			cursor.move_next();
+		}		
+
+		// Our Free List contains no block covering the given address and size.
+		// This is an error, because we have to reserve the address to prevent it from being used differently.
+		Err(())
+	}
+
 	pub fn deallocate(&mut self, address: usize, size: usize) {
 		debug!(
 			"Deallocating {} bytes at {:#X} from Free List {:#X}",

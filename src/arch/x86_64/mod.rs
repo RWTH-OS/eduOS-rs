@@ -8,10 +8,10 @@
 pub mod kernel;
 pub mod mm;
 
+use crate::errno::*;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::ptr::write_bytes;
-use crate::errno::*;
 use goblin::elf::program_header::{PT_DYNAMIC, PT_GNU_RELRO, PT_LOAD};
 use goblin::elf64::r#dyn::{DT_RELA, DT_RELASZ};
 use goblin::elf64::reloc::{R_386_GLOB_DAT, R_386_RELATIVE};
@@ -22,9 +22,9 @@ use self::mm::paging;
 use self::mm::paging::{BasePageSize, PageSize, PageTableEntryFlags};
 use self::mm::physicalmem;
 use crate::consts::*;
-use core::slice;
 use crate::fs;
 use crate::logging::*;
+use core::slice;
 use x86::controlregs;
 
 pub fn load_application(path: &String) -> Result<()> {
@@ -146,5 +146,7 @@ pub fn load_application(path: &String) -> Result<()> {
 	let entry = elf.entry - vstart as u64 + USER_SPACE_START as u64;
 
 	debug!("jump to user land at 0x{:x}", entry);
-	self::kernel::jump_to_user_land(entry);
+	unsafe { self::kernel::jump_to_user_land(entry); }
+
+	Ok(())
 }
