@@ -37,7 +37,9 @@ extern "C" fn create_user_foo() {
 	arch::x86_64::mm::paging::map_usr_entry(user_foo);
 
 	debug!("jump to user land");
-	unsafe { arch::jump_to_user_land(user_foo); }
+	unsafe {
+		arch::jump_to_user_land(user_foo);
+	}
 }
 
 extern "C" fn foo() {
