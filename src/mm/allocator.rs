@@ -22,7 +22,7 @@ use alloc::alloc::Layout;
 use core::alloc::GlobalAlloc;
 
 /// Size of the preallocated space for the Bootstrap Allocator.
-const BOOTSTRAP_HEAP_SIZE: usize = 0x1000;
+const BOOTSTRAP_HEAP_SIZE: usize = 0x140000;
 
 /// Alignment of pointers returned by the Bootstrap Allocator.
 /// Note that you also have to align the HermitAllocatorInfo structure!
@@ -41,7 +41,7 @@ struct AllocatorInfo {
 impl AllocatorInfo {
 	const fn new() -> AllocatorInfo {
 		AllocatorInfo {
-			heap: [0xCC; BOOTSTRAP_HEAP_SIZE],
+			heap: [0x00; BOOTSTRAP_HEAP_SIZE],
 			index: 0,
 			is_bootstrapping: true,
 		}
@@ -127,7 +127,7 @@ fn dealloc_system(virtual_address: usize, layout: Layout) {
 }
 
 pub fn init() {
-	unsafe {
+	/*unsafe {
 		ALLOCATOR_INFO.switch_to_system_allocator();
-	}
+	}*/
 }
