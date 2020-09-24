@@ -7,7 +7,7 @@
 
 #![allow(dead_code)]
 
-use consts::*;
+use crate::consts::*;
 use core::mem;
 use x86::bits64::segmentation::*;
 use x86::bits64::task::*;
@@ -16,7 +16,7 @@ use x86::dtables::{self, DescriptorTablePointer};
 use x86::segmentation::*;
 use x86::Ring;
 //use logging::*;
-use scheduler;
+use crate::scheduler;
 
 const GDT_NULL: usize = 0;
 const GDT_KERNEL_CODE: usize = 1;
@@ -28,7 +28,7 @@ const GDT_FIRST_TSS: usize = 6;
 
 // fox x86_64 is a TSS descriptor twice larger than a code/data descriptor
 const TSS_ENTRIES: usize = 2;
-const GDT_ENTRIES: usize = (GDT_FIRST_TSS + TSS_ENTRIES);
+const GDT_ENTRIES: usize = GDT_FIRST_TSS + TSS_ENTRIES;
 
 /// We use IST1 through IST4.
 /// Each critical exception (NMI, Double Fault, Machine Check) gets a dedicated one while IST1 is shared for all other

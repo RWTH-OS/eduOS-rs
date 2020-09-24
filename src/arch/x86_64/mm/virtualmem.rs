@@ -5,12 +5,11 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
-use arch::x86_64::mm::paging::{BasePageSize, PageSize};
-use collections::Node;
-use mm;
-use mm::freelist::{FreeList, FreeListEntry};
-use mm::POOL;
-use scheduler::DisabledPreemption;
+use crate::arch::x86_64::mm::paging::{BasePageSize, PageSize};
+use crate::mm;
+use crate::mm::freelist::{FreeList, FreeListEntry};
+use crate::mm::POOL;
+use crate::scheduler::DisabledPreemption;
 
 static mut KERNEL_FREE_LIST: FreeList = FreeList::new();
 
@@ -24,12 +23,12 @@ const KERNEL_VIRTUAL_MEMORY_END: usize = 0x1_0000_0000;
 const TASK_VIRTUAL_MEMORY_END: usize = 0x8000_0000_0000;
 
 pub fn init() {
-	let entry = Node::new(FreeListEntry {
+	let entry = FreeListEntry {
 		start: mm::kernel_end_address(),
 		end: KERNEL_VIRTUAL_MEMORY_END,
-	});
+	};
 	unsafe {
-		KERNEL_FREE_LIST.list.push(entry);
+		KERNEL_FREE_LIST.list.push_back(entry);
 	}
 }
 
@@ -43,7 +42,7 @@ pub fn allocate(size: usize) -> usize {
 	);
 
 	let _preemption = DisabledPreemption::new();
-	let result = unsafe { KERNEL_FREE_LIST.allocate(size) };
+	let result = unsafe { KERNEL_FREE_LIST.allocate(size, None) };
 	assert!(
 		result.is_ok(),
 		"Could not allocate {:#X} bytes of virtual memory",

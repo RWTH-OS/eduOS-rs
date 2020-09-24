@@ -5,13 +5,12 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
-use arch::x86_64::kernel::get_memory_size;
-use arch::x86_64::mm::paging::{BasePageSize, PageSize};
-use collections::Node;
-use mm;
-use mm::freelist::{FreeList, FreeListEntry};
-use mm::POOL;
-use scheduler::DisabledPreemption;
+use crate::arch::x86_64::kernel::get_memory_size;
+use crate::arch::x86_64::mm::paging::{BasePageSize, PageSize};
+use crate::mm;
+use crate::mm::freelist::{FreeList, FreeListEntry};
+use crate::mm::POOL;
+use crate::scheduler::DisabledPreemption;
 
 static mut PHYSICAL_FREE_LIST: FreeList = FreeList::new();
 
@@ -22,12 +21,12 @@ fn detect_from_limits() -> Result<(), ()> {
 		return Err(());
 	}
 
-	let entry = Node::new(FreeListEntry {
+	let entry = FreeListEntry {
 		start: mm::kernel_end_address(),
 		end: limit,
-	});
+	};
 	unsafe {
-		PHYSICAL_FREE_LIST.list.push(entry);
+		PHYSICAL_FREE_LIST.list.push_back(entry);
 	}
 
 	Ok(())
@@ -47,7 +46,7 @@ pub fn allocate(size: usize) -> usize {
 	);
 
 	let _preemption = DisabledPreemption::new();
-	let result = unsafe { PHYSICAL_FREE_LIST.allocate(size) };
+	let result = unsafe { PHYSICAL_FREE_LIST.allocate(size, None) };
 	assert!(
 		result.is_ok(),
 		"Could not allocate {:#X} bytes of physical memory",
@@ -75,7 +74,7 @@ pub fn allocate_aligned(size: usize, alignment: usize) -> usize {
 	let _preemption = DisabledPreemption::new();
 	let result = unsafe {
 		POOL.maintain();
-		PHYSICAL_FREE_LIST.allocate_aligned(size, alignment)
+		PHYSICAL_FREE_LIST.allocate(size, Some(alignment))
 	};
 	assert!(
 		result.is_ok(),

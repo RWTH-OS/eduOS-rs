@@ -10,7 +10,7 @@ pub mod physicalmem;
 pub mod virtualmem;
 
 use self::paging::{BasePageSize, PageSize, PageTableEntryFlags};
-use arch::x86_64::kernel::get_memfile;
+use crate::arch::x86_64::kernel::get_memfile;
 
 pub fn init() {
 	paging::init();

@@ -5,7 +5,8 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
-use scheduler::task::BOOT_STACK;
+#[allow(unused_imports)]
+use crate::scheduler::task::BOOT_STACK;
 
 extern "C" {
 	pub fn main();

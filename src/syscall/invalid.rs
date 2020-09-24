@@ -5,9 +5,10 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
-use logging::*;
-use scheduler::*;
+use crate::logging::*;
+use crate::scheduler::*;
 
+#[allow(unused_assignments)]
 #[no_mangle]
 #[naked]
 pub unsafe extern "C" fn sys_invalid() {

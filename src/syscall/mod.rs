@@ -10,10 +10,10 @@ mod invalid;
 mod nothing;
 mod write;
 
-use syscall::exit::sys_exit;
-use syscall::invalid::sys_invalid;
-use syscall::nothing::sys_nothing;
-use syscall::write::{sys_write, sys_writev};
+use crate::syscall::exit::sys_exit;
+use crate::syscall::invalid::sys_invalid;
+use crate::syscall::nothing::sys_nothing;
+use crate::syscall::write::{sys_write, sys_writev};
 
 /// number of the system call `write`
 pub const SYSNO_WRITE: usize = 1;

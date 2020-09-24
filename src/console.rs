@@ -1,8 +1,8 @@
 //! A wrapper around our serial console.
 
-use arch::serial;
+use crate::arch::serial;
+use crate::synch::spinlock::*;
 use core::fmt;
-use synch::spinlock::*;
 
 pub struct Console;
 
