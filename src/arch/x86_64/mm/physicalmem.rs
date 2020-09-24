@@ -9,7 +9,6 @@ use crate::arch::x86_64::kernel::get_memory_size;
 use crate::arch::x86_64::mm::paging::{BasePageSize, PageSize};
 use crate::mm;
 use crate::mm::freelist::{FreeList, FreeListEntry};
-use crate::mm::POOL;
 use crate::scheduler::DisabledPreemption;
 
 static mut PHYSICAL_FREE_LIST: FreeList = FreeList::new();
@@ -73,7 +72,6 @@ pub fn allocate_aligned(size: usize, alignment: usize) -> usize {
 
 	let _preemption = DisabledPreemption::new();
 	let result = unsafe {
-		POOL.maintain();
 		PHYSICAL_FREE_LIST.allocate(size, Some(alignment))
 	};
 	assert!(
@@ -101,7 +99,6 @@ pub fn deallocate(physical_address: usize, size: usize) {
 
 	let _preemption = DisabledPreemption::new();
 	unsafe {
-		POOL.maintain();
 		PHYSICAL_FREE_LIST.deallocate(physical_address, size);
 	}
 }

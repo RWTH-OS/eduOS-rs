@@ -7,12 +7,10 @@
 
 pub mod allocator;
 pub mod freelist;
-mod nodepool;
 
 use crate::arch;
 use crate::arch::mm::paging::{BasePageSize, PageSize, PageTableEntryFlags};
 use crate::logging::*;
-use crate::mm::nodepool::NodePool;
 use crate::scheduler::DisabledPreemption;
 use alloc::alloc::Layout;
 
@@ -20,8 +18,6 @@ extern "C" {
 	static kernel_start: u8;
 	static kernel_end: u8;
 }
-
-pub static mut POOL: NodePool = NodePool::new();
 
 /// Physical and virtual address of the first 2 MiB page that maps the kernel.
 /// Can be easily accessed through kernel_start_address()
