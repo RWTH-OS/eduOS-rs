@@ -146,7 +146,9 @@ pub fn load_application(path: &String) -> Result<()> {
 	let entry = elf.entry - vstart as u64 + USER_SPACE_START as u64;
 
 	debug!("jump to user land at 0x{:x}", entry);
-	unsafe { self::kernel::jump_to_user_land(entry); }
+	unsafe {
+		self::kernel::jump_to_user_land(entry);
+	}
 
 	Ok(())
 }

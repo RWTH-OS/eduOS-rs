@@ -8,6 +8,7 @@
 use crate::logging::*;
 use crate::scheduler::*;
 
+#[allow(unused_assignments)]
 #[no_mangle]
 #[naked]
 pub unsafe extern "C" fn sys_invalid() {

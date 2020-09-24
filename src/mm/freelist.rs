@@ -122,12 +122,12 @@ impl FreeList {
 
 				let new_entry = FreeListEntry::new(end, region_end);
 				cursor.insert_after(new_entry);
-			
+
 				return Ok(());
 			}
 
 			cursor.move_next();
-		}		
+		}
 
 		// Our Free List contains no block covering the given address and size.
 		// This is an error, because we have to reserve the address to prevent it from being used differently.
