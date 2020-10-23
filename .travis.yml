@@ -23,6 +23,7 @@ before_install:
   - sudo apt-get install -y qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils
   - sudo adduser $USER libvirt
   - sudo adduser $USER kvm
+  - rustup component add rust-src
   - cargo install --git https://github.com/RWTH-OS/ehyve.git
   - >
     if [ $(egrep -c '(vmx|svm)' /proc/cpuinfo) -eq "0" ]; then
