@@ -1,0 +1,38 @@
+language: rust
+branches:
+  only:
+    - master
+    - stage0
+    - stage1
+    - stage2
+    - stage3
+    - stage4
+    - stage5
+    - stage6
+    - stage7
+    - stage8
+rust:
+  - nightly
+os: linux
+dist: bionic
+cache: cargo
+before_cache:
+  # Only cache cargo dependencies, do a clean build for rusty-hermit
+  - rm -rf $TRAVIS_BUILD_DIR/target
+before_install:
+  - sudo apt-get install -y qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils
+  - sudo adduser $USER libvirt
+  - sudo adduser $USER kvm
+  - cargo install --git https://github.com/RWTH-OS/ehyve.git
+  - >
+    if [ $(egrep -c '(vmx|svm)' /proc/cpuinfo) -eq "0" ]; then
+        echo "No virtualization possible - ehyve can't run";
+        exit -1;
+    fi
+jobs:
+  include:
+    - name: "Build and Test"
+      script:
+        - cargo build -Z build-std=core,alloc --no-default-features --target x86_64-eduos.json
+        # used to get terminal with new groups permissions while preserving own user
+        - sudo -E sudo -u $USER -E bash -c "HERMIT_VERBOSE=1 $HOME/.cargo/bin/ehyve target/x86_64-eduos/debug/eduos-rs"
