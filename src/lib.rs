@@ -3,6 +3,7 @@
 #![feature(global_asm)]
 #![feature(naked_functions)]
 #![feature(abi_x86_interrupt)]
+#![feature(const_fn_fn_ptr_basics)]
 #![no_std]
 
 extern crate alloc;
