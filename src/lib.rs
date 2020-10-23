@@ -6,6 +6,7 @@
 #![feature(abi_x86_interrupt)]
 #![feature(specialization)]
 #![feature(linked_list_cursors)]
+#![feature(const_fn_fn_ptr_basics)]
 #![no_std]
 
 extern crate alloc;
