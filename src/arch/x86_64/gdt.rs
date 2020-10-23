@@ -24,7 +24,7 @@ const GDT_FIRST_TSS: usize = 3;
 
 // fox x86_64 is a TSS descriptor twice larger than a code/data descriptor
 const TSS_ENTRIES: usize = 2;
-const GDT_ENTRIES: usize = (3 + TSS_ENTRIES);
+const GDT_ENTRIES: usize = 3 + TSS_ENTRIES;
 
 // thread_local on a static mut, signals that the value of this static may
 // change depending on the current thread.
