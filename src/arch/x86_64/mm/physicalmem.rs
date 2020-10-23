@@ -71,9 +71,7 @@ pub fn allocate_aligned(size: usize, alignment: usize) -> usize {
 	);
 
 	let _preemption = DisabledPreemption::new();
-	let result = unsafe {
-		PHYSICAL_FREE_LIST.allocate(size, Some(alignment))
-	};
+	let result = unsafe { PHYSICAL_FREE_LIST.allocate(size, Some(alignment)) };
 	assert!(
 		result.is_ok(),
 		"Could not allocate {:#X} bytes of physical memory aligned to {} bytes",
