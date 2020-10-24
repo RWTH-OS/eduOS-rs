@@ -29,6 +29,7 @@ pub mod macros;
 #[macro_use]
 pub mod logging;
 pub mod arch;
+pub mod collections;
 pub mod console;
 pub mod consts;
 pub mod errno;
