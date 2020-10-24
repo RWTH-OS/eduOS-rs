@@ -36,4 +36,4 @@ jobs:
       script:
         - cargo build -Z build-std=core,alloc --no-default-features --target x86_64-eduos.json
         # used to get terminal with new groups permissions while preserving own user
-        - sudo -E sudo -u $USER -E bash -c "HERMIT_VERBOSE=1 $HOME/.cargo/bin/ehyve target/x86_64-eduos/debug/eduos-rs"
+        - sudo -E sudo -u $USER -E bash -c "$HOME/.cargo/bin/ehyve -f ./demo/hello target/x86_64-eduos/debug/eduos-rs"
