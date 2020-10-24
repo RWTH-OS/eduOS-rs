@@ -5,7 +5,7 @@
 |   | Build & Test |
 |---|:-----:|
 |**all OS'**|![Actions Status](https://github.com/RWTH-OS/ehyve/workflows/Build/badge.svg)|
-|**Linux only**|[![Build & Test](https://git.rwth-aachen.de/os/eduOS-rs/badges/master/pipeline.svg)](https://git.rwth-aachen.de/os/eduOS-rs/pipelines)|
+|**Linux only**|[![Build Status](https://travis-ci.com/RWTH-OS/eduOS-rs.svg?branch=stage0)](https://travis-ci.com/RWTH-OS/eduOS-rs)|
 
 ## Introduction
 
