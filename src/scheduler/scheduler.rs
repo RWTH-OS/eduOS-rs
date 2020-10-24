@@ -6,8 +6,8 @@
 // copied, modified, or distributed except according to those terms.
 
 use crate::arch::drop_user_space;
-use crate::arch::irq::{irq_nested_disable, irq_nested_enable};
 use crate::arch::switch;
+use crate::collections::irqsave;
 use crate::consts::*;
 use crate::errno::*;
 use crate::logging::*;
@@ -62,26 +62,30 @@ impl Scheduler {
 	}
 
 	pub fn spawn(&mut self, func: extern "C" fn(), prio: TaskPriority) -> Result<TaskId> {
-		let prio_number = prio.into() as usize;
+		let closure = || {
+			let prio_number = prio.into() as usize;
 
-		if prio_number >= NO_PRIORITIES {
-			return Err(Error::BadPriority);
-		}
+			if prio_number >= NO_PRIORITIES {
+				return Err(Error::BadPriority);
+			}
 
-		// Create the new task.
-		let tid = self.get_tid();
-		let task = Rc::new(RefCell::new(Task::new(tid, TaskStatus::TaskReady, prio)));
+			// Create the new task.
+			let tid = self.get_tid();
+			let task = Rc::new(RefCell::new(Task::new(tid, TaskStatus::TaskReady, prio)));
 
-		task.borrow_mut().create_stack_frame(func);
+			task.borrow_mut().create_stack_frame(func);
 
-		// Add it to the task lists.
-		self.ready_queue.lock().push(task.clone());
-		self.tasks.lock().insert(tid, task);
-		NO_TASKS.fetch_add(1, Ordering::SeqCst);
+			// Add it to the task lists.
+			self.ready_queue.lock().push(task.clone());
+			self.tasks.lock().insert(tid, task);
+			NO_TASKS.fetch_add(1, Ordering::SeqCst);
 
-		info!("Creating task {}", tid);
+			info!("Creating task {}", tid);
 
-		Ok(tid)
+			Ok(tid)
+		};
+
+		irqsave(closure)
 	}
 
 	fn cleanup(&mut self) {
@@ -95,12 +99,16 @@ impl Scheduler {
 	}
 
 	pub fn exit(&mut self) -> ! {
-		if self.current_task.borrow().status != TaskStatus::TaskIdle {
-			info!("finish task with id {}", self.current_task.borrow().id);
-			self.cleanup();
-		} else {
-			panic!("unable to terminate idle task");
-		}
+		let closure = || {
+			if self.current_task.borrow().status != TaskStatus::TaskIdle {
+				info!("finish task with id {}", self.current_task.borrow().id);
+				self.cleanup();
+			} else {
+				panic!("unable to terminate idle task");
+			}
+		};
+
+		irqsave(closure);
 
 		self.reschedule();
 
@@ -109,12 +117,16 @@ impl Scheduler {
 	}
 
 	pub fn abort(&mut self) -> ! {
-		if self.current_task.borrow().status != TaskStatus::TaskIdle {
-			info!("abort task with id {}", self.current_task.borrow().id);
-			self.cleanup();
-		} else {
-			panic!("unable to terminate idle task");
-		}
+		let closure = || {
+			if self.current_task.borrow().status != TaskStatus::TaskIdle {
+				info!("abort task with id {}", self.current_task.borrow().id);
+				self.cleanup();
+			} else {
+				panic!("unable to terminate idle task");
+			}
+		};
+
+		irqsave(closure);
 
 		self.reschedule();
 
@@ -123,33 +135,41 @@ impl Scheduler {
 	}
 
 	pub fn block_current_task(&mut self) -> Rc<RefCell<Task>> {
-		if self.current_task.borrow().status == TaskStatus::TaskRunning {
-			debug!("block task {}", self.current_task.borrow().id);
+		let closure = || {
+			if self.current_task.borrow().status == TaskStatus::TaskRunning {
+				debug!("block task {}", self.current_task.borrow().id);
 
-			self.current_task.borrow_mut().status = TaskStatus::TaskBlocked;
-			self.current_task.clone()
-		} else {
-			panic!("unable to block task {}", self.current_task.borrow().id);
-		}
+				self.current_task.borrow_mut().status = TaskStatus::TaskBlocked;
+				self.current_task.clone()
+			} else {
+				panic!("unable to block task {}", self.current_task.borrow().id);
+			}
+		};
+
+		irqsave(closure)
 	}
 
 	pub fn wakeup_task(&mut self, task: Rc<RefCell<Task>>) {
-		if task.borrow().status == TaskStatus::TaskBlocked {
-			debug!("wakeup task {}", task.borrow().id);
+		let closure = || {
+			if task.borrow().status == TaskStatus::TaskBlocked {
+				debug!("wakeup task {}", task.borrow().id);
 
-			task.borrow_mut().status = TaskStatus::TaskReady;
-			self.ready_queue.lock().push(task.clone());
-		}
+				task.borrow_mut().status = TaskStatus::TaskReady;
+				self.ready_queue.lock().push(task.clone());
+			}
+		};
+
+		irqsave(closure);
 	}
 
 	pub fn get_current_taskid(&self) -> TaskId {
-		self.current_task.borrow().id
+		irqsave(|| self.current_task.borrow().id)
 	}
 
 	/// Determines the start address of the stack
 	#[no_mangle]
 	pub fn get_current_stack(&self) -> usize {
-		unsafe { (*self.current_task.borrow().stack).bottom() }
+		irqsave(|| unsafe { (*self.current_task.borrow().stack).bottom() })
 	}
 
 	pub fn get_root_page_table(&self) -> usize {
@@ -237,8 +257,6 @@ impl Scheduler {
 	}
 
 	pub fn reschedule(&mut self) {
-		let flags = irq_nested_disable();
-		self.schedule();
-		irq_nested_enable(flags);
+		irqsave(|| self.schedule());
 	}
 }
