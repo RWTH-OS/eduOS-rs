@@ -10,4 +10,8 @@ rustflags = [
 ]
 
 [target.x86_64-eduos]
-runner = "ehyve"
+rustflags = [
+  "-C", "link-arg=-Tsrc/arch/x86_64/linker.ld"
+]
+
+runner = "ehyve -f ./demo/hello"
