@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-[build]
-=======
 [unstable]
 build-std = ["core", "alloc"]
 
@@ -8,10 +5,12 @@ build-std = ["core", "alloc"]
 target = "x86_64-eduos.json"
 
 [target.aarch64-eduos]
->>>>>>> 22b866d... remove dependency to make
 rustflags = [
   "-C", "link-arg=-Tsrc/arch/x86_64/linker.ld"
 ]
 
 [target.x86_64-eduos]
+rustflags = [
+  "-C", "link-arg=-Tsrc/arch/x86_64/linker.ld"
+]
 runner = "ehyve"
