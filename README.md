@@ -37,9 +37,9 @@ $ xcode-select --install
 
 ### Windows
 
-To build eduOS-rs you have to install a linker, [make](http://gnuwin32.sourceforge.net/packages/make.htm) and a [git client](https://git-scm.com/downloads).
+To build eduOS-rs you have to install a linker and a [git client](https://git-scm.com/downloads).
 We tested the eduOS-rs with the linker from Visual Studio.
-Consequently, we suggest installing Visual Studio in addition to [make](http://gnuwin32.sourceforge.net/packages/make.htm) and [git](https://git-scm.com/downloads).
+Consequently, we suggest installing Visual Studio in addition to [git](https://git-scm.com/downloads).
 
 ### Linux
 
@@ -89,13 +89,13 @@ $ git clone https://github.com/RWTH-OS/eduOS-rs.git
 $ cd eduOS-rs
 
 $ # Build kernel
-$ make build
+$ cargo build
 ```
 
 From here, we should be able to run the kernel in ehyve:
 
 ```sh
-$ make run
+$ cargo run
 ```
 
 ## Overview of all branches
