@@ -1,0 +1,13 @@
+[unstable]
+build-std = ["core", "alloc"]
+
+[build]
+target = "x86_64-eduos.json"
+
+[target.aarch64-eduos]
+rustflags = [
+  "-C", "link-arg=-Tlink_aarch64.ld"
+]
+
+[target.x86_64-eduos]
+runner = "ehyve"
