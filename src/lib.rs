@@ -22,7 +22,6 @@ pub mod arch;
 pub mod console;
 pub mod consts;
 pub mod mm;
-pub mod rlib;
 pub mod scheduler;
 
 #[global_allocator]
