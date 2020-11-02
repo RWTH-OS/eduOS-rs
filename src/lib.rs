@@ -17,4 +17,3 @@ pub mod macros;
 pub mod logging;
 pub mod arch;
 pub mod console;
-pub mod rlib;
