@@ -66,7 +66,6 @@ pub fn register_task() {
 }
 
 extern "C" {
-	#[no_mangle]
 	pub fn jump_to_user_land(entry: u64);
 }
 
