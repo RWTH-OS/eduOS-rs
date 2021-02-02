@@ -5,7 +5,7 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
-#[allow(unused_imports)]
+use crate::consts::STACK_SIZE;
 use crate::scheduler::task::BOOT_STACK;
 
 extern "C" {
@@ -15,11 +15,16 @@ extern "C" {
 #[cfg(not(test))]
 #[no_mangle]
 #[naked]
-pub unsafe extern "C" fn _start() {
+pub unsafe extern "C" fn _start() -> ! {
 	// be sure that rsp is a valid stack pointer
-	llvm_asm!("mov $0, %rsp" :: "r"(BOOT_STACK.top()) :: "volatile");
-
-	main();
-
-	loop {}
+	asm!("lea rax, {1}",
+		"add rax, {offset}",
+		"mov rsp, rax",
+		"call {0}",
+		"L0: jmp L0",
+		sym main,
+		sym BOOT_STACK,
+		offset = const STACK_SIZE - 16,
+		options(noreturn)
+	);
 }
