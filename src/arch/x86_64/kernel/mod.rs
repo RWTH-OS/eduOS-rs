@@ -11,7 +11,6 @@ mod pit;
 pub mod processor;
 pub mod serial;
 mod start;
-pub mod switch;
 mod syscall;
 pub mod task;
 
@@ -19,6 +18,7 @@ pub use crate::arch::x86_64::kernel::syscall::syscall_handler;
 use core::ptr::read_volatile;
 
 global_asm!(include_str!("user_land.s"));
+global_asm!(include_str!("switch.s"));
 
 #[repr(C)]
 struct KernelHeader {
