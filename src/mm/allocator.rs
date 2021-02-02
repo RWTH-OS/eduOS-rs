@@ -47,6 +47,7 @@ impl AllocatorInfo {
 		}
 	}
 
+	#[allow(dead_code)]
 	fn switch_to_system_allocator(&mut self) {
 		info!("Switching to the System Allocator");
 		self.is_bootstrapping = false;
