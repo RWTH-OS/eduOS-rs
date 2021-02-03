@@ -61,7 +61,7 @@ pub fn register_task() {
 	let sel: u16 = 6u16 << 3;
 
 	unsafe {
-		llvm_asm!("ltr $0" :: "r"(sel) :: "volatile");
+		asm!("ltr ax", in("ax") sel, options(nostack));
 	}
 }
 
@@ -140,7 +140,7 @@ macro_rules! syscall {
 pub fn syscall0(arg0: u64) -> u64 {
 	let mut ret: u64;
 	unsafe {
-		llvm_asm!("syscall" : "={rax}" (ret) : "{rax}" (arg0) : "rcx", "r11", "memory" : "volatile");
+		asm!("syscall", lateout("rax") ret, in("rax") arg0, lateout("rcx") _, lateout("r11") _);
 	}
 	ret
 }
@@ -150,8 +150,7 @@ pub fn syscall0(arg0: u64) -> u64 {
 pub fn syscall1(arg0: u64, arg1: u64) -> u64 {
 	let mut ret: u64;
 	unsafe {
-		llvm_asm!("syscall"	: "={rax}" (ret) : "{rax}" (arg0), "{rdi}" (arg1)
-						: "rcx", "r11", "memory" : "volatile");
+		asm!("syscall", lateout("rax") ret, in("rax") arg0, in("rdi") arg1, lateout("rcx") _, lateout("r11") _);
 	}
 	ret
 }
@@ -161,8 +160,7 @@ pub fn syscall1(arg0: u64, arg1: u64) -> u64 {
 pub fn syscall2(arg0: u64, arg1: u64, arg2: u64) -> u64 {
 	let mut ret: u64;
 	unsafe {
-		llvm_asm!("syscall"	: "={rax}" (ret) : "{rax}" (arg0), "{rdi}" (arg1), "{rsi}" (arg2)
-						: "rcx", "r11", "memory" : "volatile");
+		asm!("syscall",  lateout("rax") ret, in("rax") arg0, in("rdi") arg1, in("rsi") arg2, lateout("rcx") _, lateout("r11") _);
 	}
 	ret
 }
@@ -172,8 +170,7 @@ pub fn syscall2(arg0: u64, arg1: u64, arg2: u64) -> u64 {
 pub fn syscall3(arg0: u64, arg1: u64, arg2: u64, arg3: u64) -> u64 {
 	let mut ret: u64;
 	unsafe {
-		llvm_asm!("syscall"	: "={rax}" (ret) : "{rax}" (arg0), "{rdi}" (arg1), "{rsi}" (arg2),
-						"{rdx}" (arg3) : "rcx", "r11", "memory" : "volatile");
+		asm!("syscall",  lateout("rax") ret, in("rax") arg0, in("rdi") arg1, in("rsi") arg2, in("rdx") arg3, lateout("rcx") _, lateout("r11") _);
 	}
 	ret
 }
@@ -183,9 +180,7 @@ pub fn syscall3(arg0: u64, arg1: u64, arg2: u64, arg3: u64) -> u64 {
 pub fn syscall4(arg0: u64, arg1: u64, arg2: u64, arg3: u64, arg4: u64) -> u64 {
 	let mut ret: u64;
 	unsafe {
-		llvm_asm!("syscall"	: "={rax}" (ret)
-						: "{rax}"  (arg0), "{rdi}"  (arg1), "{rsi}"  (arg2), "{rdx}"  (arg3),
-						"{r10}"  (arg4) : "rcx", "r11", "memory" : "volatile");
+		asm!("syscall",  lateout("rax") ret, in("rax") arg0, in("rdi") arg1, in("rsi") arg2, in("rdx") arg3, in("r10") arg4, lateout("rcx") _, lateout("r11") _);
 	}
 	ret
 }
@@ -195,9 +190,7 @@ pub fn syscall4(arg0: u64, arg1: u64, arg2: u64, arg3: u64, arg4: u64) -> u64 {
 pub fn syscall5(arg0: u64, arg1: u64, arg2: u64, arg3: u64, arg4: u64, arg5: u64) -> u64 {
 	let mut ret: u64;
 	unsafe {
-		llvm_asm!("syscall"	: "={rax}" (ret)
-						: "{rax}" (arg0), "{rdi}" (arg1), "{rsi}" (arg2), "{rdx}" (arg3),
-						"{r10}" (arg4), "{r8}" (arg5) : "rcx", "r11", "memory" : "volatile");
+		asm!("syscall",  lateout("rax") ret, in("rax") arg0, in("rdi") arg1, in("rsi") arg2, in("rdx") arg3, in("r10") arg4, in("r8") arg5, lateout("rcx") _, lateout("r11") _);
 	}
 	ret
 }
@@ -215,9 +208,7 @@ pub fn syscall6(
 ) -> u64 {
 	let mut ret: u64;
 	unsafe {
-		llvm_asm!("syscall"	: "={rax}" (ret) : "{rax}" (arg0), "{rdi}" (arg1), "{rsi}" (arg2),
-						"{rdx}" (arg3), "{r10}" (arg4), "{r8}" (arg5), "{r9}" (arg6)
-						: "rcx", "r11", "memory" : "volatile");
+		asm!("syscall",  lateout("rax") ret, in("rax") arg0, in("rdi") arg1, in("rsi") arg2, in("rdx") arg3, in("r10") arg4, in("r8") arg5, in("r9") arg6, lateout("rcx") _, lateout("r11") _);
 	}
 	ret
 }
