@@ -36,7 +36,7 @@ build:kernel:
   stage: build
   image: ${CI_REGISTRY_IMAGE}
   script:
-    - RUST_LOG=debug cargo build -Z build-std=core,alloc --no-default-features --target x86_64-eduos.json
+    - cargo build -Z build-std=core,alloc --no-default-features --target x86_64-eduos.json
   artifacts:
     paths:
       - target/x86_64-eduos/debug/eduos-rs
@@ -49,6 +49,6 @@ test:kernel:
    script:
      - lscpu
      - kvm-ok
-     - ehyve -f ./demo/hello target/x86_64-eduos/debug/eduos-rs
+     - RUST_LOG=debug ehyve -f ./demo/hello target/x86_64-eduos/debug/eduos-rs
    tags:
      - privileged
