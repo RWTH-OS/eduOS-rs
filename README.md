@@ -48,48 +48,21 @@ $ apt-get install -y git curl wget nasm make autotools-dev gcc g++ build-essenti
 ```
 
 ### Common for macOS, Windows and Linux
-It is required to install the Rust toolchain.
-Please visit the [Rust website](https://www.rust-lang.org/) and follow the installation instructions for your operating system.
-It is important that the *nightly channel* is used to install the toolchain.
-This is queried during installation and should be answered as appropriate.
-
-Afterwards the installation the source code of Rust runtime and the llvm tools are required to build the kernel:
-
-```sh
-$ rustup component add rust-src
-$ rustup component add llvm-tools-preview
-```
+This project uses Rustup to set its Rust toolchain.
+Follow the instructions to [install Rust using Rustup](https://www.rust-lang.org/tools/install).
 
 eduOS-rs is able to run within [ehyve](https://github.com/RWTH-OS/ehyve), which a specialized hypervisor for eduOS-rs.
 Therefore [ehyve](https://github.com/RWTH-OS/ehyve) must be installed.
 
 ```sh
-$ cargo install --git https://github.com/RWTH-OS/ehyve.git
+$ cargo +nightly install --git https://github.com/RWTH-OS/ehyve.git --locked
 ```
 
 Please check if your system fullfil ehyve's [system requirements](https://github.com/RWTH-OS/ehyve).
 
-To build the kernel, it is important to add the path to *llvm-tools* to the environment variable `PATH`.
-Depening on the operating systems, the tools are located at:
-
-* Linux: `~/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/bin`
-* MacOS: `~/.rustup/toolchains/nightly-x86_64-apple-darwin/lib/rustlib/x86_64-apple-darwin/bin`
-* Windows: `%USERPROFILE%\.rustup\toolchains\nightly-x86_64-pc-windows-msvc\lib\rustlib\x86_64-pc-windows-msvc\bin`
-
 ## Building
 
-The final step is to create a copy of the repository and to build the kernel:
-
-```sh
-$ # Get our source code.
-$ git clone https://github.com/RWTH-OS/eduOS-rs.git
-$ cd eduOS-rs
-
-$ # Build kernel
-$ cargo build
-```
-
-From here, we should be able to run the kernel in ehyve:
+After cloning the repository, you can run the kernel with ehyve:
 
 ```sh
 $ cargo run
