@@ -18,29 +18,9 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        rust: [nightly]
-        include:
-          - os: macOS-latest
-            rust: 'nightly'
-            components: 'rustfmt, clippy'
-            targets: 'x86_64-apple-darwin'
-          - os: windows-latest
-            rust: 'nightly'
-            components: 'rustfmt, clippy'
-            targets: 'x86_64-pc-windows-msvc'
-          - os: ubuntu-latest
-            rust: 'nightly'
-            components: 'rustfmt, clippy'
-            targets: 'x86_64-unknown-linux-musl'
-
 
     steps:
-    - uses: hecrj/setup-rust-action@v1
-      with: 
-         rust-version: ${{ matrix.rust }}
-         components: ${{ matrix.components || '' }}
-         targets: ${{ matrix.targets || '' }}
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
       with:
          submodules: true
     - name: Check Cargo availability
