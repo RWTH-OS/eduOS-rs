@@ -11,9 +11,15 @@ extern "C" {
 
 #[cfg(not(test))]
 #[no_mangle]
-#[naked]
-pub unsafe extern "C" fn _start() -> ! {
+pub unsafe extern "C" fn pre_main() -> ! {
 	main();
 
 	loop {}
+}
+
+#[cfg(not(test))]
+#[no_mangle]
+#[naked]
+pub unsafe extern "C" fn _start() -> ! {
+	asm!("call {pre_main}", pre_main = sym pre_main, options(noreturn));
 }
