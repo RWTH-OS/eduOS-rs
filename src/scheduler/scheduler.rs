@@ -151,7 +151,9 @@ impl Scheduler {
 
 				self.current_task = new_task;
 
-				switch(old_stack_pointer, new_stack_pointer);
+				unsafe {
+					switch(old_stack_pointer, new_stack_pointer);
+				}
 			}
 			_ => {}
 		}
