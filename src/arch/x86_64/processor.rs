@@ -12,7 +12,11 @@ pub fn lsb(i: u64) -> u64 {
 		ret = !0u64;
 	} else {
 		unsafe {
-			llvm_asm!("bsf $1, $0" : "=r"(ret) : "r"(i) : "cc" : "volatile");
+			asm!("bsf {0}, {1}",
+				in(reg) i,
+			    out(reg) ret,
+			    options(nostack)
+			);
 		}
 	}
 
@@ -21,7 +25,7 @@ pub fn lsb(i: u64) -> u64 {
 
 pub fn halt() {
 	unsafe {
-		llvm_asm!("hlt" :::: "volatile");
+		asm!("sti; hlt", options(nomem, nostack));
 	}
 }
 
