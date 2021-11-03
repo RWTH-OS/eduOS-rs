@@ -6,11 +6,17 @@ use x86::io::*;
 /// Search the most significant bit
 #[inline(always)]
 pub fn msb(value: u64) -> Option<u64> {
+	println!("value {}", value);
 	if value > 0 {
 		let ret: u64;
 		unsafe {
-			llvm_asm!("bsr $1, $0" : "=r"(ret) : "r"(value) : "cc" : "volatile");
+			asm!("bsr {0}, {1}",
+			    out(reg) ret,
+				in(reg) value,
+			    options(nomem, nostack)
+			);
 		}
+		println!("value {} {}", value, ret);
 		Some(ret)
 	} else {
 		None
@@ -23,7 +29,11 @@ pub fn lsb(value: u64) -> Option<u64> {
 	if value > 0 {
 		let ret: u64;
 		unsafe {
-			llvm_asm!("bsf $1, $0" : "=r"(ret) : "r"(value) : "cc" : "volatile");
+			asm!("bsf {0}, {1}",
+			    out(reg) ret,
+				in(reg) value,
+			    options(nomem, nostack)
+			);
 		}
 		Some(ret)
 	} else {
@@ -33,13 +43,13 @@ pub fn lsb(value: u64) -> Option<u64> {
 
 pub fn halt() {
 	unsafe {
-		llvm_asm!("hlt" :::: "volatile");
+		asm!("hlt", options(nomem, nostack));
 	}
 }
 
 pub fn pause() {
 	unsafe {
-		llvm_asm!("pause" :::: "volatile");
+		asm!("pause", options(nomem, nostack));
 	}
 }
 
