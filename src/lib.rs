@@ -1,4 +1,4 @@
-#![feature(llvm_asm, const_fn, lang_items)]
+#![feature(const_ptr_offset, asm, lang_items)]
 #![feature(allocator_api)]
 #![feature(naked_functions)]
 #![feature(abi_x86_interrupt)]
