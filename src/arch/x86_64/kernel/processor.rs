@@ -33,11 +33,17 @@ pub fn mb() {
 /// Search the most significant bit
 #[inline(always)]
 pub fn msb(value: u64) -> Option<u64> {
+	println!("value {}", value);
 	if value > 0 {
 		let ret: u64;
 		unsafe {
-			asm!("bsr {0}, {1}", out(reg) ret, in(reg) value, options(nostack,preserves_flags));
+			asm!("bsr {0}, {1}",
+			    out(reg) ret,
+				in(reg) value,
+			    options(nomem, nostack)
+			);
 		}
+		println!("value {} {}", value, ret);
 		Some(ret)
 	} else {
 		None
@@ -50,7 +56,11 @@ pub fn lsb(value: u64) -> Option<u64> {
 	if value > 0 {
 		let ret: u64;
 		unsafe {
-			asm!("bsf {0}, {1}", out(reg) ret, in(reg) value, options(nostack, preserves_flags));
+			asm!("bsf {0}, {1}",
+			    out(reg) ret,
+				in(reg) value,
+			    options(nomem, nostack)
+			);
 		}
 		Some(ret)
 	} else {
@@ -61,14 +71,14 @@ pub fn lsb(value: u64) -> Option<u64> {
 #[inline(always)]
 pub fn halt() {
 	unsafe {
-		asm!("hlt", options(nostack));
+		asm!("hlt", options(nomem, nostack));
 	}
 }
 
 #[inline(always)]
 pub fn pause() {
 	unsafe {
-		asm!("pause", options(nostack));
+		asm!("pause", options(nomem, nostack));
 	}
 }
 
