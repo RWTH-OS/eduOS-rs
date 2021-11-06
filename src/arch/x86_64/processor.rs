@@ -6,16 +6,16 @@ use x86::io::*;
 /// Search the least significant bit
 #[inline(always)]
 pub fn lsb(i: u64) -> u64 {
-	let ret: u64;
+	let ret;
 
 	if i == 0 {
 		ret = !0u64;
 	} else {
 		unsafe {
 			asm!("bsf {0}, {1}",
+				lateout(reg) ret,
 				in(reg) i,
-			    out(reg) ret,
-			    options(nostack)
+				options(nomem, nostack)
 			);
 		}
 	}
@@ -25,7 +25,7 @@ pub fn lsb(i: u64) -> u64 {
 
 pub fn halt() {
 	unsafe {
-		asm!("sti; hlt", options(nomem, nostack));
+		asm!("hlt", options(nomem, nostack));
 	}
 }
 
