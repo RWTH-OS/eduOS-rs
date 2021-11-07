@@ -5,66 +5,88 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
-#[inline(never)]
-#[naked]
-pub extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
-	// rdi = old_rsp => the address to store the old rsp
-	// rsi = new_rsp => stack pointer of the new task
+use crate::arch::x86_64::kernel::gdt::set_current_kernel_stack;
 
-	unsafe {
-		llvm_asm!(
-			// store context
-			"pushfq\n\t\
-			push %rax\n\t\
-			push %rcx\n\t\
-			push %rdx\n\t\
-			push %rbx\n\t\
-			sub  $$8, %rsp	// ignore rsp\n\t\
-			push %rbp\n\t\
-			push %rsi\n\t\
-			push %rdi\n\t\
-			push %r8\n\t\
-			push %r9\n\t\
-			push %r10\n\t\
-			push %r11\n\t\
-			push %r12\n\t\
-			push %r13\n\t\
-			push %r14\n\t\
-			push %r15\n\t\
-			rdfsbase %rax\n\t\
-			rdgsbase %rdx\n\t\
-			push %rax\n\t\
-			push %rdx\n\t\
-			mov %rsp, (%rdi)\n\t\
-			mov %rsi, %rsp\n\t\
-			// Set task switched flag \n\t\
-			mov %cr0, %rax\n\t\
-			or $$8, %rax\n\t\
-			mov %rax, %cr0\n\t\
-			// set stack pointer in TSS \n\t\
-			call set_current_kernel_stack \n\t\
-			// restore context \n\t\
-			pop %r15\n\t\
-			wrgsbase %r15\n\t\
-			pop %r15\n\t\
-			wrfsbase %r15\n\t\
-			pop %r15\n\t\
-			pop %r14\n\t\
-			pop %r13\n\t\
-			pop %r12\n\t\
-			pop %r11\n\t\
-			pop %r10\n\t\
-			pop %r9\n\t\
-			pop %r8\n\t\
-			pop %rdi\n\t\
-			pop %rsi\n\t\
-			pop %rbp\n\t\
-			add $$8, %rsp\n\t\
-			pop %rbx\n\t\
-			pop %rdx\n\t\
-			pop %rcx\n\t\
-			pop %rax\n\t\
-			popfq" :::: "volatile"
-		);
-	}
+macro_rules! save_context {
+	() => {
+		concat!(
+			r#"
+			pushfq
+			push rax
+			push rcx
+			push rdx
+			push rbx
+			sub  rsp, 8
+			push rbp
+			push rsi
+			push rdi
+			push r8
+			push r9
+			push r10
+			push r11
+			push r12
+			push r13
+			push r14
+			push r15
+			"#,
+		)
+	};
+}
+
+macro_rules! restore_context {
+	() => {
+		concat!(
+			r#"
+			pop r15
+			pop r14
+			pop r13
+			pop r12
+			pop r11
+			pop r10
+			pop r9
+			pop r8
+			pop rdi
+			pop rsi
+			pop rbp
+			add rsp, 8
+			pop rbx
+			pop rdx
+			pop rcx
+			pop rax
+			popfq
+			ret
+			"#
+		)
+	};
+}
+
+#[naked]
+pub unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
+	// rdi = old_stack => the address to store the old rsp
+	// rsi = new_stack => stack pointer of the new task
+
+	asm!(
+		save_context!(),
+		"rdfsbase rax",
+		"rdgsbase rdx",
+		"push rax",
+		"push rdx",
+		// Store the old `rsp` behind `old_stack`
+		"mov [rdi], rsp",
+		// Set `rsp` to `new_stack`
+		"mov rsp, rsi",
+		// Set task switched flag
+		"mov rax, cr0",
+		"or rax, 8",
+		"mov cr0, rax",
+		// set stack pointer in TSS
+		"call {set_stack}",
+		"pop r15",
+		"wrgsbase r15",
+		"pop r15",
+		"wrfsbase r15",
+		restore_context!(),
+		set_stack = sym set_current_kernel_stack,
+		options(noreturn)
+	);
 }

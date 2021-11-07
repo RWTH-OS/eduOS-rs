@@ -26,7 +26,7 @@ static mut SUPPORTS_1GIB_PAGES: bool = false;
 #[inline(always)]
 pub fn mb() {
 	unsafe {
-		llvm_asm!("mfence" ::: "memory" : "volatile");
+		asm!("mfence", options(preserves_flags, nostack));
 	}
 }
 
@@ -36,7 +36,11 @@ pub fn msb(value: u64) -> Option<u64> {
 	if value > 0 {
 		let ret: u64;
 		unsafe {
-			llvm_asm!("bsr $1, $0" : "=r"(ret) : "r"(value) : "cc" : "volatile");
+			asm!("bsr {0}, {1}",
+				out(reg) ret,
+				in(reg) value,
+				options(nomem, nostack)
+			);
 		}
 		Some(ret)
 	} else {
@@ -50,7 +54,11 @@ pub fn lsb(value: u64) -> Option<u64> {
 	if value > 0 {
 		let ret: u64;
 		unsafe {
-			llvm_asm!("bsf $1, $0" : "=r"(ret) : "r"(value) : "cc" : "volatile");
+			asm!("bsf {0}, {1}",
+				out(reg) ret,
+				in(reg) value,
+				options(nomem, nostack)
+			);
 		}
 		Some(ret)
 	} else {
@@ -61,14 +69,14 @@ pub fn lsb(value: u64) -> Option<u64> {
 #[inline(always)]
 pub fn halt() {
 	unsafe {
-		llvm_asm!("hlt" :::: "volatile");
+		asm!("hlt", options(nomem, nostack));
 	}
 }
 
 #[inline(always)]
 pub fn pause() {
 	unsafe {
-		llvm_asm!("pause" :::: "volatile");
+		asm!("pause", options(nomem, nostack));
 	}
 }
 
@@ -171,7 +179,7 @@ pub fn init() {
 
 		// reset GS registers
 		wrmsr(IA32_GS_BASE, 0);
-		llvm_asm!("wrgsbase $0" :: "r"(BOOT_STACK.top()) :: "volatile");
+		asm!("wrgsbase {}", in(reg) BOOT_STACK.top(), options(preserves_flags, nomem, nostack));
 	}
 
 	// determin processor features

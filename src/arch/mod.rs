@@ -17,10 +17,6 @@ pub use self::x86_64::load_application;
 
 // Export our platform-specific modules.
 #[cfg(target_arch = "x86_64")]
-pub use self::x86_64::kernel::switch::switch;
-
-// Export our platform-specific modules.
-#[cfg(target_arch = "x86_64")]
 pub use self::x86_64::mm;
 
 // Export our platform-specific modules.
@@ -32,3 +28,13 @@ pub use self::x86_64::mm::paging::{
 // Implementations for x86_64.
 #[cfg(target_arch = "x86_64")]
 pub mod x86_64;
+
+extern "C" {
+	pub fn __switch(old_stack: *mut usize, new_stack: usize);
+}
+
+pub fn switch(old_stack: *mut usize, new_stack: usize) {
+	unsafe {
+		__switch(old_stack, new_stack);
+	}
+}
