@@ -61,7 +61,6 @@ macro_rules! restore_context {
 }
 
 #[naked]
-
 pub unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
 	// rdi = old_stack => the address to store the old rsp
 	// rsi = new_stack => stack pointer of the new task
