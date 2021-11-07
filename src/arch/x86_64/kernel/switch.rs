@@ -5,7 +5,7 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
-use crate::arch::x86_64::gdt::set_current_kernel_stack;
+use crate::arch::x86_64::kernel::gdt::set_current_kernel_stack;
 
 macro_rules! save_context {
 	() => {
