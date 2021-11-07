@@ -5,7 +5,7 @@ use x86::io::*;
 
 pub fn halt() {
 	unsafe {
-		asm!("sti; hlt", options(nomem, nostack));
+		asm!("hlt", options(nomem, nostack));
 	}
 }
 
