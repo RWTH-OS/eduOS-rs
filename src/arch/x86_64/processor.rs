@@ -15,7 +15,6 @@ pub fn mb() {
 /// Search the most significant bit
 #[inline(always)]
 pub fn msb(value: u64) -> Option<u64> {
-	println!("value {}", value);
 	if value > 0 {
 		let ret: u64;
 		unsafe {
@@ -25,7 +24,6 @@ pub fn msb(value: u64) -> Option<u64> {
 			    options(nomem, nostack)
 			);
 		}
-		println!("value {} {}", value, ret);
 		Some(ret)
 	} else {
 		None
