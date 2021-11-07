@@ -26,8 +26,7 @@ pub unsafe extern "C" fn pre_main() -> ! {
 pub unsafe extern "C" fn _start() -> ! {
 	asm!(
 		// initialize stack pointer
-		"mov rsp, {stack}",
-		"add rsp, {size}",
+		"lea rsp, [{stack}+{size}]",
 		"call {pre_main}",
 		stack = sym BOOT_STACK,
 		size = const STACK_SIZE - 16,
