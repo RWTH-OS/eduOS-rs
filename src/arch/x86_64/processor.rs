@@ -21,7 +21,7 @@ const EFER_TCE: u64 = 1 << 15;
 #[inline(always)]
 pub fn mb() {
 	unsafe {
-		llvm_asm!("mfence" ::: "memory" : "volatile");
+		asm!("mfence", options(preserves_flags, nostack));
 	}
 }
 
@@ -33,9 +33,9 @@ pub fn msb(value: u64) -> Option<u64> {
 		let ret: u64;
 		unsafe {
 			asm!("bsr {0}, {1}",
-			    out(reg) ret,
+				out(reg) ret,
 				in(reg) value,
-			    options(nomem, nostack)
+				options(nomem, nostack)
 			);
 		}
 		println!("value {} {}", value, ret);
@@ -52,9 +52,9 @@ pub fn lsb(value: u64) -> Option<u64> {
 		let ret: u64;
 		unsafe {
 			asm!("bsf {0}, {1}",
-			    out(reg) ret,
+				out(reg) ret,
 				in(reg) value,
-			    options(nomem, nostack)
+				options(nomem, nostack)
 			);
 		}
 		Some(ret)
