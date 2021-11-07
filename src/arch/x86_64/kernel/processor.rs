@@ -26,7 +26,7 @@ static mut SUPPORTS_1GIB_PAGES: bool = false;
 #[inline(always)]
 pub fn mb() {
 	unsafe {
-		asm!("mfence", options(nostack));
+		asm!("mfence", options(preserves_flags, nostack));
 	}
 }
 
@@ -37,9 +37,9 @@ pub fn msb(value: u64) -> Option<u64> {
 		let ret: u64;
 		unsafe {
 			asm!("bsr {0}, {1}",
-			    out(reg) ret,
+				out(reg) ret,
 				in(reg) value,
-			    options(nomem, nostack)
+				options(nomem, nostack)
 			);
 		}
 		Some(ret)
@@ -55,9 +55,9 @@ pub fn lsb(value: u64) -> Option<u64> {
 		let ret: u64;
 		unsafe {
 			asm!("bsf {0}, {1}",
-			    out(reg) ret,
+				out(reg) ret,
 				in(reg) value,
-			    options(nomem, nostack)
+				options(nomem, nostack)
 			);
 		}
 		Some(ret)
@@ -179,7 +179,7 @@ pub fn init() {
 
 		// reset GS registers
 		wrmsr(IA32_GS_BASE, 0);
-		asm!("wrgsbase {}", in(reg) BOOT_STACK.top());
+		asm!("wrgsbase {}", in(reg) BOOT_STACK.top(), options(preserves_flags, nomem, nostack));
 	}
 
 	// determin processor features
