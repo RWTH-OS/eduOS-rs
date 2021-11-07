@@ -238,11 +238,7 @@ impl<S: PageSize> Page<S> {
 	#[inline(always)]
 	fn flush_from_tlb(&self) {
 		unsafe {
-<<<<<<< HEAD
-			asm!("invlpg [{0}]", in(reg) self.virtual_address, options(nostack));
-=======
 			asm!("invlpg [{}]", in(reg) self.virtual_address, options(preserves_flags, nostack));
->>>>>>> 7d66029... convert inline assmebly to the new assembly format
 		}
 	}
 

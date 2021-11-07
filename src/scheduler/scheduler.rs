@@ -250,9 +250,7 @@ impl Scheduler {
 
 				self.current_task = new_task;
 
-				unsafe {
-					switch(current_stack_pointer, new_stack_pointer);
-				}
+				switch(current_stack_pointer, new_stack_pointer);
 			}
 			_ => {}
 		}

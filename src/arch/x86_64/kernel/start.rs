@@ -14,17 +14,23 @@ extern "C" {
 
 #[cfg(not(test))]
 #[no_mangle]
+pub unsafe extern "C" fn pre_main() -> ! {
+	main();
+
+	loop {}
+}
+
+#[cfg(not(test))]
+#[no_mangle]
 #[naked]
 pub unsafe extern "C" fn _start() -> ! {
-	// be sure that rsp is a valid stack pointer
-	asm!("lea rax, {1}",
-		"add rax, {offset}",
-		"mov rsp, rax",
-		"call {0}",
-		"L0: jmp L0",
-		sym main,
-		sym BOOT_STACK,
-		offset = const STACK_SIZE - 16,
+	asm!(
+		// initialize stack pointer
+		"lea rsp, [{stack}+{size}]",
+		"call {pre_main}",
+		stack = sym BOOT_STACK,
+		size = const STACK_SIZE - 16,
+		pre_main = sym pre_main,
 		options(noreturn)
 	);
 }
