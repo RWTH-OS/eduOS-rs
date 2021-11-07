@@ -8,7 +8,7 @@ use x86::io::*;
 #[inline(always)]
 pub fn mb() {
 	unsafe {
-		llvm_asm!("mfence" ::: "memory" : "volatile");
+		asm!("mfence", options(preserves_flags, nostack));
 	}
 }
 
