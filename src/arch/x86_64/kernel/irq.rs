@@ -24,12 +24,12 @@ const KERNEL_CODE_SELECTOR: SegmentSelector = SegmentSelector::new(1, Ring::Ring
 
 /// Enable Interrupts
 pub fn irq_enable() {
-	unsafe { asm!("sti", options(nomem, nostack)) };
+	unsafe { asm!("sti", options(preserves_flags, nomem, nostack)) };
 }
 
 /// Disable Interrupts
 pub fn irq_disable() {
-	unsafe { asm!("cli", options(nomem, nostack)) };
+	unsafe { asm!("cli", options(preserves_flags, nomem, nostack)) };
 }
 
 /// Determines, if the interrupt flags (IF) is set
