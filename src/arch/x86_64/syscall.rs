@@ -36,7 +36,7 @@ pub unsafe extern "C" fn syscall_handler() {
 		"cli",
 		"pop rcx",
 		"mov es, rcx",
-	    "pop rcx",
+		"pop rcx",
 		"mov ds, rcx",
 		"pop r11",
 		"pop r10",
