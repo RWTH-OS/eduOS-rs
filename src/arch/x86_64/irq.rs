@@ -213,10 +213,7 @@ extern "x86-interrupt" fn overrun_exception(stack_frame: ExceptionStackFrame) {
 // 13: General Protection Fault Exception (With Error Code!)
 // 14: Page Fault Exception (With Error Code!)
 
-extern "x86-interrupt" fn bad_tss_exception(
-	stack_frame: ExceptionStackFrame,
-	error_code: u64,
-) {
+extern "x86-interrupt" fn bad_tss_exception(stack_frame: ExceptionStackFrame, error_code: u64) {
 	info!(
 		"Task {} receive a Bad TSS Exception: {:#?}, error_code 0x{:x}",
 		get_current_taskid(),
@@ -227,10 +224,7 @@ extern "x86-interrupt" fn bad_tss_exception(
 	abort();
 }
 
-extern "x86-interrupt" fn not_present_exception(
-	stack_frame: ExceptionStackFrame,
-	error_code: u64,
-) {
+extern "x86-interrupt" fn not_present_exception(stack_frame: ExceptionStackFrame, error_code: u64) {
 	info!(
 		"Task {} receive a Segment Not Present Exception: {:#?}, error_code 0x{:x}",
 		get_current_taskid(),
@@ -241,10 +235,7 @@ extern "x86-interrupt" fn not_present_exception(
 	abort();
 }
 
-extern "x86-interrupt" fn stack_fault_exception(
-	stack_frame: ExceptionStackFrame,
-	error_code: u64,
-) {
+extern "x86-interrupt" fn stack_fault_exception(stack_frame: ExceptionStackFrame, error_code: u64) {
 	info!(
 		"Task {} receive a Stack Fault Exception: {:#?}, error_code 0x{:x}",
 		get_current_taskid(),
@@ -269,10 +260,7 @@ extern "x86-interrupt" fn general_protection_exception(
 	abort();
 }
 
-extern "x86-interrupt" fn page_fault_exception(
-	stack_frame: ExceptionStackFrame,
-	error_code: u64,
-) {
+extern "x86-interrupt" fn page_fault_exception(stack_frame: ExceptionStackFrame, error_code: u64) {
 	info!(
 		"Task {} receive a Page Fault Exception: {:#?}, error_code {:x}",
 		get_current_taskid(),
