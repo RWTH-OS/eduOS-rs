@@ -116,7 +116,7 @@ pub fn init() {
 		let tss_descriptor: Descriptor64 =
 			<DescriptorBuilder as GateDescriptorBuilder<u64>>::tss_descriptor(
 				base,
-				base + mem::size_of::<TaskStateSegment>() as u64 - 1,
+				mem::size_of::<TaskStateSegment>() as u64 - 1,
 				true,
 			)
 			.present()
@@ -138,8 +138,6 @@ pub fn init() {
 
 		// Reload the segment descriptors
 		load_cs(SegmentSelector::new(GDT_KERNEL_CODE as u16, Ring::Ring0));
-		load_ds(SegmentSelector::new(GDT_KERNEL_DATA as u16, Ring::Ring0));
-		load_es(SegmentSelector::new(GDT_KERNEL_DATA as u16, Ring::Ring0));
 		load_ss(SegmentSelector::new(GDT_KERNEL_DATA as u16, Ring::Ring0));
 	}
 }
