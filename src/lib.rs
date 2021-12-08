@@ -1,4 +1,7 @@
-#![feature(asm, lang_items)]
+#![feature(const_ptr_offset, asm, lang_items)]
+#![feature(asm_const)]
+#![feature(asm_sym)]
+#![feature(allocator_api)]
 #![feature(naked_functions)]
 #![no_std]
 
