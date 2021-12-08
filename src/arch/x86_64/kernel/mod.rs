@@ -50,18 +50,20 @@ pub fn register_task() {
 pub unsafe fn jump_to_user_land(func: extern "C" fn()) -> ! {
 	let ds = 0x23u64;
 	let cs = 0x2bu64;
+	let addr: u64 = 0x8000000000 | (func as u64 & 0xFFFu64);
 
 	asm!(
+		"swapgs",
 		"push {0}",
-		"push rsp",
-		"add QWORD PTR [rsp], 16",
-		"pushf",
 		"push {1}",
+		"pushf",
 		"push {2}",
+		"push {3}",
 		"iretq",
 		in(reg) ds,
+		in(reg) 0x8000400000u64,
 		in(reg) cs,
-		in(reg) func as u64,
+		in(reg) addr,
 		options(nostack)
 	);
 
