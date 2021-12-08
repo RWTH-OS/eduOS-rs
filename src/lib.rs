@@ -1,4 +1,6 @@
 #![feature(const_ptr_offset, asm, lang_items)]
+#![feature(asm_const)]
+#![feature(asm_sym)]
 #![feature(linked_list_cursors)]
 #![feature(allocator_api)]
 #![feature(naked_functions)]
