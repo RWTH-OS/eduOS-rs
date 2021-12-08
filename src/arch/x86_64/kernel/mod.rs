@@ -18,8 +18,6 @@ pub mod task;
 pub use crate::arch::x86_64::kernel::syscall::syscall_handler;
 use core::ptr::read_volatile;
 
-global_asm!(include_str!("user_land.s"), options(att_syntax));
-
 #[repr(C)]
 struct KernelHeader {
 	magic_number: u32,
@@ -49,8 +47,27 @@ pub fn register_task() {
 	}
 }
 
-extern "C" {
-	pub fn jump_to_user_land(func: extern "C" fn()) -> !;
+pub unsafe fn jump_to_user_land(func: extern "C" fn()) -> ! {
+	let ds = 0x23u64;
+	let cs = 0x2bu64;
+
+	asm!(
+		"push {0}",
+		"push rsp",
+		"add QWORD PTR [rsp], 16",
+		"pushf",
+		"push {1}",
+		"push {2}",
+		"iretq",
+		in(reg) ds,
+		in(reg) cs,
+		in(reg) func as u64,
+		options(nostack)
+	);
+
+	loop {
+		processor::halt();
+	}
 }
 
 /// This macro can be used to call system functions from user-space
