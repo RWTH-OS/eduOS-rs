@@ -1,4 +1,6 @@
 #![feature(asm, lang_items)]
+#![feature(asm_const)]
+#![feature(asm_sym)]
 #![feature(allocator_api)]
 #![feature(panic_info_message)]
 #![feature(naked_functions)]
