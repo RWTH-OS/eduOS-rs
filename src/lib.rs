@@ -1,6 +1,5 @@
 #![feature(const_ptr_offset, asm, lang_items)]
 #![feature(allocator_api)]
-#![feature(global_asm)]
 #![feature(naked_functions)]
 #![feature(abi_x86_interrupt)]
 #![feature(const_fn_fn_ptr_basics)]

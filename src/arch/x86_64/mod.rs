@@ -10,7 +10,28 @@ pub mod task;
 
 pub use crate::arch::x86_64::syscall::syscall_handler;
 
-global_asm!(include_str!("user_land.s"), options(att_syntax));
+pub unsafe fn jump_to_user_land(func: extern "C" fn()) -> ! {
+	let ds = 0x23u64;
+	let cs = 0x2bu64;
+
+	asm!(
+		"push {0}",
+		"push rsp",
+		"add QWORD PTR [rsp], 16",
+		"pushf",
+		"push {1}",
+		"push {2}",
+		"iretq",
+		in(reg) ds,
+		in(reg) cs,
+		in(reg) func as u64,
+		options(nostack)
+	);
+
+	loop {
+		processor::halt();
+	}
+}
 
 pub fn register_task() {
 	let sel: u16 = 6u16 << 3;
@@ -18,10 +39,6 @@ pub fn register_task() {
 	unsafe {
 		asm!("ltr ax", in("ax") sel, options(nostack, nomem));
 	}
-}
-
-extern "C" {
-	pub fn jump_to_user_land(func: extern "C" fn()) -> !;
 }
 
 #[macro_export]
