@@ -14,6 +14,7 @@ macro_rules! save_context {
 			push rcx
 			push rdx
 			push rbx
+			sub rsp, 8
 			push rbp
 			push rsi
 			push rdi
@@ -44,6 +45,7 @@ macro_rules! restore_context {
 			pop r8
 			pop rdi
 			pop rsi
+			add rsp, 8
 			pop rbp
 			pop rbx
 			pop rdx
