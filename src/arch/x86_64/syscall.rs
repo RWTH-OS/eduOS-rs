@@ -6,6 +6,7 @@
 // copied, modified, or distributed except according to those terms.
 
 use crate::syscall::SYSHANDLER_TABLE;
+use core::arch::asm;
 
 #[no_mangle]
 #[naked]

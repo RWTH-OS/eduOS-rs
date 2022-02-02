@@ -10,6 +10,7 @@
 use crate::logging::*;
 use crate::scheduler::*;
 use crate::synch::spinlock::*;
+use core::arch::asm;
 use core::fmt;
 use x86::bits64::paging::VAddr;
 use x86::dtables::{lidt, DescriptorTablePointer};

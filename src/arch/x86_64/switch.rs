@@ -6,6 +6,7 @@
 // copied, modified, or distributed except according to those terms.
 
 use crate::arch::x86_64::gdt::set_current_kernel_stack;
+use core::arch::asm;
 
 macro_rules! save_context {
 	() => {

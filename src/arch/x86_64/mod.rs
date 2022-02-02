@@ -9,6 +9,7 @@ mod syscall;
 pub mod task;
 
 pub use crate::arch::x86_64::syscall::syscall_handler;
+use core::arch::asm;
 
 pub unsafe fn jump_to_user_land(func: extern "C" fn()) -> ! {
 	let ds = 0x23u64;

@@ -2,6 +2,7 @@
 
 use crate::arch::x86_64::syscall_handler;
 use crate::logging::*;
+use core::arch::asm;
 use x86::controlregs::*;
 use x86::cpuid::*;
 use x86::io::*;
@@ -140,7 +141,7 @@ pub fn init() {
 
 	unsafe { cr4_write(cr4) };
 
-	let has_syscall = match cpuid.get_extended_function_info() {
+	let has_syscall = match cpuid.get_extended_processor_and_feature_identifiers() {
 		Some(finfo) => finfo.has_syscall_sysret(),
 		None => false,
 	};
