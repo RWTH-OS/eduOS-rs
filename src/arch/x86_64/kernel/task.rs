@@ -7,7 +7,6 @@
 
 //! Architecture dependent interface to initialize a task
 
-use crate::arch::processor::halt;
 use crate::consts::*;
 use crate::logging::*;
 use crate::scheduler::task::*;
@@ -63,10 +62,6 @@ extern "C" fn leave_task() -> ! {
 	debug!("finish task {}", get_current_taskid());
 
 	do_exit();
-
-	loop {
-		halt();
-	}
 }
 
 impl TaskFrame for Task {

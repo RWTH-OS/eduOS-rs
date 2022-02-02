@@ -3,6 +3,7 @@
 use crate::arch::x86_64::kernel::syscall_handler;
 use crate::logging::*;
 use crate::scheduler::task::BOOT_STACK;
+use core::arch::asm;
 use x86::controlregs::*;
 use x86::cpuid::*;
 use x86::io::*;
@@ -161,7 +162,7 @@ pub fn init() {
 
 	unsafe { cr4_write(cr4) };
 
-	let has_syscall = match cpuid.get_extended_function_info() {
+	let has_syscall = match cpuid.get_extended_processor_and_feature_identifiers() {
 		Some(finfo) => finfo.has_syscall_sysret(),
 		None => false,
 	};
@@ -183,17 +184,16 @@ pub fn init() {
 	}
 
 	// determin processor features
-	let extended_function_info = cpuid
-		.get_extended_function_info()
-		.expect("CPUID Extended Function Info not available!");
+	let extended_feature_info = cpuid
+		.get_processor_capacity_feature_info()
+		.expect("CPUID Capacity Feature Info is not available!");
 	unsafe {
-		PHYSICAL_ADDRESS_BITS = extended_function_info
-			.physical_address_bits()
-			.expect("CPUID Physical Address Bits not available!");
-		LINEAR_ADDRESS_BITS = extended_function_info
-			.linear_address_bits()
-			.expect("CPUID Linear Address Bits not available!");
-		SUPPORTS_1GIB_PAGES = extended_function_info.has_1gib_pages();
+		PHYSICAL_ADDRESS_BITS = extended_feature_info.physical_address_bits();
+		LINEAR_ADDRESS_BITS = extended_feature_info.linear_address_bits();
+		SUPPORTS_1GIB_PAGES = cpuid
+			.get_extended_processor_and_feature_identifiers()
+			.expect("CPUID Extended Processor and Feature Info is not available!")
+			.has_1gib_pages();
 	}
 
 	if supports_1gib_pages() {

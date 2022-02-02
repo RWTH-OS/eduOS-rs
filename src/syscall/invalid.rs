@@ -7,9 +7,9 @@
 
 use crate::logging::*;
 use crate::scheduler::*;
+use core::arch::asm;
 
-#[no_mangle]
-extern "C" fn invalid_syscall(sys_no: u64) {
+extern "C" fn invalid_syscall(sys_no: u64) -> ! {
 	error!("Invalid syscall {}", sys_no);
 	do_exit();
 }

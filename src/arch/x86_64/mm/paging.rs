@@ -15,6 +15,7 @@ use crate::consts::*;
 use crate::logging::*;
 use crate::mm;
 use crate::scheduler;
+use core::arch::asm;
 use core::marker::PhantomData;
 use core::mem::size_of;
 use core::ptr::write_bytes;

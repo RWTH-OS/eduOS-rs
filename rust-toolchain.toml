@@ -1,5 +1,5 @@
 [toolchain]
-channel = "nightly-2021-12-06"
+channel = "nightly-2022-01-31"
 components = [
     "clippy",
     "rustfmt",
