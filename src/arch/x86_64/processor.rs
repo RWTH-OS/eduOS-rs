@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use core::arch::asm;
 use x86::controlregs::*;
 use x86::io::*;
 

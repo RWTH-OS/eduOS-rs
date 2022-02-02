@@ -7,6 +7,7 @@
 
 use crate::consts::STACK_SIZE;
 use crate::scheduler::task::BOOT_STACK;
+use core::arch::asm;
 
 extern "C" {
 	#[allow(dead_code)]
