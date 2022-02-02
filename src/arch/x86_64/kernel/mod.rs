@@ -16,6 +16,7 @@ mod syscall;
 pub mod task;
 
 pub use crate::arch::x86_64::kernel::syscall::syscall_handler;
+use core::arch::asm;
 use core::ptr::read_volatile;
 
 #[repr(C)]
