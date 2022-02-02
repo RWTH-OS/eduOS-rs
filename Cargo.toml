@@ -6,10 +6,10 @@ authors = ["Stefan Lankes <slankes@eonerc.rwth-aachen.de>"]
 edition = "2018"
 
 [dependencies]
-spin = "0.5.2"	# Spinlocks.
+spin = "0.9"	# Spinlocks.
 
 [target.'cfg(target_arch = "x86_64")'.dependencies.x86]
-version = "0.34.*"
+version = "0.46"
 default-features = false
 
 # The development profile, used for `cargo build`.

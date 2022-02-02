@@ -1,4 +1,4 @@
-#![feature(const_ptr_offset, asm, lang_items)]
+#![feature(const_ptr_offset, lang_items)]
 #![feature(asm_const)]
 #![feature(asm_sym)]
 #![feature(linked_list_cursors)]
