@@ -1,5 +1,5 @@
 # Download base image ubuntu 18.04
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -17,3 +17,7 @@ RUN /root/.cargo/bin/cargo install --git https://github.com/RWTH-OS/ehyve.git
 
 ENV PATH="/root/.cargo/bin:/root/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/bin/:${PATH}"
 ENV EDITOR=vim
+
+# Switch back to dialog for any ad-hoc use of apt-get
+ENV DEBIAN_FRONTEND=dialog
+
