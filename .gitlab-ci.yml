@@ -39,6 +39,6 @@ test:kernel:
    script:
      - lscpu
      - kvm-ok
-     - RUST_LOG=debug ehyve -f ./demo/hello target/x86_64-eduos/debug/eduos-rs
+     - RUST_LOG=debug ehyve target/x86_64-eduos/debug/eduos-rs
    tags:
      - privileged
