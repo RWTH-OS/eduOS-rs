@@ -38,10 +38,10 @@ Consequently, we suggest installing Visual Studio in addition to [git](https://g
 
 ### Linux
 Linux users should install common developer tools.
-For instance, on Ubuntu 18.04 the following command installs the required tools:
+For instance, on Ubuntu 22.04 the following command installs the required tools:
 
 ```sh
-$ apt-get install -y git curl wget nasm make autotools-dev gcc g++ build-essential lld-8
+$ apt-get install -y git curl wget nasm make autotools-dev gcc g++ build-essential
 ```
 
 ### Common for macOS, Windows and Linux
