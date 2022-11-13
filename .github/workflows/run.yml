@@ -56,7 +56,7 @@ jobs:
           exit 0
         fi
     - name: run
-      if: ${{ matrix.os == 'macos' }}
+      if: ${{ matrix.os == 'macos-latest' }}
       run: |
         if test `cargo run` -eq 5 ; then
           exit 1
@@ -64,6 +64,6 @@ jobs:
           exit 0
         fi
     - name: run
-      if: ${{ matrix.os == 'windows' }}
+      if: ${{ matrix.os == 'windows-latest' }}
       shell: pwsh
       run: cargo run
