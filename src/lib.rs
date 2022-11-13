@@ -1,6 +1,5 @@
-#![feature(const_ptr_offset, lang_items)]
+#![feature(lang_items)]
 #![feature(asm_const)]
-#![feature(asm_sym)]
 #![feature(allocator_api)]
 #![feature(naked_functions)]
 #![no_std]
