@@ -14,7 +14,7 @@ spin = "0.9"
 #features = ["spin_no_std"]
 
 [target.'cfg(target_arch = "x86_64")'.dependencies.x86]
-version = "0.46"
+version = "0.52"
 default-features = false
 
 [dependencies.goblin]
