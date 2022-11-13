@@ -1,8 +1,7 @@
-#![feature(const_ptr_offset, lang_items)]
+#![feature(lang_items)]
 #![feature(asm_const)]
-#![feature(asm_sym)]
 #![feature(linked_list_cursors)]
-#![feature(allocator_api)]
+#![feature(alloc_error_handler)]
 #![feature(naked_functions)]
 #![no_std]
 
