@@ -49,11 +49,8 @@ jobs:
          cargo build
     - name: run
       run: |
-        cargo run
-        retval=$?
-        if [ $retval -eq 5 ]; then
-          echo "Kernel runs correctly"
-          exit 0
-        else
+        if test `cargo run` -eq 5 ; then
           exit 1
+        else
+          exit 0
         fi
