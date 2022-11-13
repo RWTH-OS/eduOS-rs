@@ -1,13 +1,11 @@
-#![feature(const_ptr_offset, lang_items)]
+#![feature(lang_items)]
 #![feature(asm_const)]
-#![feature(asm_sym)]
-#![feature(allocator_api)]
 #![feature(panic_info_message)]
+#![feature(linked_list_cursors)]
+#![feature(alloc_error_handler)]
 #![feature(naked_functions)]
 #![feature(abi_x86_interrupt)]
 #![feature(specialization)]
-#![feature(linked_list_cursors)]
-#![feature(const_fn_fn_ptr_basics)]
 #![no_std]
 
 extern crate alloc;

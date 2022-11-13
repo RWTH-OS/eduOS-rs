@@ -88,8 +88,7 @@ pub fn init() {
 }
 
 #[cfg(not(test))]
-#[lang = "oom"]
-#[no_mangle]
+#[alloc_error_handler]
 pub fn rust_oom(layout: Layout) -> ! {
 	println!(
 		"[!!!OOM!!!] Memory allocation of {} bytes failed",
