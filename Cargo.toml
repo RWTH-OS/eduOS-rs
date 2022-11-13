@@ -8,7 +8,7 @@ edition = "2018"
 [dependencies]
 
 [target.'cfg(target_arch = "x86_64")'.dependencies.x86]
-version = "0.46"
+version = "0.52"
 default-features = false
 
 # The development profile, used for `cargo build`.
