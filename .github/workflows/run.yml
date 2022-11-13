@@ -68,5 +68,8 @@ jobs:
       shell: pwsh
       run: |
         cargo run
-        IF %ERRORLEVEL% EQ 5 EXIT 1
-        EXIT 0
+        IF(%ERRORLEVEL% EQ 5) {
+          EXIT 1
+        } else {
+          EXIT 0
+        }
