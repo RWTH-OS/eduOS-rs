@@ -14,5 +14,4 @@ rustflags = [
 rustflags = [
   "-C", "link-arg=-Tsrc/arch/x86_64/linker.ld"
 ]
-
-runner = "ehyve -f ./demo/hello"
+runner = "bootimage runner"

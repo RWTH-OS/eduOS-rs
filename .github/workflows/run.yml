@@ -1,0 +1,75 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - stage8
+  pull_request:
+    branches:
+      - stage8
+  schedule:
+    - cron: '0 0 * * 6'
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest,macos-latest,windows-latest]
+
+    steps:
+    - name: Install QEMU, NASM (ubuntu)
+      if: ${{ matrix.os == 'ubuntu-latest' }}
+      run: |
+        sudo apt-get update
+        sudo apt-get install qemu-system-x86 nasm
+    - name: Install QEMU, NASM (macos)
+      if: ${{ matrix.os == 'macos-latest' }}
+      run: |
+        brew update
+        brew install qemu nasm
+    - name: Install QEMU, NASM (windows)
+      if: ${{ matrix.os == 'windows' }}
+      run: |
+        choco install qemu
+        echo "C:\Program Files\qemu" >> $GITHUB_PATH
+        choco install nasm
+        echo "C:\Program Files\NASM" >> $GITHUB_PATH
+    - uses: actions/checkout@v3
+      with:
+         submodules: true
+    - name: Check Cargo availability
+      run: cargo --version
+    - name: Install bootimage
+      run: cargo install bootimage
+    - name: Build
+      run:
+         cargo build
+    - name: run (ubuntu)
+      if: ${{ matrix.os == 'ubuntu-latest' }}
+      run: |
+        if test `cargo run` -eq 5 ; then
+          exit 1
+        else
+          exit 0
+        fi
+    - name: run (macos)
+      if: ${{ matrix.os == 'macos-latest' }}
+      run: |
+        if test `cargo run` -eq 5 ; then
+          exit 1
+        else
+          exit 0
+        fi
+    - name: run (windows)
+      if: ${{ matrix.os == 'windows-latest' }}
+      shell: pwsh
+      run: |
+        cargo run
+        IF($LASTEXITCODE -EQ 5) {
+          EXIT 1
+        } else {
+          EXIT 0
+        }

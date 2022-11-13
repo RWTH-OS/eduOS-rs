@@ -32,11 +32,21 @@ Following terminal command installs these tools without Apple's IDE Xcode:
 $ xcode-select --install
 ```
 
+In addition, *Qemu* must be installed.
+Please use [Homebrew](https://brew.sh) as package manager to install Qemu.
+
+```sh
+$ brew install qemu 
+```
+
 ### Windows
 
-To build eduOS-rs you have to install a linker and a [git client](https://git-scm.com/downloads).
-We tested the eduOS-rs with the linker from Visual Studio.
-Consequently, we suggest installing Visual Studio in addition to [git](https://git-scm.com/downloads).
+To build eduOS-rs you have to install _Qemu_ and a git client.
+Please use [Chocolatey](https://chocolatey.org) as package manager to install Qemu and git.
+
+```sh
+$ choco install qemu git
+```
 
 ### Linux
 
@@ -44,25 +54,18 @@ Linux users should install common developer tools.
 For instance, on Ubuntu 18.04 the following command installs the required tools:
 
 ```sh
-$ apt-get install -y git curl wget nasm make autotools-dev gcc g++ build-essential lld-8
+$ apt-get install -y git nasm qemu-system-x86 build-essential
 ```
 
 ### Common for macOS, Windows and Linux
 This project uses Rustup to set its Rust toolchain.
 Follow the instructions to [install Rust using Rustup](https://www.rust-lang.org/tools/install).
 
-eduOS-rs is able to run within [ehyve](https://github.com/RWTH-OS/ehyve), which a specialized hypervisor for eduOS-rs.
-Therefore [ehyve](https://github.com/RWTH-OS/ehyve) must be installed.
-
-```sh
-$ cargo +nightly install --git https://github.com/RWTH-OS/ehyve.git --locked
-```
-
-Please check if your system fullfil ehyve's [system requirements](https://github.com/RWTH-OS/ehyve).
+eduOS-rs is able to run within [Qemu](https://www.qemu.org), which is a generic and open source machine emulator and virtualizer.
 
 ## Building
 
-After cloning the repository, you can run the kernel with ehyve:
+After cloning the repository, you can run the kernel within Qemu:
 
 ```sh
 $ cargo run
