@@ -1,12 +1,14 @@
-name: Build
+name: Run
 
 on:
   push:
     branches:
       - stage0
+      - stage1
   pull_request:
     branches:
       - stage0
+      - stage1
   schedule:
     - cron: '0 0 * * 6'
 
