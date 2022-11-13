@@ -65,7 +65,11 @@ jobs:
         fi
     - name: run (windows)
       if: ${{ matrix.os == 'windows-latest' }}
+      shell: pwsh
       run: |
         cargo run
-        IF %ERRORLEVEL% EQ 5 EXIT 1
-        EXIT 0
+        IF($LASTEXITCODE EQ 5) {
+          EXIT 1
+        } else {
+          EXIT 0
+        }
