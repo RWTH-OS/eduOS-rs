@@ -48,5 +48,10 @@ jobs:
       run:
          cargo build
     - name: run
-      run:
-        cargo run && 5
+      run: |
+        if cargo run == 5 ; then
+          echo "Kernel runs correctly"
+          exit 0
+        else
+          exit 1
+        fi
