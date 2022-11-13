@@ -68,7 +68,7 @@ jobs:
       shell: pwsh
       run: |
         cargo run
-        IF($LASTEXITCODE EQ 5) {
+        IF($LASTEXITCODE -EQ 5) {
           EXIT 1
         } else {
           EXIT 0
