@@ -3,9 +3,9 @@
 use crate::arch::x86_64::syscall_handler;
 use crate::logging::*;
 use core::arch::asm;
+use qemu_exit::QEMUExit;
 use x86::controlregs::*;
 use x86::cpuid::*;
-use x86::io::*;
 use x86::msr::*;
 
 // MSR EFER bits
@@ -77,13 +77,8 @@ pub fn pause() {
 #[no_mangle]
 pub extern "C" fn shutdown() -> ! {
 	// shutdown, works like Qemu's shutdown command
-	unsafe {
-		outb(0xf4, 0x00);
-	}
-
-	loop {
-		halt();
-	}
+	let qemu_exit_handle = qemu_exit::X86::new(0xf4, 5);
+	qemu_exit_handle.exit_success();
 }
 
 pub fn init() {
