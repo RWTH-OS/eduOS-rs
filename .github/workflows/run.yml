@@ -47,7 +47,7 @@ jobs:
     - name: Build
       run:
          cargo build
-    - name: run
+    - name: run (ubuntu)
       if: ${{ matrix.os == 'ubuntu-latest' }}
       run: |
         if test `cargo run` -eq 5 ; then
@@ -55,7 +55,7 @@ jobs:
         else
           exit 0
         fi
-    - name: run
+    - name: run (macos)
       if: ${{ matrix.os == 'macos-latest' }}
       run: |
         if test `cargo run` -eq 5 ; then
@@ -63,13 +63,9 @@ jobs:
         else
           exit 0
         fi
-    - name: run
+    - name: run (windows)
       if: ${{ matrix.os == 'windows-latest' }}
-      shell: pwsh
       run: |
         cargo run
-        IF(%ERRORLEVEL% EQ 5) {
-          EXIT 1
-        } else {
-          EXIT 0
-        }
+        IF %ERRORLEVEL% EQ 5 EXIT 1
+        EXIT 0
