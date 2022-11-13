@@ -17,8 +17,7 @@ checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 [[package]]
 name = "bootloader"
 version = "0.9.23"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6e02311b16c9819e7c72866d379cdd3026c3b7b25c1edf161f548f8e887e7ff"
+source = "git+https://github.com/RWTH-OS/bootloader.git?branch=eduos#51805b19574e844c359d2cf153488d8b442b5e81"
 
 [[package]]
 name = "eduos-rs"
