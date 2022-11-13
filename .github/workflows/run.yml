@@ -49,4 +49,4 @@ jobs:
          cargo build
     - name: run
       run:
-        cargo run
+        cargo run && 5
