@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 
 use core::arch::asm;
-use x86::controlregs::*;
 use qemu_exit::QEMUExit;
+use x86::controlregs::*;
 
 pub fn halt() {
 	unsafe {
