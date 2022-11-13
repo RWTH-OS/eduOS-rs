@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 
 use core::arch::asm;
+use qemu_exit::QEMUExit;
 use x86::controlregs::*;
-use x86::io::*;
 
 /// Search the most significant bit
 #[inline(always)]
@@ -55,13 +55,8 @@ pub fn pause() {
 #[no_mangle]
 pub extern "C" fn shutdown() -> ! {
 	// shutdown, works like Qemu's shutdown command
-	unsafe {
-		outb(0xf4, 0x00);
-	}
-
-	loop {
-		halt();
-	}
+	let qemu_exit_handle = qemu_exit::X86::new(0xf4, 5);
+	qemu_exit_handle.exit_success();
 }
 
 pub fn cpu_init() {
