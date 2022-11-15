@@ -169,7 +169,7 @@ impl Scheduler {
 	/// Determines the start address of the stack
 	#[no_mangle]
 	pub fn get_current_stack(&self) -> usize {
-		irqsave(|| unsafe { (*self.current_task.borrow().stack).bottom() })
+		irqsave(|| (*self.current_task.borrow().stack).bottom())
 	}
 
 	pub fn get_root_page_table(&self) -> usize {
