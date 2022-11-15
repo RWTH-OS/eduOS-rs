@@ -5,34 +5,36 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
-use crate::arch::x86_64::kernel::get_memory_size;
+use crate::arch::mm;
+use crate::arch::x86_64::kernel::BOOT_INFO;
 use crate::arch::x86_64::mm::paging::{BasePageSize, PageSize};
-use crate::mm;
+use crate::logging::*;
 use crate::mm::freelist::{FreeList, FreeListEntry};
 use crate::scheduler::DisabledPreemption;
+use core::convert::TryInto;
+use core::ops::Deref;
 
 static mut PHYSICAL_FREE_LIST: FreeList = FreeList::new();
 
-fn detect_from_limits() -> Result<(), ()> {
-	let limit = get_memory_size();
-
-	if limit == 0 {
-		return Err(());
-	}
-
-	let entry = FreeListEntry {
-		start: mm::kernel_end_address(),
-		end: limit,
-	};
-	unsafe {
-		PHYSICAL_FREE_LIST.list.push_back(entry);
-	}
-
-	Ok(())
-}
-
 pub fn init() {
-	detect_from_limits().unwrap();
+	unsafe {
+		let regions = BOOT_INFO.unwrap().memory_map.deref();
+
+		for i in regions {
+			if i.region_type == bootloader::bootinfo::MemoryRegionType::Usable {
+				let entry = FreeListEntry {
+					start: (i.range.start_frame_number * 0x1000).try_into().unwrap(),
+					end: (i.range.end_frame_number * 0x1000).try_into().unwrap(),
+				};
+
+				debug!(
+					"Add free physical regions 0x{:x} - 0x{:x}",
+					entry.start, entry.end
+				);
+				PHYSICAL_FREE_LIST.list.push_back(entry);
+			}
+		}
+	}
 }
 
 pub fn allocate(size: usize) -> usize {

@@ -1,8 +1,9 @@
 #![allow(dead_code)]
 
+use crate::arch::mm::get_boot_stack;
 use crate::arch::x86_64::kernel::syscall_handler;
 use crate::logging::*;
-use crate::scheduler::task::BOOT_STACK;
+use crate::scheduler::task::Stack;
 use core::arch::asm;
 use qemu_exit::QEMUExit;
 use x86::controlregs::*;
@@ -175,7 +176,7 @@ pub fn init() {
 
 		// reset GS registers
 		wrmsr(IA32_GS_BASE, 0);
-		asm!("wrgsbase {}", in(reg) BOOT_STACK.top(), options(preserves_flags, nomem, nostack));
+		asm!("wrgsbase {}", in(reg) get_boot_stack().top(), options(preserves_flags, nomem, nostack));
 	}
 
 	// determin processor features

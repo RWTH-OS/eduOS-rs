@@ -5,16 +5,20 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
+use crate::arch::mm;
 use crate::arch::x86_64::mm::paging::{BasePageSize, PageSize};
-use crate::mm;
 use crate::mm::freelist::{FreeList, FreeListEntry};
 use crate::scheduler::DisabledPreemption;
 
 static mut KERNEL_FREE_LIST: FreeList = FreeList::new();
 
-/// End of the virtual memory address space reserved for kernel memory (4 GiB).
+/// Start of the virtual memory address space reserved for kernel memory.
 /// This also marks the start of the virtual memory address space reserved for the task heap.
-const KERNEL_VIRTUAL_MEMORY_END: usize = 0x1_0000_0000;
+pub const KERNEL_VIRTUAL_MEMORY_START: usize = 0x8000_0000;
+
+/// End of the virtual memory address space reserved for kernel memory (32 GiB).
+/// This also marks the start of the virtual memory address space reserved for the task heap.
+pub const KERNEL_VIRTUAL_MEMORY_END: usize = 0x800_0000_0000;
 
 /// End of the virtual memory address space reserved for kernel memory (128 TiB).
 /// This is the maximum contiguous virtual memory area possible with current x86-64 CPUs, which only support 48-bit
@@ -23,7 +27,7 @@ const TASK_VIRTUAL_MEMORY_END: usize = 0x8000_0000_0000;
 
 pub fn init() {
 	let entry = FreeListEntry {
-		start: mm::kernel_end_address(),
+		start: KERNEL_VIRTUAL_MEMORY_START,
 		end: KERNEL_VIRTUAL_MEMORY_END,
 	};
 	unsafe {
@@ -46,6 +50,33 @@ pub fn allocate(size: usize) -> usize {
 		result.is_ok(),
 		"Could not allocate {:#X} bytes of virtual memory",
 		size
+	);
+	result.unwrap()
+}
+
+pub fn allocate_aligned(size: usize, alignment: usize) -> usize {
+	assert!(size > 0);
+	assert!(alignment > 0);
+	assert!(
+		size % alignment == 0,
+		"Size {:#X} is not a multiple of the given alignment {:#X}",
+		size,
+		alignment
+	);
+	assert!(
+		alignment % BasePageSize::SIZE == 0,
+		"Alignment {:#X} is not a multiple of {:#X}",
+		alignment,
+		BasePageSize::SIZE
+	);
+
+	let _preemption = DisabledPreemption::new();
+	let result = unsafe { KERNEL_FREE_LIST.allocate(size, Some(alignment)) };
+	assert!(
+		result.is_ok(),
+		"Could not allocate {:#X} bytes of virtual memory aligned to {} bytes",
+		size,
+		alignment
 	);
 	result.unwrap()
 }
