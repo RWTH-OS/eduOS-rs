@@ -75,7 +75,7 @@ unsafe impl<'a> GlobalAlloc for &'a Allocator {
 		// any significant amounts of memory.
 		// So check if this is a pointer allocated by the System Allocator.
 		debug!("Deallocate {} bytes at {:#X}", layout.size(), ptr as usize);
-		if address >= mm::kernel_end_address() {
+		if address >= crate::arch::mm::kernel_end_address() {
 			dealloc_system(address, layout);
 		}
 	}

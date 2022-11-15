@@ -16,45 +16,11 @@ mod syscall;
 pub mod task;
 
 pub use crate::arch::x86_64::kernel::syscall::syscall_handler;
+use crate::consts::USER_SPACE_START;
+use bootloader::BootInfo;
 use core::arch::asm;
-use core::ptr::read_volatile;
 
-#[repr(C)]
-struct KernelHeader {
-	magic_number: u32,
-	version: u32,
-	mem_limit: u64,
-	num_cpus: u32,
-	file_addr: u64,
-	file_length: u64,
-}
-
-/// Kernel header to announce machine features
-#[link_section = ".kheader"]
-static KERNEL_HEADER: KernelHeader = KernelHeader {
-	magic_number: 0xDEADC0DEu32,
-	version: 0,
-	mem_limit: 0,
-	num_cpus: 1,
-	file_addr: 0,
-	file_length: 0,
-};
-
-pub fn get_memfile() -> (u64, u64) {
-	let version = unsafe { read_volatile(&KERNEL_HEADER.version) };
-	let addr = unsafe { read_volatile(&KERNEL_HEADER.file_addr) };
-	let len = unsafe { read_volatile(&KERNEL_HEADER.file_length) };
-
-	if version > 0 {
-		(addr, len)
-	} else {
-		(0, 0)
-	}
-}
-
-pub fn get_memory_size() -> usize {
-	unsafe { read_volatile(&KERNEL_HEADER.mem_limit) as usize }
-}
+pub(crate) static mut BOOT_INFO: Option<&'static BootInfo> = None;
 
 pub fn register_task() {
 	let sel: u16 = 6u16 << 3;
@@ -67,7 +33,7 @@ pub fn register_task() {
 pub unsafe fn jump_to_user_land(func: u64) {
 	let ds = 0x23u64;
 	let cs = 0x2bu64;
-	let addr: u64 = 0x8000000000 | (func as u64 & 0xFFFu64);
+	let addr: u64 = (USER_SPACE_START as u64) | (func as u64 & 0xFFFu64);
 
 	asm!(
 		"swapgs",
@@ -78,7 +44,7 @@ pub unsafe fn jump_to_user_land(func: u64) {
 		"push {3}",
 		"iretq",
 		in(reg) ds,
-		in(reg) 0x8000400000u64,
+		in(reg) USER_SPACE_START as u64 + 0x400000u64,
 		in(reg) cs,
 		in(reg) addr,
 		options(nostack)

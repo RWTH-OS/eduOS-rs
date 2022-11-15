@@ -27,7 +27,7 @@ build:kernel:
   stage: build
   image: ${CI_REGISTRY_IMAGE}
   script:
-    - cargo build -Z build-std=core,alloc --no-default-features --target x86_64-eduos.json
+    - cargo build
   artifacts:
     paths:
       - target/x86_64-eduos/debug/eduos-rs
@@ -40,7 +40,7 @@ test:kernel:
    script: |
      lscpu
      kvm-ok
-     if test `RUST_LOG=debug ehyve -f ./demo/hello target/x86_64-eduos/debug/eduos-rs` -eq 5 ; then
+     if test `cargo run` -eq 5 ; then
         exit 1
      else
         exit 0

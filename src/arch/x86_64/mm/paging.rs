@@ -9,13 +9,13 @@
 
 use crate::arch::x86_64::kernel::irq;
 use crate::arch::x86_64::kernel::processor;
-use crate::arch::x86_64::mm::physicalmem;
-use crate::arch::x86_64::mm::virtualmem;
+use crate::arch::x86_64::kernel::BOOT_INFO;
+use crate::arch::x86_64::mm::{physicalmem, virtualmem};
 use crate::consts::*;
 use crate::logging::*;
-use crate::mm;
 use crate::scheduler;
 use core::arch::asm;
+use core::convert::TryInto;
 use core::marker::PhantomData;
 use core::mem::size_of;
 use core::ptr::write_bytes;
@@ -440,12 +440,10 @@ impl<L: PageTableLevel> PageTableMethods for PageTable<L> {
 
 		for index in 0..last {
 			if self.entries[index].is_present() && self.entries[index].is_user() {
-				let address = self.entries[index].address();
+				let physical_address = self.entries[index].address();
 
-				if !(address >= mm::kernel_start_address() && address < mm::kernel_end_address()) {
-					debug!("Free page frame at 0x{:x}", address);
-					physicalmem::deallocate(address, BasePageSize::SIZE);
-				}
+				debug!("Free page frame at 0x{:x}", physical_address);
+				physicalmem::deallocate(physical_address, BasePageSize::SIZE);
 			}
 		}
 	}
@@ -504,13 +502,9 @@ where
 
 					subtable.drop_user_space();
 
-					let address = self.entries[index].address();
-					if !(address >= mm::kernel_start_address()
-						&& address < mm::kernel_end_address())
-					{
-						debug!("Free page table at 0x{:x}", address);
-						physicalmem::deallocate(address, BasePageSize::SIZE);
-					}
+					//let physical_address = self.entries[index].address();
+					//debug!("Free page table at 0x{:x}", physical_address);
+					//physicalmem::deallocate(physical_address, BasePageSize::SIZE);
 				}
 			}
 		}
@@ -619,11 +613,9 @@ where
 
 				subtable.drop_user_space();
 
-				let address = self.entries[index].address();
-				if !(address >= mm::kernel_start_address() && address < mm::kernel_end_address()) {
-					debug!("Free page table at 0x{:x}", address);
-					physicalmem::deallocate(address, BasePageSize::SIZE);
-				}
+				let physical_address = self.entries[index].address();
+				debug!("Free page table at 0x{:x}", physical_address);
+				physicalmem::deallocate(physical_address, BasePageSize::SIZE);
 			}
 		}
 	}
@@ -713,29 +705,18 @@ pub fn get_physical_address<S: PageSize>(virtual_address: usize) -> usize {
 /// Translate a virtual memory address to a physical one.
 /// Just like get_physical_address, but automatically uses the correct page size for the respective memory address.
 pub fn virtual_to_physical(virtual_address: usize) -> usize {
-	if virtual_address < mm::kernel_start_address() {
-		// Parts of the memory below the kernel image are identity-mapped.
-		// However, this range should never be used in a virtual_to_physical call.
-		panic!(
-			"Trying to get the physical address of {:#X}, which is too low",
-			virtual_address
-		);
-	} else if virtual_address < mm::kernel_end_address() {
-		// The kernel image is mapped in 2 MiB pages.
-		get_physical_address::<LargePageSize>(virtual_address)
-	} else if virtual_address < virtualmem::task_heap_start() {
-		// The kernel memory is mapped in 4 KiB pages.
-		get_physical_address::<BasePageSize>(virtual_address)
-	} else if virtual_address < virtualmem::task_heap_end() {
-		// The application memory is mapped in 2 MiB pages.
-		get_physical_address::<LargePageSize>(virtual_address)
-	} else {
-		// This range is currently unused by HermitCore.
-		panic!(
-			"Trying to get the physical address of {:#X}, which is too high",
-			virtual_address
-		);
-	}
+	get_physical_address::<BasePageSize>(virtual_address)
+}
+
+pub fn unmap<S: PageSize>(virtual_address: usize, count: usize) {
+	debug!(
+		"Unmapping virtual address {:#X} ({} pages)",
+		virtual_address, count
+	);
+
+	let range = get_page_range::<S>(virtual_address, count);
+	let root_pagetable = unsafe { &mut *PML4_ADDRESS };
+	root_pagetable.map_pages(range, 0, PageTableEntryFlags::BLANK);
 }
 
 pub fn map<S: PageSize>(
@@ -754,25 +735,11 @@ pub fn map<S: PageSize>(
 	root_pagetable.map_pages(range, physical_address, flags);
 }
 
-#[repr(align(0x1000))]
-#[repr(C)]
-struct KernelPageTables {
-	tables: [u8; 3 * BasePageSize::SIZE],
-}
-
-impl KernelPageTables {
-	const fn new() -> KernelPageTables {
-		KernelPageTables {
-			tables: [0x00; 3 * BasePageSize::SIZE],
-		}
-	}
-}
-
-static mut ROOT_PAGE_TABLES: KernelPageTables = KernelPageTables::new();
+static mut ROOT_PAGE_TABLE: usize = 0;
 
 #[inline(always)]
 pub fn get_kernel_root_page_table() -> usize {
-	unsafe { &ROOT_PAGE_TABLES as *const _ as usize }
+	unsafe { ROOT_PAGE_TABLE }
 }
 
 pub fn drop_user_space() {
@@ -789,8 +756,8 @@ pub fn create_usr_pgd() -> usize {
 	unsafe {
 		let physical_address =
 			physicalmem::allocate_aligned(BasePageSize::SIZE, BasePageSize::SIZE);
-		let user_page_table: usize = 0x10000; // it is always free...
-		let kernel_page_table = get_kernel_root_page_table();
+		let user_page_table: usize =
+			virtualmem::allocate_aligned(BasePageSize::SIZE, BasePageSize::SIZE);
 
 		debug!(
 			"Map page frame 0x{:x} at virtual address 0x{:x}",
@@ -806,14 +773,20 @@ pub fn create_usr_pgd() -> usize {
 
 		write_bytes(user_page_table as *mut u8, 0x00, BasePageSize::SIZE);
 
-		let pml4 = user_page_table as *mut PageTableEntry;
-		(*pml4).set(
-			kernel_page_table + BasePageSize::SIZE,
-			PageTableEntryFlags::WRITABLE | PageTableEntryFlags::USER_ACCESSIBLE,
-		);
+		let recursive_pgt = BOOT_INFO.unwrap().recursive_page_table_addr as *const u64;
+		let recursive_pgt_idx = BOOT_INFO.unwrap().recursive_index();
+		let pml4 = user_page_table as *mut u64;
+		for i in 0..recursive_pgt_idx + 2 {
+			*pml4.offset(i.try_into().unwrap()) = *recursive_pgt.offset(i.try_into().unwrap());
+		}
+
 		let pml4 =
 			(user_page_table + BasePageSize::SIZE - size_of::<usize>()) as *mut PageTableEntry;
 		(*pml4).set(physical_address, PageTableEntryFlags::WRITABLE);
+
+		// unmap page table
+		unmap::<BasePageSize>(user_page_table, 1);
+		virtualmem::deallocate(user_page_table, BasePageSize::SIZE);
 
 		scheduler::set_root_page_table(physical_address);
 
@@ -822,47 +795,25 @@ pub fn create_usr_pgd() -> usize {
 }
 
 pub fn init() {
-	// initialize page tables
+	let recursive_pgt = unsafe { BOOT_INFO.unwrap().recursive_page_table_addr } as *mut u64;
+	let recursive_pgt_idx = unsafe { BOOT_INFO.unwrap().recursive_index() };
+
+	debug!(
+		"Found recursive_page_table_addr at 0x{:x}",
+		recursive_pgt as u64
+	);
+	debug!("Recursive index: {}", recursive_pgt_idx);
+
 	unsafe {
-		let root_page_table = get_kernel_root_page_table();
+		ROOT_PAGE_TABLE = *recursive_pgt.offset(recursive_pgt_idx.try_into().unwrap()) as usize
+			& !(BasePageSize::SIZE - 1);
+		*recursive_pgt.offset(511) = *recursive_pgt.offset(recursive_pgt_idx.try_into().unwrap());
 
-		write_bytes(root_page_table as *mut u8, 0x00, 3 * BasePageSize::SIZE);
-
-		let pml4 = root_page_table as *mut PageTableEntry;
-		(*pml4).set(
-			root_page_table + BasePageSize::SIZE,
-			PageTableEntryFlags::WRITABLE,
-		);
-		let pml4 =
-			(root_page_table + BasePageSize::SIZE - size_of::<usize>()) as *mut PageTableEntry;
-		(*pml4).set(root_page_table, PageTableEntryFlags::WRITABLE);
-
-		let pdpt = (root_page_table + BasePageSize::SIZE) as *mut PageTableEntry;
-		(*pdpt).set(
-			root_page_table + 2 * BasePageSize::SIZE,
-			PageTableEntryFlags::WRITABLE,
-		);
-
-		// map kernel 1-to-1 in the virtual address space
-		let mut paddr = mm::kernel_start_address();
-		loop {
-			let pd = (root_page_table
-				+ 2 * BasePageSize::SIZE
-				+ (paddr / LargePageSize::SIZE) * size_of::<usize>()) as *mut PageTableEntry;
-
-			(*pd).set(
-				paddr,
-				PageTableEntryFlags::WRITABLE
-					| PageTableEntryFlags::HUGE_PAGE
-					| PageTableEntryFlags::GLOBAL,
-			);
-
-			paddr += LargePageSize::SIZE;
-			if paddr >= mm::kernel_end_address() {
-				break;
-			}
+		for i in recursive_pgt_idx + 2..511 {
+			*recursive_pgt.offset(i.try_into().unwrap()) = 0;
 		}
 
-		controlregs::cr3_write(root_page_table as u64);
+		//flush TLB
+		controlregs::cr3_write(controlregs::cr3());
 	}
 }

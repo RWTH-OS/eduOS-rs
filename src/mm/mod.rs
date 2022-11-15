@@ -9,31 +9,11 @@ pub mod allocator;
 pub mod freelist;
 
 use crate::arch;
+use crate::arch::mm::get_memory_size;
 use crate::arch::mm::paging::{BasePageSize, PageSize, PageTableEntryFlags};
 use crate::logging::*;
 use crate::scheduler::DisabledPreemption;
 use alloc::alloc::Layout;
-
-extern "C" {
-	static kernel_start: u8;
-	static kernel_end: u8;
-}
-
-/// Physical and virtual address of the first 2 MiB page that maps the kernel.
-/// Can be easily accessed through kernel_start_address()
-static mut KERNEL_START_ADDRESS: usize = 0;
-
-/// Physical and virtual address of the first page after the kernel.
-/// Can be easily accessed through kernel_end_address()
-static mut KERNEL_END_ADDRESS: usize = 0;
-
-pub fn kernel_start_address() -> usize {
-	unsafe { KERNEL_START_ADDRESS }
-}
-
-pub fn kernel_end_address() -> usize {
-	unsafe { KERNEL_END_ADDRESS }
-}
 
 pub fn allocate(size: usize, execute_disable: bool) -> usize {
 	let _preemption = DisabledPreemption::new();
@@ -67,25 +47,7 @@ pub fn deallocate(virtual_address: usize, size: usize) {
 }
 
 pub fn init() {
-	let image_size;
-
-	// Calculate the start and end addresses of the 2 MiB page(s) that map the kernel.
-	unsafe {
-		image_size = &kernel_end as *const u8 as usize - &kernel_start as *const u8 as usize;
-		KERNEL_START_ADDRESS = align_down!(
-			&kernel_start as *const u8 as usize,
-			arch::mm::paging::LargePageSize::SIZE
-		);
-		KERNEL_END_ADDRESS = align_up!(
-			&kernel_end as *const u8 as usize,
-			arch::mm::paging::LargePageSize::SIZE
-		);
-	}
-
-	info!("Memory size {} MByte", arch::get_memory_size() >> 20);
-	info!("Kernel start address 0x{:x}", kernel_start_address());
-	info!("Kernel end address 0x{:x}", kernel_end_address());
-	info!("Kernel image size {} KByte", image_size >> 10);
+	info!("Memory size {} MByte", get_memory_size() >> 20);
 
 	arch::mm::init();
 	self::allocator::init();
