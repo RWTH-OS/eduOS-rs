@@ -61,11 +61,18 @@ $ apt-get install -y git nasm qemu-system-x86 build-essential
 This project uses Rustup to set its Rust toolchain.
 Follow the instructions to [install Rust using Rustup](https://www.rust-lang.org/tools/install).
 
-eduOS-rs is able to run within [Qemu](https://www.qemu.org), which is a generic and open source machine emulator and virtualizer.
+In addition, the tool https://github.com/rust-osdev/bootimage[bootimage] is required, which creates a bootable diskimage.
+Please install the tool with following command.
+
+```sh
+$ cargo install bootimage
+```
 
 ## Building
 
-After cloning the repository, you can run the kernel within Qemu:
+eduOS-rs is able to run within [Qemu](https://www.qemu.org), which is a generic and open source machine emulator and virtualizer.
+
+After cloning the repository, you can run the kernel with following command:
 
 ```sh
 $ cargo run
