@@ -13,7 +13,7 @@ RUN apt-get install -y apt-transport-https curl wget vim nano git binutils autoc
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly
 RUN /root/.cargo/bin/rustup component add rust-src
 RUN /root/.cargo/bin/rustup component add llvm-tools-preview
-RUN /root/.cargo/bin/cargo install --git https://github.com/RWTH-OS/ehyve.git --locked
+RUN /root/.cargo/bin/cargo install bootimage
 
 ENV PATH="/root/.cargo/bin:/root/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/bin/:${PATH}"
 ENV EDITOR=vim
