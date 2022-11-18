@@ -95,21 +95,6 @@ impl TaskQueue {
 	pub fn pop(&mut self) -> Option<Rc<RefCell<Task>>> {
 		self.queue.pop_front()
 	}
-
-	/// Remove a specific task from the priority queue.
-	pub fn remove(&mut self, task: Rc<RefCell<Task>>) {
-		let mut cursor = self.queue.cursor_front_mut();
-
-		// Loop through all blocked tasks to find it.
-		while let Some(node) = cursor.current() {
-			if Rc::ptr_eq(&node, &task) {
-				// Remove it from the list
-				cursor.remove_current();
-
-				break;
-			}
-		}
-	}
 }
 
 /// A task control block, which identifies either a process or a thread
