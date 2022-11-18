@@ -5,14 +5,18 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
-// Export our platform-specific modules.
-#[cfg(target_arch = "x86_64")]
-pub use self::x86_64::{init, irq, jump_to_user_land, processor, register_task, serial};
-
-// Export our platform-specific modules.
-#[cfg(target_arch = "x86_64")]
-pub use self::x86_64::switch::switch;
-
 // Implementations for x86_64.
 #[cfg(target_arch = "x86_64")]
 pub mod x86_64;
+
+// Export our platform-specific modules.
+#[cfg(target_arch = "x86_64")]
+pub use self::x86_64::kernel::{init, irq, jump_to_user_land, processor, register_task, serial};
+
+// Export our platform-specific modules.
+#[cfg(target_arch = "x86_64")]
+pub use self::x86_64::kernel::switch::switch;
+
+// Export our platform-specific modules.
+#[cfg(target_arch = "x86_64")]
+pub use self::x86_64::mm;

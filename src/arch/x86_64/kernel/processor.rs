@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use crate::arch::x86_64::syscall_handler;
+use crate::arch::x86_64::kernel::syscall_handler;
 use crate::logging::*;
 use core::arch::asm;
 use qemu_exit::QEMUExit;
