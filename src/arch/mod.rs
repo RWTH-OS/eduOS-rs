@@ -7,11 +7,11 @@
 
 // Export our platform-specific modules.
 #[cfg(target_arch = "x86_64")]
-pub use self::x86_64::{processor, serial};
+pub use self::x86_64::kernel::{processor, serial};
 
 // Export our platform-specific modules.
 #[cfg(target_arch = "x86_64")]
-pub use self::x86_64::switch::switch;
+pub use self::x86_64::kernel::switch::switch;
 
 // Implementations for x86_64.
 #[cfg(target_arch = "x86_64")]
