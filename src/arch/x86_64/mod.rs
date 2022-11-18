@@ -1,16 +1,9 @@
-mod gdt;
-pub mod irq;
-mod pit;
-pub mod processor;
-pub mod serial;
-mod start;
-pub mod switch;
-pub mod task;
+// Copyright (c) 2017-2021 Stefan Lankes, RWTH Aachen University
+//
+// Licensed under the Apache License, Version 2.0, <LICENSE-APACHE or
+// http://apache.org/licenses/LICENSE-2.0> or the MIT license <LICENSE-MIT or
+// http://opensource.org/licenses/MIT>, at your option. This file may not be
+// copied, modified, or distributed except according to those terms.
 
-/// Initialize module, must be called once, and only once
-pub fn init() {
-	processor::init();
-	gdt::init();
-	irq::init();
-	pit::init();
-}
+pub mod kernel;
+pub mod mm;
