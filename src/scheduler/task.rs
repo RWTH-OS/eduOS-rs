@@ -8,16 +8,11 @@
 #![allow(dead_code)]
 
 use crate::consts::*;
-use crate::logging::*;
-use alloc::alloc::{alloc, dealloc, Layout};
+use alloc::boxed::Box;
 use alloc::collections::LinkedList;
 use alloc::rc::Rc;
 use core::cell::RefCell;
 use core::fmt;
-
-extern "C" {
-	fn get_bootstack() -> *mut u8;
-}
 
 /// The status of the task - used for scheduling
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -50,30 +45,35 @@ impl alloc::fmt::Display for TaskId {
 	}
 }
 
+pub trait Stack {
+	fn top(&self) -> usize;
+	fn bottom(&self) -> usize;
+}
+
 #[derive(Copy, Clone)]
 #[repr(align(64))]
 #[repr(C)]
-pub struct Stack {
+pub struct TaskStack {
 	buffer: [u8; STACK_SIZE],
 }
 
-impl Stack {
-	pub const fn new() -> Stack {
-		Stack {
+impl TaskStack {
+	pub const fn new() -> TaskStack {
+		TaskStack {
 			buffer: [0; STACK_SIZE],
 		}
 	}
+}
 
-	pub fn top(&self) -> usize {
+impl Stack for TaskStack {
+	fn top(&self) -> usize {
 		(&(self.buffer[STACK_SIZE - 16]) as *const _) as usize
 	}
 
-	pub fn bottom(&self) -> usize {
+	fn bottom(&self) -> usize {
 		(&(self.buffer[0]) as *const _) as usize
 	}
 }
-
-pub static mut BOOT_STACK: Stack = Stack::new();
 
 pub struct TaskQueue {
 	queue: LinkedList<Rc<RefCell<Task>>>,
@@ -122,7 +122,7 @@ pub struct Task {
 	/// Last stack pointer before a context switch to another task
 	pub last_stack_pointer: usize,
 	// Stack of the task
-	pub stack: *mut Stack,
+	pub stack: Box<dyn Stack>,
 }
 
 impl Task {
@@ -131,20 +131,16 @@ impl Task {
 			id: id,
 			status: TaskStatus::TaskIdle,
 			last_stack_pointer: 0,
-			stack: unsafe { &mut BOOT_STACK },
+			stack: Box::new(crate::arch::mm::get_boot_stack()),
 		}
 	}
 
 	pub fn new(id: TaskId, status: TaskStatus) -> Task {
-		let stack = unsafe { alloc(Layout::new::<Stack>()) as *mut Stack };
-
-		debug!("Allocate stack for task {} at 0x{:x}", id, stack as usize);
-
 		Task {
 			id: id,
 			status: status,
 			last_stack_pointer: 0,
-			stack: stack,
+			stack: Box::new(TaskStack::new()),
 		}
 	}
 }
@@ -152,20 +148,4 @@ impl Task {
 pub trait TaskFrame {
 	/// Create the initial stack frame for a new task
 	fn create_stack_frame(&mut self, func: extern "C" fn());
-}
-
-impl Drop for Task {
-	fn drop(&mut self) {
-		if unsafe { self.stack != &mut BOOT_STACK } {
-			debug!(
-				"Deallocate stack of task {} (stack at 0x{:x})",
-				self.id, self.stack as usize
-			);
-
-			// deallocate stack
-			unsafe {
-				dealloc(self.stack as *mut u8, Layout::new::<Stack>());
-			}
-		}
-	}
 }
