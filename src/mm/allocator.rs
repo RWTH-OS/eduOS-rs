@@ -14,17 +14,12 @@
 //! preallocated space, along with an index variable.
 //! Freed memory is never reused, but this can be neglected for bootstrapping.
 
-use crate::consts::*;
 use crate::logging::*;
 use alloc::alloc::Layout;
 use core::alloc::GlobalAlloc;
 
 /// Size of the preallocated space for the Bootstrap Allocator.
 const BOOTSTRAP_HEAP_SIZE: usize = 2 * 1024 * 1024;
-
-/// Alignment of pointers returned by the Bootstrap Allocator.
-/// Note that you also have to align the HermitAllocatorInfo structure!
-const BOOTSTRAP_HEAP_ALIGNMENT: usize = CACHE_LINE;
 
 /// The Allocator structure is immutable, so we need this helper structure
 /// for our allocator information.
@@ -38,7 +33,7 @@ struct AllocatorInfo {
 impl AllocatorInfo {
 	const fn new() -> AllocatorInfo {
 		AllocatorInfo {
-			heap: [0xCC; BOOTSTRAP_HEAP_SIZE],
+			heap: [0x00; BOOTSTRAP_HEAP_SIZE],
 			index: 0,
 		}
 	}
@@ -61,7 +56,7 @@ unsafe impl<'a> GlobalAlloc for &'a Allocator {
 
 /// An allocation using the always available Bootstrap Allocator.
 unsafe fn alloc_bootstrap(layout: Layout) -> *mut u8 {
-	let ptr = &mut ALLOCATOR_INFO.heap[ALLOCATOR_INFO.index] as *mut u8;
+	let ptr = &mut ALLOCATOR_INFO.heap[align_up!(ALLOCATOR_INFO.index, layout.align())] as *mut u8;
 	debug!(
 		"Allocating {:#X} bytes at {:#X}, index {}",
 		layout.size(),
@@ -73,11 +68,7 @@ unsafe fn alloc_bootstrap(layout: Layout) -> *mut u8 {
 		panic!("Bootstrap Allocator Overflow! Increase BOOTSTRAP_HEAP_SIZE.");
 	}
 
-	// Bump the heap index and align it up to the next BOOTSTRAP_HEAP_ALIGNMENT boundary.
-	ALLOCATOR_INFO.index = align_up!(
-		ALLOCATOR_INFO.index + layout.size(),
-		BOOTSTRAP_HEAP_ALIGNMENT
-	);
+	ALLOCATOR_INFO.index = align_up!(ALLOCATOR_INFO.index, layout.align()) + layout.size();
 
 	ptr
 }

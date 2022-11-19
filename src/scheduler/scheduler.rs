@@ -5,6 +5,7 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
+use crate::arch::mm::VirtAddr;
 use crate::arch::switch;
 use crate::collections::irqsave;
 use crate::consts::*;
@@ -160,7 +161,7 @@ impl Scheduler {
 	}
 
 	/// Determines the start address of the stack
-	pub fn get_current_stack(&self) -> usize {
+	pub fn get_current_stack(&self) -> VirtAddr {
 		irqsave(|| (*self.current_task.borrow().stack).bottom())
 	}
 

@@ -68,9 +68,9 @@ extern "C" fn leave_task() -> ! {
 impl TaskFrame for Task {
 	fn create_stack_frame(&mut self, func: extern "C" fn()) {
 		unsafe {
-			let mut stack: *mut u64 = ((*self.stack).top()) as *mut u64;
+			let mut stack: *mut u64 = ((*self.stack).top()).as_mut_ptr();
 
-			write_bytes((*self.stack).bottom() as *mut u8, 0xCD, STACK_SIZE);
+			write_bytes((*self.stack).bottom().as_mut_ptr::<u8>(), 0xCD, STACK_SIZE);
 
 			/* Only marker for debugging purposes, ... */
 			*stack = 0xDEADBEEFu64;
