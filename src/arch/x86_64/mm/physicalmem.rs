@@ -5,7 +5,6 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
-use crate::arch::mm;
 use crate::arch::x86_64::kernel::BOOT_INFO;
 use crate::arch::x86_64::mm::paging::{BasePageSize, PageSize};
 use crate::logging::*;
@@ -84,11 +83,6 @@ pub fn allocate_aligned(size: usize, alignment: usize) -> usize {
 }
 
 pub fn deallocate(physical_address: usize, size: usize) {
-	assert!(
-		physical_address >= mm::kernel_end_address(),
-		"Physical address {:#X} is not >= KERNEL_END_ADDRESS",
-		physical_address
-	);
 	assert!(size > 0);
 	assert!(
 		size % BasePageSize::SIZE == 0,

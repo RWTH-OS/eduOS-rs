@@ -54,32 +54,30 @@ pub fn get_boot_stack() -> BootStack {
 	}
 }
 
-pub fn kernel_start_address() -> usize {
+pub fn is_kernel(addr: usize) -> bool {
 	unsafe {
 		let regions = BOOT_INFO.unwrap().memory_map.deref();
 
 		for i in regions {
 			if i.region_type == MemoryRegionType::Kernel {
-				return (i.range.start_frame_number * 0x1000).try_into().unwrap();
+				if addr >= (i.range.start_frame_number * 0x1000).try_into().unwrap()
+					&& addr <= (i.range.end_frame_number * 0x1000).try_into().unwrap()
+				{
+					return true;
+				}
+			}
+
+			if i.region_type == MemoryRegionType::KernelStack {
+				if addr >= (i.range.start_frame_number * 0x1000).try_into().unwrap()
+					&& addr <= (i.range.end_frame_number * 0x1000).try_into().unwrap()
+				{
+					return true;
+				}
 			}
 		}
-
-		panic!("Unable to determine the start address of the kernel");
 	}
-}
 
-pub fn kernel_end_address() -> usize {
-	unsafe {
-		let regions = BOOT_INFO.unwrap().memory_map.deref();
-
-		for i in regions {
-			if i.region_type == MemoryRegionType::Kernel {
-				return (i.range.end_frame_number * 0x1000).try_into().unwrap();
-			}
-		}
-
-		panic!("Unable to determine the end address of the kernel");
-	}
+	false
 }
 
 pub fn get_memory_size() -> usize {
