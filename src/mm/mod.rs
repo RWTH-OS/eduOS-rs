@@ -7,17 +7,13 @@
 
 pub mod allocator;
 pub mod freelist;
-mod nodepool;
 
 use crate::arch;
 use crate::arch::mm::get_memory_size;
 use crate::arch::mm::paging::{BasePageSize, PageSize, PageTableEntryFlags};
 use crate::logging::*;
-use crate::mm::nodepool::NodePool;
 use crate::scheduler::DisabledPreemption;
 use alloc::alloc::Layout;
-
-pub static mut POOL: NodePool = NodePool::new();
 
 pub fn allocate(size: usize, execute_disable: bool) -> usize {
 	let _preemption = DisabledPreemption::new();

@@ -10,7 +10,6 @@ use crate::arch::x86_64::kernel::BOOT_INFO;
 use crate::arch::x86_64::mm::paging::{BasePageSize, PageSize};
 use crate::logging::*;
 use crate::mm::freelist::{FreeList, FreeListEntry};
-use crate::mm::POOL;
 use crate::scheduler::DisabledPreemption;
 use core::convert::TryInto;
 use core::ops::Deref;
@@ -74,10 +73,7 @@ pub fn allocate_aligned(size: usize, alignment: usize) -> usize {
 	);
 
 	let _preemption = DisabledPreemption::new();
-	let result = unsafe {
-		POOL.maintain();
-		PHYSICAL_FREE_LIST.allocate(size, Some(alignment))
-	};
+	let result = unsafe { PHYSICAL_FREE_LIST.allocate(size, Some(alignment)) };
 	assert!(
 		result.is_ok(),
 		"Could not allocate {:#X} bytes of physical memory aligned to {} bytes",
@@ -103,7 +99,6 @@ pub fn deallocate(physical_address: usize, size: usize) {
 
 	let _preemption = DisabledPreemption::new();
 	unsafe {
-		POOL.maintain();
 		PHYSICAL_FREE_LIST.deallocate(physical_address, size);
 	}
 }

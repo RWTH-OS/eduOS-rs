@@ -8,7 +8,6 @@
 use crate::arch::mm;
 use crate::arch::x86_64::mm::paging::{BasePageSize, PageSize};
 use crate::mm::freelist::{FreeList, FreeListEntry};
-use crate::mm::POOL;
 use crate::scheduler::DisabledPreemption;
 
 static mut KERNEL_FREE_LIST: FreeList = FreeList::new();
@@ -109,7 +108,6 @@ pub fn deallocate(virtual_address: usize, size: usize) {
 
 	let _preemption = DisabledPreemption::new();
 	unsafe {
-		POOL.maintain();
 		KERNEL_FREE_LIST.deallocate(virtual_address, size);
 	}
 }
@@ -141,7 +139,6 @@ pub fn deallocate(virtual_address: usize, size: usize) {
 
 	let _preemption = DisabledPreemption::new();
 	let result = unsafe {
-		POOL.maintain();
 		KERNEL_FREE_LIST.reserve(virtual_address, size)
 	};
 	assert!(
