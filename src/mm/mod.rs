@@ -9,14 +9,14 @@ pub mod allocator;
 pub mod freelist;
 
 use crate::arch;
-use crate::arch::mm::get_memory_size;
 use crate::arch::mm::paging::{BasePageSize, PageSize, PageTableEntryFlags};
+use crate::arch::mm::{get_memory_size, VirtAddr};
 use crate::logging::*;
 use crate::scheduler::DisabledPreemption;
 #[cfg(not(test))]
 use alloc::alloc::Layout;
 
-pub fn allocate(size: usize, execute_disable: bool) -> usize {
+pub fn allocate(size: usize, execute_disable: bool) -> VirtAddr {
 	let _preemption = DisabledPreemption::new();
 
 	let physical_address = arch::mm::physicalmem::allocate(size);
@@ -33,7 +33,7 @@ pub fn allocate(size: usize, execute_disable: bool) -> usize {
 	virtual_address
 }
 
-pub fn deallocate(virtual_address: usize, size: usize) {
+pub fn deallocate(virtual_address: VirtAddr, size: usize) {
 	let _preemption = DisabledPreemption::new();
 
 	if let Some(entry) = arch::mm::paging::get_page_table_entry::<BasePageSize>(virtual_address) {

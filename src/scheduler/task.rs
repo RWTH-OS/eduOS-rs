@@ -8,6 +8,8 @@
 #![allow(dead_code)]
 
 use crate::arch;
+use crate::arch::mm::PhysAddr;
+use crate::arch::mm::VirtAddr;
 use crate::arch::processor::msb;
 use crate::arch::{BasePageSize, PageSize};
 use crate::consts::*;
@@ -260,8 +262,8 @@ impl PriorityTaskQueue {
 }
 
 pub trait Stack {
-	fn top(&self) -> usize;
-	fn bottom(&self) -> usize;
+	fn top(&self) -> VirtAddr;
+	fn bottom(&self) -> VirtAddr;
 }
 
 #[derive(Copy, Clone)]
@@ -280,12 +282,12 @@ impl TaskStack {
 }
 
 impl Stack for TaskStack {
-	fn top(&self) -> usize {
-		(&(self.buffer[STACK_SIZE - 16]) as *const _) as usize
+	fn top(&self) -> VirtAddr {
+		VirtAddr::from((&(self.buffer[STACK_SIZE - 16]) as *const _) as u64)
 	}
 
-	fn bottom(&self) -> usize {
-		(&(self.buffer[0]) as *const _) as usize
+	fn bottom(&self) -> VirtAddr {
+		VirtAddr::from((&(self.buffer[0]) as *const _) as u64)
 	}
 }
 
@@ -299,11 +301,11 @@ pub struct Task {
 	/// Status of a task, e.g. if the task is ready or blocked
 	pub status: TaskStatus,
 	/// Last stack pointer before a context switch to another task
-	pub last_stack_pointer: usize,
+	pub last_stack_pointer: VirtAddr,
 	// Stack of the task
 	pub stack: Box<dyn Stack>,
 	// Physical address of the 1st level page table
-	pub root_page_table: usize,
+	pub root_page_table: PhysAddr,
 	// next task in queue
 	pub next: Option<Rc<RefCell<Task>>>,
 	// previous task in queue
@@ -316,7 +318,7 @@ impl Task {
 			id: id,
 			prio: LOW_PRIORITY,
 			status: TaskStatus::TaskIdle,
-			last_stack_pointer: 0,
+			last_stack_pointer: VirtAddr::zero(),
 			stack: Box::new(crate::arch::mm::get_boot_stack()),
 			root_page_table: arch::get_kernel_root_page_table(),
 			next: None,
@@ -329,7 +331,7 @@ impl Task {
 			id: id,
 			prio: prio,
 			status: status,
-			last_stack_pointer: 0,
+			last_stack_pointer: VirtAddr::zero(),
 			stack: Box::new(TaskStack::new()),
 			root_page_table: arch::get_kernel_root_page_table(),
 			next: None,

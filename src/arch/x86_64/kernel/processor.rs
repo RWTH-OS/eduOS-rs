@@ -176,7 +176,7 @@ pub fn init() {
 
 		// reset GS registers
 		wrmsr(IA32_GS_BASE, 0);
-		asm!("wrgsbase {}", in(reg) get_boot_stack().top(), options(preserves_flags, nomem, nostack));
+		asm!("wrgsbase {}", in(reg) get_boot_stack().top().as_u64(), options(preserves_flags, nomem, nostack));
 	}
 
 	// determin processor features

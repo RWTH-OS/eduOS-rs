@@ -33,7 +33,7 @@ pub fn register_task() {
 pub unsafe fn jump_to_user_land(func: extern "C" fn()) -> ! {
 	let ds = 0x23u64;
 	let cs = 0x2bu64;
-	let addr: u64 = (USER_ENTRY as u64) | (func as u64 & 0xFFFu64);
+	let addr: u64 = USER_ENTRY.as_u64() | (func as u64 & 0xFFFu64);
 
 	asm!(
 		"swapgs",
@@ -44,7 +44,7 @@ pub unsafe fn jump_to_user_land(func: extern "C" fn()) -> ! {
 		"push {3}",
 		"iretq",
 		in(reg) ds,
-		in(reg) USER_ENTRY as u64 + 0x400000u64,
+		in(reg) USER_ENTRY.as_u64() + 0x400000u64,
 		in(reg) cs,
 		in(reg) addr,
 		options(nostack)

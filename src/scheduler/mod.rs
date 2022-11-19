@@ -14,6 +14,7 @@ mod scheduler;
 pub mod task;
 
 use crate::arch;
+use crate::arch::mm::{PhysAddr, VirtAddr};
 use crate::errno::*;
 use crate::scheduler::task::{Task, TaskPriority};
 use alloc::rc::Rc;
@@ -57,15 +58,15 @@ pub fn abort() -> ! {
 	unsafe { SCHEDULER.as_mut().unwrap().abort() }
 }
 
-pub fn get_current_stack() -> usize {
+pub fn get_current_stack() -> VirtAddr {
 	unsafe { SCHEDULER.as_mut().unwrap().get_current_stack() }
 }
 
-pub fn get_root_page_table() -> usize {
+pub fn get_root_page_table() -> PhysAddr {
 	unsafe { SCHEDULER.as_mut().unwrap().get_root_page_table() }
 }
 
-pub fn set_root_page_table(addr: usize) {
+pub fn set_root_page_table(addr: PhysAddr) {
 	unsafe {
 		SCHEDULER.as_mut().unwrap().set_root_page_table(addr);
 	}

@@ -11,6 +11,7 @@ use crate::arch::x86_64::kernel::irq;
 use crate::arch::x86_64::kernel::processor;
 use crate::arch::x86_64::kernel::BOOT_INFO;
 use crate::arch::x86_64::mm::{physicalmem, virtualmem};
+use crate::arch::x86_64::mm::{PhysAddr, VirtAddr};
 use crate::consts::*;
 use crate::logging::*;
 use crate::scheduler;
@@ -109,28 +110,31 @@ impl PageTableEntryFlags {
 #[derive(Clone, Copy)]
 pub struct PageTableEntry {
 	/// Physical memory address this entry refers, combined with flags from PageTableEntryFlags.
-	physical_address_and_flags: usize,
+	physical_address_and_flags: PhysAddr,
 }
 
 impl PageTableEntry {
 	/// Return the stored physical address.
-	pub fn address(&self) -> usize {
-		self.physical_address_and_flags
-			& !(BasePageSize::SIZE - 1)
-			& !(PageTableEntryFlags::EXECUTE_DISABLE).bits()
+	pub fn address(&self) -> PhysAddr {
+		PhysAddr::from(
+			self.physical_address_and_flags.as_usize()
+				& !(BasePageSize::SIZE - 1)
+				& !(PageTableEntryFlags::EXECUTE_DISABLE).bits(),
+		)
 	}
 
 	/// Returns whether this entry is valid (present).
 	fn is_present(&self) -> bool {
-		(self.physical_address_and_flags & PageTableEntryFlags::PRESENT.bits()) != 0
+		(self.physical_address_and_flags.as_usize() & PageTableEntryFlags::PRESENT.bits()) != 0
 	}
 
 	fn is_huge(&self) -> bool {
-		(self.physical_address_and_flags & PageTableEntryFlags::HUGE_PAGE.bits()) != 0
+		(self.physical_address_and_flags.as_usize() & PageTableEntryFlags::HUGE_PAGE.bits()) != 0
 	}
 
 	fn is_user(&self) -> bool {
-		(self.physical_address_and_flags & PageTableEntryFlags::USER_ACCESSIBLE.bits()) != 0
+		(self.physical_address_and_flags.as_usize() & PageTableEntryFlags::USER_ACCESSIBLE.bits())
+			!= 0
 	}
 
 	/// Mark this as a valid (present) entry and set address translation and flags.
@@ -139,7 +143,7 @@ impl PageTableEntry {
 	///
 	/// * `physical_address` - The physical memory address this entry shall translate to
 	/// * `flags` - Flags from PageTableEntryFlags (note that the PRESENT and ACCESSED flags are set automatically)
-	fn set(&mut self, physical_address: usize, flags: PageTableEntryFlags) {
+	fn set(&mut self, physical_address: PhysAddr, flags: PageTableEntryFlags) {
 		if flags.contains(PageTableEntryFlags::HUGE_PAGE) {
 			// HUGE_PAGE may indicate a 2 MiB or 1 GiB page.
 			// We don't know this here, so we can only verify that at least the offset bits for a 2 MiB page are zero.
@@ -160,7 +164,7 @@ impl PageTableEntry {
 		// Verify that the physical address does not exceed the CPU's physical address width.
 		assert!(
 			CheckedShr::checked_shr(
-				&physical_address,
+				&physical_address.as_u64(),
 				processor::get_physical_address_bits() as u32
 			) == Some(0),
 			"Physical address exceeds CPU's physical address width (physical_address = {:#X})",
@@ -170,7 +174,8 @@ impl PageTableEntry {
 		let mut flags_to_set = flags;
 		flags_to_set.insert(PageTableEntryFlags::PRESENT);
 		flags_to_set.insert(PageTableEntryFlags::ACCESSED);
-		self.physical_address_and_flags = physical_address | flags_to_set.bits();
+		self.physical_address_and_flags =
+			PhysAddr::from(physical_address.as_usize() | flags_to_set.bits());
 	}
 }
 
@@ -223,7 +228,7 @@ impl PageSize for HugePageSize {
 struct Page<S: PageSize> {
 	/// Virtual memory address of this page.
 	/// This is rounded to a page size boundary on creation.
-	virtual_address: usize,
+	virtual_address: VirtAddr,
 
 	/// Required by Rust to support the S parameter.
 	size: PhantomData<S>,
@@ -231,7 +236,7 @@ struct Page<S: PageSize> {
 
 impl<S: PageSize> Page<S> {
 	/// Return the stored virtual address.
-	fn address(&self) -> usize {
+	fn address(&self) -> VirtAddr {
 		self.virtual_address
 	}
 
@@ -239,7 +244,7 @@ impl<S: PageSize> Page<S> {
 	#[inline(always)]
 	fn flush_from_tlb(&self) {
 		unsafe {
-			asm!("invlpg [{}]", in(reg) self.virtual_address, options(preserves_flags, nostack));
+			asm!("invlpg [{}]", in(reg) self.virtual_address.as_u64(), options(preserves_flags, nostack));
 		}
 	}
 
@@ -252,13 +257,14 @@ impl<S: PageSize> Page<S> {
 	///
 	/// Although we could make this check depend on the actual linear address width from the CPU,
 	/// any extension above 48-bit would require a new page table level, which we don't implement.
-	fn is_valid_address(virtual_address: usize) -> bool {
-		virtual_address < 0x8000_0000_0000 || virtual_address >= 0xFFFF_8000_0000_0000
+	fn is_valid_address(virtual_address: VirtAddr) -> bool {
+		virtual_address < VirtAddr(0x8000_0000_0000u64)
+			|| virtual_address >= VirtAddr(0xFFFF_8000_0000_0000u64)
 	}
 
 	/// Returns a Page including the given virtual address.
 	/// That means, the address is rounded down to a page size boundary.
-	fn including_address(virtual_address: usize) -> Self {
+	fn including_address(virtual_address: VirtAddr) -> Self {
 		assert!(
 			Self::is_valid_address(virtual_address),
 			"Virtual address {:#X} is invalid",
@@ -287,7 +293,7 @@ impl<S: PageSize> Page<S> {
 	/// Returns the index of this page in the table given by L.
 	fn table_index<L: PageTableLevel>(&self) -> usize {
 		assert!(L::LEVEL >= S::MAP_LEVEL);
-		self.virtual_address >> PAGE_BITS >> L::LEVEL * PAGE_MAP_BITS & PAGE_MAP_MASK
+		self.virtual_address.as_usize() >> PAGE_BITS >> L::LEVEL * PAGE_MAP_BITS & PAGE_MAP_MASK
 	}
 }
 
@@ -381,13 +387,13 @@ trait PageTableMethods {
 	fn map_page_in_this_table<S: PageSize>(
 		&mut self,
 		page: Page<S>,
-		physical_address: usize,
+		physical_address: PhysAddr,
 		flags: PageTableEntryFlags,
 	) -> bool;
 	fn map_page<S: PageSize>(
 		&mut self,
 		page: Page<S>,
-		physical_address: usize,
+		physical_address: PhysAddr,
 		flags: PageTableEntryFlags,
 	) -> bool;
 	fn drop_user_space(&mut self);
@@ -401,7 +407,7 @@ impl<L: PageTableLevel> PageTableMethods for PageTable<L> {
 	fn map_page_in_this_table<S: PageSize>(
 		&mut self,
 		page: Page<S>,
-		physical_address: usize,
+		physical_address: PhysAddr,
 		flags: PageTableEntryFlags,
 	) -> bool {
 		assert!(L::LEVEL == S::MAP_LEVEL);
@@ -456,7 +462,7 @@ impl<L: PageTableLevel> PageTableMethods for PageTable<L> {
 	default fn map_page<S: PageSize>(
 		&mut self,
 		page: Page<S>,
-		physical_address: usize,
+		physical_address: PhysAddr,
 		flags: PageTableEntryFlags,
 	) -> bool {
 		self.map_page_in_this_table::<S>(page, physical_address, flags)
@@ -518,7 +524,7 @@ where
 	fn map_page<S: PageSize>(
 		&mut self,
 		page: Page<S>,
-		physical_address: usize,
+		physical_address: PhysAddr,
 		flags: PageTableEntryFlags,
 	) -> bool {
 		assert!(L::LEVEL >= S::MAP_LEVEL);
@@ -542,7 +548,7 @@ where
 				// Mark all entries as unused in the newly created table.
 				let subtable = self.subtable::<S>(page);
 				for entry in subtable.entries.iter_mut() {
-					entry.physical_address_and_flags = 0;
+					entry.physical_address_and_flags = PhysAddr::zero();
 				}
 
 				subtable.map_page::<S>(page, physical_address, flags)
@@ -586,14 +592,14 @@ where
 	fn map_pages<S: PageSize>(
 		&mut self,
 		range: PageIter<S>,
-		physical_address: usize,
+		physical_address: PhysAddr,
 		flags: PageTableEntryFlags,
 	) {
 		let mut current_physical_address = physical_address;
 
 		for page in range {
 			self.map_page(page, current_physical_address, flags);
-			current_physical_address += S::SIZE;
+			current_physical_address += S::SIZE as u64;
 		}
 	}
 
@@ -625,10 +631,10 @@ pub extern "x86-interrupt" fn page_fault_handler(
 	stack_frame: irq::ExceptionStackFrame,
 	error_code: u64,
 ) {
-	let mut virtual_address = unsafe { controlregs::cr2() };
+	let mut virtual_address = unsafe { VirtAddr::from_usize(controlregs::cr2()) };
 
 	// do we have to create the user-space stack?
-	if virtual_address > USER_ENTRY + 0x400000 - 64 * 1024 {
+	if virtual_address > USER_ENTRY + 0x400000u64 - 64u64 * 1024u64 {
 		virtual_address = align_down!(virtual_address, BasePageSize::SIZE);
 
 		// Ok, user space want to have memory
@@ -651,7 +657,7 @@ pub extern "x86-interrupt" fn page_fault_handler(
 
 		unsafe {
 			// clear new page
-			write_bytes(virtual_address as *mut u8, 0x00, BasePageSize::SIZE);
+			write_bytes(virtual_address.as_mut_ptr::<u8>(), 0x00, BasePageSize::SIZE);
 
 			// clear cr2 to signalize that the pagefault is solved by the pagefault handler
 			controlregs::cr2_write(0);
@@ -679,13 +685,13 @@ pub extern "x86-interrupt" fn page_fault_handler(
 	}
 }
 
-fn get_page_range<S: PageSize>(virtual_address: usize, count: usize) -> PageIter<S> {
+fn get_page_range<S: PageSize>(virtual_address: VirtAddr, count: usize) -> PageIter<S> {
 	let first_page = Page::<S>::including_address(virtual_address);
 	let last_page = Page::<S>::including_address(virtual_address + (count - 1) * S::SIZE);
 	Page::range(first_page, last_page)
 }
 
-pub fn get_page_table_entry<S: PageSize>(virtual_address: usize) -> Option<PageTableEntry> {
+pub fn get_page_table_entry<S: PageSize>(virtual_address: VirtAddr) -> Option<PageTableEntry> {
 	debug!("Looking up Page Table Entry for {:#X}", virtual_address);
 
 	let page = Page::<S>::including_address(virtual_address);
@@ -693,7 +699,7 @@ pub fn get_page_table_entry<S: PageSize>(virtual_address: usize) -> Option<PageT
 	root_pagetable.get_page_table_entry(page)
 }
 
-pub fn get_physical_address<S: PageSize>(virtual_address: usize) -> usize {
+pub fn get_physical_address<S: PageSize>(virtual_address: VirtAddr) -> PhysAddr {
 	debug!("Getting physical address for {:#X}", virtual_address);
 
 	let page = Page::<S>::including_address(virtual_address);
@@ -703,16 +709,16 @@ pub fn get_physical_address<S: PageSize>(virtual_address: usize) -> usize {
 		.expect("Entry not present")
 		.address();
 	let offset = virtual_address & (S::SIZE - 1);
-	address | offset
+	address | PhysAddr(offset.as_u64())
 }
 
 /// Translate a virtual memory address to a physical one.
 /// Just like get_physical_address, but automatically uses the correct page size for the respective memory address.
-pub fn virtual_to_physical(virtual_address: usize) -> usize {
+pub fn virtual_to_physical(virtual_address: VirtAddr) -> PhysAddr {
 	get_physical_address::<BasePageSize>(virtual_address)
 }
 
-pub fn unmap<S: PageSize>(virtual_address: usize, count: usize) {
+pub fn unmap<S: PageSize>(virtual_address: VirtAddr, count: usize) {
 	debug!(
 		"Unmapping virtual address {:#X} ({} pages)",
 		virtual_address, count
@@ -720,12 +726,12 @@ pub fn unmap<S: PageSize>(virtual_address: usize, count: usize) {
 
 	let range = get_page_range::<S>(virtual_address, count);
 	let root_pagetable = unsafe { &mut *PML4_ADDRESS };
-	root_pagetable.map_pages(range, 0, PageTableEntryFlags::BLANK);
+	root_pagetable.map_pages(range, PhysAddr::zero(), PageTableEntryFlags::BLANK);
 }
 
 pub fn map<S: PageSize>(
-	virtual_address: usize,
-	physical_address: usize,
+	virtual_address: VirtAddr,
+	physical_address: PhysAddr,
 	count: usize,
 	flags: PageTableEntryFlags,
 ) {
@@ -739,15 +745,18 @@ pub fn map<S: PageSize>(
 	root_pagetable.map_pages(range, physical_address, flags);
 }
 
-static mut ROOT_PAGE_TABLE: usize = 0;
+static mut ROOT_PAGE_TABLE: PhysAddr = PhysAddr::zero();
 
 #[inline(always)]
-pub fn get_kernel_root_page_table() -> usize {
+pub fn get_kernel_root_page_table() -> PhysAddr {
 	unsafe { ROOT_PAGE_TABLE }
 }
 
 pub fn map_usr_entry(func: extern "C" fn()) {
-	let addr = align_down!((func as *const ()) as usize, BasePageSize::SIZE);
+	let addr = VirtAddr::from_usize(align_down!(
+		(func as *const ()) as usize,
+		BasePageSize::SIZE
+	));
 
 	map::<BasePageSize>(
 		USER_ENTRY,
@@ -765,14 +774,13 @@ pub fn drop_user_space() {
 
 // just an workaround to explaine the difference between
 // kernel and user space
-pub fn create_usr_pgd() -> usize {
+pub fn create_usr_pgd() -> PhysAddr {
 	debug!("Create 1st level page table for the user-level task");
 
 	unsafe {
 		let physical_address =
 			physicalmem::allocate_aligned(BasePageSize::SIZE, BasePageSize::SIZE);
-		let user_page_table: usize =
-			virtualmem::allocate_aligned(BasePageSize::SIZE, BasePageSize::SIZE);
+		let user_page_table = virtualmem::allocate_aligned(BasePageSize::SIZE, BasePageSize::SIZE);
 
 		debug!(
 			"Map page frame 0x{:x} at virtual address 0x{:x}",
@@ -786,17 +794,17 @@ pub fn create_usr_pgd() -> usize {
 			PageTableEntryFlags::WRITABLE | PageTableEntryFlags::EXECUTE_DISABLE,
 		);
 
-		write_bytes(user_page_table as *mut u8, 0x00, BasePageSize::SIZE);
+		write_bytes(user_page_table.as_mut_ptr::<u8>(), 0x00, BasePageSize::SIZE);
 
 		let recursive_pgt = BOOT_INFO.unwrap().recursive_page_table_addr as *const u64;
 		let recursive_pgt_idx = BOOT_INFO.unwrap().recursive_index();
-		let pml4 = user_page_table as *mut u64;
+		let pml4 = user_page_table.as_mut_ptr::<u64>();
 		for i in 0..recursive_pgt_idx + 2 {
 			*pml4.offset(i.try_into().unwrap()) = *recursive_pgt.offset(i.try_into().unwrap());
 		}
 
-		let pml4 =
-			(user_page_table + BasePageSize::SIZE - size_of::<usize>()) as *mut PageTableEntry;
+		let pml4 = (user_page_table.as_usize() + BasePageSize::SIZE - size_of::<usize>())
+			as *mut PageTableEntry;
 		(*pml4).set(physical_address, PageTableEntryFlags::WRITABLE);
 
 		// unmap page table
@@ -820,8 +828,10 @@ pub fn init() {
 	debug!("Recursive index: {}", recursive_pgt_idx);
 
 	unsafe {
-		ROOT_PAGE_TABLE = *recursive_pgt.offset(recursive_pgt_idx.try_into().unwrap()) as usize
-			& !(BasePageSize::SIZE - 1);
+		ROOT_PAGE_TABLE = PhysAddr::from(
+			*recursive_pgt.offset(recursive_pgt_idx.try_into().unwrap()) as usize
+				& !(BasePageSize::SIZE - 1),
+		);
 		*recursive_pgt.offset(511) = *recursive_pgt.offset(recursive_pgt_idx.try_into().unwrap());
 
 		for i in recursive_pgt_idx + 2..511 {

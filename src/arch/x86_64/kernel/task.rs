@@ -7,6 +7,7 @@
 
 //! Architecture dependent interface to initialize a task
 
+use crate::arch::mm::VirtAddr;
 use crate::arch::processor::halt;
 use crate::consts::*;
 use crate::logging::*;
@@ -72,9 +73,9 @@ extern "C" fn leave_task() -> ! {
 impl TaskFrame for Task {
 	fn create_stack_frame(&mut self, func: extern "C" fn()) {
 		unsafe {
-			let mut stack: *mut u64 = ((*self.stack).top()) as *mut u64;
+			let mut stack: *mut u64 = ((*self.stack).top()).as_mut_ptr();
 
-			write_bytes((*self.stack).bottom() as *mut u8, 0xCD, STACK_SIZE);
+			write_bytes((*self.stack).bottom().as_mut_ptr::<u8>(), 0xCD, STACK_SIZE);
 
 			/* Only marker for debugging purposes, ... */
 			*stack = 0xDEADBEEFu64;
@@ -93,13 +94,13 @@ impl TaskFrame for Task {
 
 			(*state).rsp = (stack as usize + size_of::<State>()) as u64;
 			(*state).rbp = (*state).rsp + size_of::<u64>() as u64;
-			(*state).gs = ((*self.stack).top()) as u64;
+			(*state).gs = ((*self.stack).top()).as_u64();
 
 			(*state).rip = (func as *const ()) as u64;
 			(*state).rflags = 0x1202u64;
 
 			/* Set the task's stack pointer entry to the stack we have crafted right now. */
-			self.last_stack_pointer = stack as usize;
+			self.last_stack_pointer = VirtAddr(stack as u64);
 		}
 	}
 }

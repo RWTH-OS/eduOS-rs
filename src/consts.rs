@@ -9,6 +9,8 @@
 
 //! Configuration parameter of the kernel eduOS-rs
 
+use crate::arch::mm::VirtAddr;
+
 /// Define the size of the kernel stack
 pub const STACK_SIZE: usize = 0x4000;
 
@@ -22,4 +24,4 @@ pub const NO_PRIORITIES: usize = 32;
 pub const TIMER_FREQ: u32 = 100; /* in HZ */
 
 /// Entry point of the user tasks
-pub const USER_ENTRY: usize = 0x20000000000usize;
+pub const USER_ENTRY: VirtAddr = VirtAddr(0x20000000000u64);

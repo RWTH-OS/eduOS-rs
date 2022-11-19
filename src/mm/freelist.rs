@@ -5,90 +5,76 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
+use crate::arch::mm::{PhysAddr, VirtAddr};
 use crate::logging::*;
 use alloc::collections::linked_list::LinkedList;
 use core::cmp::Ordering;
 
-pub struct FreeListEntry {
-	pub start: usize,
-	pub end: usize,
+pub struct FreeListEntry<
+	T: core::marker::Copy
+		+ core::cmp::PartialEq
+		+ core::cmp::PartialOrd
+		+ core::fmt::UpperHex
+		+ core::ops::Sub
+		+ core::ops::BitAnd<u64>
+		+ core::ops::Add<usize>
+		+ core::ops::AddAssign<u64>
+		+ core::ops::Add<usize, Output = T>,
+> {
+	pub start: T,
+	pub end: T,
 }
 
-impl FreeListEntry {
-	pub const fn new(start: usize, end: usize) -> Self {
+impl<
+		T: core::marker::Copy
+			+ core::cmp::PartialEq
+			+ core::cmp::PartialOrd
+			+ core::fmt::UpperHex
+			+ core::ops::Sub
+			+ core::ops::BitAnd<u64>
+			+ core::ops::Add<usize>
+			+ core::ops::AddAssign<u64>
+			+ core::ops::Add<usize, Output = T>,
+	> FreeListEntry<T>
+{
+	pub const fn new(start: T, end: T) -> Self {
 		FreeListEntry { start, end }
 	}
 }
 
-pub struct FreeList {
-	pub list: LinkedList<FreeListEntry>,
+pub struct FreeList<
+	T: core::marker::Copy
+		+ core::cmp::PartialEq
+		+ core::cmp::PartialOrd
+		+ core::fmt::UpperHex
+		+ core::ops::Sub
+		+ core::ops::BitAnd<u64>
+		+ core::ops::Add<usize>
+		+ core::ops::AddAssign<u64>
+		+ core::ops::Add<usize, Output = T>,
+> {
+	pub list: LinkedList<FreeListEntry<T>>,
 }
 
-impl FreeList {
+impl<
+		T: core::marker::Copy
+			+ core::cmp::PartialEq
+			+ core::cmp::PartialOrd
+			+ core::fmt::UpperHex
+			+ core::ops::Sub
+			+ core::ops::BitAnd<u64>
+			+ core::ops::Add<usize>
+			+ core::ops::AddAssign<u64>
+			+ core::ops::Add<usize, Output = T>,
+	> FreeList<T>
+{
 	pub const fn new() -> Self {
 		Self {
 			list: LinkedList::new(),
 		}
 	}
 
-	pub fn allocate(&mut self, size: usize, alignment: Option<usize>) -> Result<usize, ()> {
-		debug!(
-			"Allocating {} bytes from Free List {:#X}",
-			size, self as *const Self as usize
-		);
-
-		let new_size = if let Some(align) = alignment {
-			size + align
-		} else {
-			size
-		};
-
-		// Find a region in the Free List that has at least the requested size.
-		let mut cursor = self.list.cursor_front_mut();
-		while let Some(node) = cursor.current() {
-			let (region_start, region_size) = (node.start, node.end - node.start);
-
-			match region_size.cmp(&new_size) {
-				Ordering::Greater => {
-					// We have found a region that is larger than the requested size.
-					// Return the address to the beginning of that region and shrink the region by that size.
-					if let Some(align) = alignment {
-						let new_addr = align_up!(region_start, align);
-						node.start += size + (new_addr - region_start);
-						if new_addr != region_start {
-							let new_entry = FreeListEntry::new(region_start, new_addr);
-							cursor.insert_before(new_entry);
-						}
-						return Ok(new_addr);
-					} else {
-						node.start += size;
-						return Ok(region_start);
-					}
-				}
-				Ordering::Equal => {
-					// We have found a region that has exactly the requested size.
-					// Return the address to the beginning of that region and move the node into the pool for deletion or reuse.
-					if let Some(align) = alignment {
-						let new_addr = align_up!(region_start, align);
-						if new_addr != region_start {
-							node.end = new_addr;
-						}
-						return Ok(new_addr);
-					} else {
-						cursor.remove_current();
-						return Ok(region_start);
-					}
-				}
-				Ordering::Less => {}
-			}
-
-			cursor.move_next();
-		}
-
-		Err(())
-	}
-
-	pub fn deallocate(&mut self, address: usize, size: usize) {
+	pub fn deallocate(&mut self, address: T, size: usize) {
 		debug!(
 			"Deallocating {} bytes at {:#X} from Free List {:#X}",
 			size, address, self as *const Self as usize
@@ -220,5 +206,123 @@ fn deallocate() {
 		assert_eq!(node.end, 0x100000);
 
 		cursor.move_next();
+	}
+}
+
+impl FreeList<PhysAddr> {
+	pub fn allocate(&mut self, size: usize, alignment: Option<usize>) -> Result<PhysAddr, ()> {
+		debug!(
+			"Allocating {} bytes from Free List {:#X}",
+			size, self as *const Self as usize
+		);
+
+		let new_size = if let Some(align) = alignment {
+			size + align
+		} else {
+			size
+		};
+
+		// Find a region in the Free List that has at least the requested size.
+		let mut cursor = self.list.cursor_front_mut();
+		while let Some(node) = cursor.current() {
+			let (region_start, region_size) = (node.start, node.end - node.start);
+
+			match region_size.as_usize().cmp(&new_size) {
+				Ordering::Greater => {
+					// We have found a region that is larger than the requested size.
+					// Return the address to the beginning of that region and shrink the region by that size.
+					if let Some(align) = alignment {
+						let new_addr = PhysAddr::from(align_up!(region_start.as_usize(), align));
+						node.start += (new_addr - region_start) + size as u64;
+						if new_addr != region_start {
+							let new_entry = FreeListEntry::new(region_start, new_addr);
+							cursor.insert_before(new_entry);
+						}
+						return Ok(new_addr);
+					} else {
+						node.start += size as u64;
+						return Ok(region_start);
+					}
+				}
+				Ordering::Equal => {
+					// We have found a region that has exactly the requested size.
+					// Return the address to the beginning of that region and move the node into the pool for deletion or reuse.
+					if let Some(align) = alignment {
+						let new_addr = PhysAddr::from(align_up!(region_start.as_usize(), align));
+						if new_addr != region_start {
+							node.end = new_addr;
+						}
+						return Ok(new_addr);
+					} else {
+						cursor.remove_current();
+						return Ok(region_start);
+					}
+				}
+				Ordering::Less => {}
+			}
+
+			cursor.move_next();
+		}
+
+		Err(())
+	}
+}
+
+impl FreeList<VirtAddr> {
+	pub fn allocate(&mut self, size: usize, alignment: Option<usize>) -> Result<VirtAddr, ()> {
+		debug!(
+			"Allocating {} bytes from Free List {:#X}",
+			size, self as *const Self as usize
+		);
+
+		let new_size = if let Some(align) = alignment {
+			size + align
+		} else {
+			size
+		};
+
+		// Find a region in the Free List that has at least the requested size.
+		let mut cursor = self.list.cursor_front_mut();
+		while let Some(node) = cursor.current() {
+			let (region_start, region_size) = (node.start, node.end - node.start);
+
+			match region_size.as_usize().cmp(&new_size) {
+				Ordering::Greater => {
+					// We have found a region that is larger than the requested size.
+					// Return the address to the beginning of that region and shrink the region by that size.
+					if let Some(align) = alignment {
+						let new_addr = VirtAddr::from(align_up!(region_start.as_usize(), align));
+						node.start += (new_addr - region_start) + size as u64;
+						if new_addr != region_start {
+							let new_entry = FreeListEntry::new(region_start, new_addr);
+							cursor.insert_before(new_entry);
+						}
+						return Ok(new_addr);
+					} else {
+						node.start += size as u64;
+						return Ok(region_start);
+					}
+				}
+				Ordering::Equal => {
+					// We have found a region that has exactly the requested size.
+					// Return the address to the beginning of that region and move the node into the pool for deletion or reuse.
+					if let Some(align) = alignment {
+						let new_addr = VirtAddr::from(align_up!(region_start.as_usize(), align));
+						if new_addr != region_start {
+							node.end = new_addr;
+						}
+						return Ok(new_addr);
+					} else {
+						cursor.remove_current();
+						return Ok(region_start);
+					}
+				}
+				Ordering::Less => {}
+			}
+
+			cursor.move_next();
+		}
+
+		Err(())
 	}
 }
