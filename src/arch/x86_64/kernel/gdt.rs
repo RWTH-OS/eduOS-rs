@@ -7,6 +7,7 @@
 
 #![allow(dead_code)]
 
+use crate::arch::mm::VirtAddr;
 use crate::consts::*;
 use core::mem;
 use x86::bits64::segmentation::*;
@@ -131,11 +132,11 @@ pub fn init() {
 }
 
 #[inline(always)]
-unsafe fn set_kernel_stack(stack: usize) {
-	TSS.0.rsp[0] = stack as u64;
+unsafe fn set_kernel_stack(stack: VirtAddr) {
+	TSS.0.rsp[0] = stack.as_u64();
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn set_current_kernel_stack() {
-	set_kernel_stack(scheduler::get_current_stack() + STACK_SIZE - 0x10);
+	set_kernel_stack(scheduler::get_current_stack() + STACK_SIZE - 0x10u64);
 }

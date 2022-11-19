@@ -14,6 +14,7 @@ mod scheduler;
 pub mod task;
 
 use crate::arch;
+use crate::arch::mm::VirtAddr;
 use crate::errno::*;
 use crate::scheduler::task::{Task, TaskPriority};
 use alloc::rc::Rc;
@@ -57,7 +58,7 @@ pub fn abort() -> ! {
 	unsafe { SCHEDULER.as_mut().unwrap().abort() }
 }
 
-pub fn get_current_stack() -> usize {
+pub fn get_current_stack() -> VirtAddr {
 	unsafe { SCHEDULER.as_mut().unwrap().get_current_stack() }
 }
 
