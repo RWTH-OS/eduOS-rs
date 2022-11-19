@@ -7,6 +7,7 @@
 
 #![allow(dead_code)]
 
+use crate::arch::mm::VirtAddr;
 use crate::arch::processor::msb;
 use crate::consts::*;
 use alloc::boxed::Box;
@@ -257,8 +258,8 @@ impl PriorityTaskQueue {
 }
 
 pub trait Stack {
-	fn top(&self) -> usize;
-	fn bottom(&self) -> usize;
+	fn top(&self) -> VirtAddr;
+	fn bottom(&self) -> VirtAddr;
 }
 
 #[derive(Copy, Clone)]
@@ -277,12 +278,12 @@ impl TaskStack {
 }
 
 impl Stack for TaskStack {
-	fn top(&self) -> usize {
-		(&(self.buffer[STACK_SIZE - 16]) as *const _) as usize
+	fn top(&self) -> VirtAddr {
+		VirtAddr::from((&(self.buffer[STACK_SIZE - 16]) as *const _) as u64)
 	}
 
-	fn bottom(&self) -> usize {
-		(&(self.buffer[0]) as *const _) as usize
+	fn bottom(&self) -> VirtAddr {
+		VirtAddr::from((&(self.buffer[0]) as *const _) as u64)
 	}
 }
 
