@@ -6,6 +6,7 @@
 // copied, modified, or distributed except according to those terms.
 
 use crate::arch::drop_user_space;
+use crate::arch::mm::{PhysAddr, VirtAddr};
 use crate::arch::switch;
 use crate::collections::irqsave;
 use crate::consts::*;
@@ -168,15 +169,15 @@ impl Scheduler {
 
 	/// Determines the start address of the stack
 	#[no_mangle]
-	pub fn get_current_stack(&self) -> usize {
+	pub fn get_current_stack(&self) -> VirtAddr {
 		irqsave(|| (*self.current_task.borrow().stack).bottom())
 	}
 
-	pub fn get_root_page_table(&self) -> usize {
+	pub fn get_root_page_table(&self) -> PhysAddr {
 		self.current_task.borrow().root_page_table
 	}
 
-	pub fn set_root_page_table(&self, addr: usize) {
+	pub fn set_root_page_table(&self, addr: PhysAddr) {
 		self.current_task.borrow_mut().root_page_table = addr;
 	}
 
@@ -196,7 +197,7 @@ impl Scheduler {
 			let mut borrowed = self.current_task.borrow_mut();
 			(
 				borrowed.id,
-				&mut borrowed.last_stack_pointer as *mut usize,
+				&mut borrowed.last_stack_pointer as *mut VirtAddr,
 				borrowed.prio,
 				borrowed.status,
 			)

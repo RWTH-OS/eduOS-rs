@@ -14,6 +14,7 @@
 //! preallocated space, along with an index variable.
 //! Freed memory is never reused, but this can be neglected for bootstrapping.
 
+use crate::arch::mm::VirtAddr;
 use crate::arch::{BasePageSize, PageSize};
 use crate::logging::*;
 use crate::mm;
@@ -62,7 +63,7 @@ unsafe impl<'a> GlobalAlloc for &'a Allocator {
 	}
 
 	unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
-		let address = ptr as usize;
+		let address = VirtAddr::from_u64(ptr as u64);
 
 		// We never deallocate memory of the Bootstrap Allocator.
 		// It would only increase the management burden and we wouldn't save
@@ -102,11 +103,11 @@ fn alloc_system(layout: Layout) -> *mut u8 {
 	);
 
 	let size = align_up!(layout.size(), BasePageSize::SIZE);
-	mm::allocate(size, true) as *mut u8
+	mm::allocate(size, true).as_mut_ptr()
 }
 
 /// A deallocation using the initialized System Allocator.
-fn dealloc_system(virtual_address: usize, layout: Layout) {
+fn dealloc_system(virtual_address: VirtAddr, layout: Layout) {
 	debug!(
 		"Deallocating {} bytes at {:#X} using the System Allocator",
 		layout.size(),

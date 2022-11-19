@@ -5,6 +5,7 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
+use crate::arch::mm::VirtAddr;
 use crate::arch::x86_64::kernel::gdt::set_current_kernel_stack;
 use core::arch::asm;
 
@@ -62,7 +63,7 @@ macro_rules! restore_context {
 }
 
 #[naked]
-pub unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
+pub unsafe extern "C" fn switch(_old_stack: *mut VirtAddr, _new_stack: VirtAddr) {
 	// rdi = old_stack => the address to store the old rsp
 	// rsi = new_stack => stack pointer of the new task
 
