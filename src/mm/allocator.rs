@@ -36,7 +36,7 @@ struct AllocatorInfo {
 impl AllocatorInfo {
 	const fn new() -> AllocatorInfo {
 		AllocatorInfo {
-			heap: [0xCC; BOOTSTRAP_HEAP_SIZE],
+			heap: [0x00; BOOTSTRAP_HEAP_SIZE],
 			index: 0,
 			is_bootstrapping: true,
 		}
