@@ -5,7 +5,6 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
-use crate::arch::mm;
 use crate::arch::x86_64::mm::paging::{BasePageSize, PageSize};
 use crate::mm::freelist::{FreeList, FreeListEntry};
 use crate::scheduler::DisabledPreemption;
@@ -82,11 +81,6 @@ pub fn allocate_aligned(size: usize, alignment: usize) -> usize {
 }
 
 pub fn deallocate(virtual_address: usize, size: usize) {
-	assert!(
-		virtual_address >= mm::kernel_end_address(),
-		"Virtual address {:#X} is not >= KERNEL_END_ADDRESS",
-		virtual_address
-	);
 	assert!(
 		virtual_address < KERNEL_VIRTUAL_MEMORY_END,
 		"Virtual address {:#X} is not < KERNEL_VIRTUAL_MEMORY_END",
