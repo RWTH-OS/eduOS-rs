@@ -14,9 +14,14 @@ mod vfs;
 
 use crate::errno::*;
 use crate::fs::vfs::Fs;
+use crate::logging::*;
 use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::vec::Vec;
+use core::convert::TryInto;
+use core::include_bytes;
+
+static DEMO: &[u8] = include_bytes!("../../demo/hello");
 
 /// Type of the VfsNode
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -161,12 +166,19 @@ pub fn init() {
 	root.mkdir(&String::from("/bin")).unwrap();
 	root.mkdir(&String::from("/dev")).unwrap();
 
-	/*let (addr, len) = arch::get_memfile();
-	if len > 0 {
-		info!("Found mountable file at 0x{:x} (len 0x{:x})", addr, len);
-		root.mount(&String::from("/bin/demo"), addr, len)
-			.expect("Unable to mount file");
-	}*/
+	if DEMO.len() > 0 {
+		info!(
+			"Found mountable file at 0x{:x} (len 0x{:x})",
+			&DEMO as *const _ as u64,
+			DEMO.len()
+		);
+		root.mount(
+			&String::from("/bin/demo"),
+			&DEMO as *const _ as u64,
+			DEMO.len().try_into().unwrap(),
+		)
+		.expect("Unable to mount file");
+	}
 
 	//root.lsdir().unwrap();
 	//info!("root {:?}", root);

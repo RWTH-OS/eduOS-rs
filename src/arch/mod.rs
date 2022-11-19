@@ -7,9 +7,7 @@
 
 // Export our platform-specific modules.
 #[cfg(target_arch = "x86_64")]
-pub use self::x86_64::kernel::{
-	init, irq, jump_to_user_land, processor, register_task, serial,
-};
+pub use self::x86_64::kernel::{init, irq, jump_to_user_land, processor, register_task, serial};
 
 // Export our platform-specific modules.
 #[cfg(target_arch = "x86_64")]
