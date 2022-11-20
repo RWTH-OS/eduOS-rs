@@ -12,10 +12,8 @@
 mod initrd;
 mod vfs;
 
-use crate::arch;
 use crate::errno::*;
 use crate::fs::vfs::Fs;
-use crate::logging::*;
 use alloc::boxed::Box;
 use alloc::string::String;
 use alloc::vec::Vec;
@@ -163,12 +161,12 @@ pub fn init() {
 	root.mkdir(&String::from("/bin")).unwrap();
 	root.mkdir(&String::from("/dev")).unwrap();
 
-	let (addr, len) = arch::get_memfile();
+	/*let (addr, len) = arch::get_memfile();
 	if len > 0 {
 		info!("Found mountable file at 0x{:x} (len 0x{:x})", addr, len);
 		root.mount(&String::from("/bin/demo"), addr, len)
 			.expect("Unable to mount file");
-	}
+	}*/
 
 	//root.lsdir().unwrap();
 	//info!("root {:?}", root);
