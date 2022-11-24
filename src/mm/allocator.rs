@@ -21,7 +21,7 @@ use alloc::alloc::Layout;
 use core::alloc::GlobalAlloc;
 
 /// Size of the preallocated space for the Bootstrap Allocator.
-const BOOTSTRAP_HEAP_SIZE: usize = 2 * 1024 * 1024;
+const BOOTSTRAP_HEAP_SIZE: usize = 8 * 1024 * 1024;
 
 /// The Allocator structure is immutable, so we need this helper structure
 /// for our allocator information.
