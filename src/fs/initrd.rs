@@ -127,7 +127,7 @@ impl RamHandle {
 
 	pub fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
 		let guard = self.data.read();
-		let ref vec: &Vec<u8> = guard.deref();
+		let vec = guard.deref();
 		let mut pos_guard = self.pos.lock();
 		let pos = *pos_guard;
 
@@ -154,7 +154,7 @@ impl RamHandle {
 		}
 
 		let mut guard = self.data.write();
-		let ref mut vec: &mut Vec<u8> = guard.deref_mut();
+		let vec = guard.deref_mut();
 		let mut pos_guard = self.pos.lock();
 		let pos = *pos_guard;
 
@@ -178,7 +178,7 @@ impl RamHandle {
 			}
 			SeekFrom::End(n) => {
 				let guard = self.data.read();
-				let ref vec: &Vec<u8> = guard.deref();
+				let vec = guard.deref();
 				let data = vec.len() as i64 + n;
 				if data >= 0 {
 					*pos_guard = data as usize;
@@ -205,7 +205,7 @@ impl RamHandle {
 		}
 
 		let mut guard = self.data.write();
-		let ref mut vec: &mut Vec<u8> = guard.deref_mut();
+		let vec = guard.deref_mut();
 		let mut pos_guard = self.pos.lock();
 		let pos = *pos_guard;
 

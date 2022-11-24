@@ -13,7 +13,7 @@ use alloc::string::String;
 use alloc::vec::Vec;
 use core::ptr::write_bytes;
 use goblin::elf::program_header::{PT_DYNAMIC, PT_GNU_RELRO, PT_LOAD};
-use goblin::elf64::r#dyn::{DT_RELA, DT_RELASZ};
+use goblin::elf64::dynamic::{DT_RELA, DT_RELASZ};
 use goblin::elf64::reloc::{R_386_GLOB_DAT, R_386_RELATIVE};
 use goblin::{elf, elf64};
 //use goblin::elf::header::{EM_X86_64,ET_EXEC};
@@ -113,7 +113,7 @@ pub fn load_application(path: &String) -> Result<()> {
 			debug!("PT_DYNAMIC at 0x{:x} (size 0x{:x})", i.p_vaddr, i.p_filesz);
 
 			let mem = (USER_SPACE_START + i.p_vaddr as usize - vstart) as *mut u8;
-			let r#dyn = unsafe { elf::r#dyn::dyn64::from_raw(0, mem as usize) };
+			let r#dyn = unsafe { elf::dynamic::dyn64::from_raw(0, mem as usize) };
 
 			for j in r#dyn {
 				if j.d_tag == DT_RELA {

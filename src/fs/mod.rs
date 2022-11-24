@@ -174,7 +174,7 @@ pub fn init() {
 		);
 		root.mount(
 			&String::from("/bin/demo"),
-			&DEMO as *const _ as u64,
+			DEMO.as_ptr() as u64,
 			DEMO.len().try_into().unwrap(),
 		)
 		.expect("Unable to mount file");
