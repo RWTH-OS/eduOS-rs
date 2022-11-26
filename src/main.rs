@@ -7,7 +7,6 @@
 #[macro_use]
 extern crate eduos_rs;
 
-use eduos_rs::arch;
 use eduos_rs::arch::processor::shutdown;
 use eduos_rs::scheduler;
 
