@@ -26,3 +26,6 @@ pub const USER_SPACE_START: usize = 0x20000000000usize;
 
 /// Initial value of the stack pointer
 pub const USER_STACK: usize = USER_SPACE_START + 0x800000000;
+
+/// Size of the kernel heap
+pub const HEAP_SIZE: usize = 8 * 1024 * 1024;
