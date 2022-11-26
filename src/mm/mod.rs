@@ -8,8 +8,7 @@
 #[cfg(not(test))]
 use alloc::alloc::Layout;
 
-pub fn init() {
-}
+pub fn init() {}
 
 #[cfg(not(test))]
 #[alloc_error_handler]
