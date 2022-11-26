@@ -41,6 +41,7 @@ dependencies = [
  "goblin",
  "num-traits",
  "qemu-exit",
+ "simple-chunk-allocator",
  "spin",
  "x86",
 ]
@@ -55,6 +56,12 @@ dependencies = [
  "plain",
  "scroll",
 ]
+
+[[package]]
+name = "libm"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "348108ab3fba42ec82ff6e9564fc4ca0247bdccdc68dd8af9764bbc79c3c8ffb"
 
 [[package]]
 name = "lock_api"
@@ -147,6 +154,17 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "simple-chunk-allocator"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "973e52fd54df6336f798ab685cd26c71fcb9d065e2fba5f9ac311c3ad43b85b5"
+dependencies = [
+ "libm",
+ "log",
+ "spin",
 ]
 
 [[package]]
