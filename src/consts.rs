@@ -25,3 +25,6 @@ pub const TIMER_FREQ: u32 = 100; /* in HZ */
 
 /// Entry point of the user tasks
 pub const USER_ENTRY: VirtAddr = VirtAddr(0x20000000000u64);
+
+/// Size of the kernel heap
+pub const HEAP_SIZE: usize = 8 * 1024 * 1024;
