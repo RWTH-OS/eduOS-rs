@@ -18,13 +18,11 @@ use crate::arch::mm::VirtAddr;
 use crate::arch::{BasePageSize, PageSize};
 use crate::logging::*;
 use crate::mm;
-use crate::mm::freelist::{FreeList, FreeListEntry};
 use alloc::alloc::Layout;
 use core::alloc::GlobalAlloc;
 
 /// Size of the preallocated space for the Bootstrap Allocator.
 const BOOTSTRAP_HEAP_SIZE: usize = 2 * 1024 * 1024;
-const HEAP_SIZE: usize = 8 * 1024 * 1024;
 
 /// The Allocator structure is immutable, so we need this helper structure
 /// for our allocator information.
@@ -32,7 +30,6 @@ const HEAP_SIZE: usize = 8 * 1024 * 1024;
 #[repr(C)]
 struct AllocatorInfo {
 	heap: [u8; BOOTSTRAP_HEAP_SIZE],
-	free_list: FreeList<VirtAddr>,
 	index: usize,
 	is_bootstrapping: bool,
 }
@@ -41,21 +38,13 @@ impl AllocatorInfo {
 	const fn new() -> AllocatorInfo {
 		AllocatorInfo {
 			heap: [0x00; BOOTSTRAP_HEAP_SIZE],
-			free_list: FreeList::new(),
 			index: 0,
 			is_bootstrapping: true,
 		}
 	}
 
 	fn switch_to_system_allocator(&mut self) {
-		let size = align_up!(HEAP_SIZE, BasePageSize::SIZE);
-		let addr = mm::allocate(size, true);
-		let entry = FreeListEntry::new(addr, addr + size);
-		self.free_list.list.push_back(entry);
-
 		info!("Switching to the System Allocator");
-		info!("Heap start at 0x{:x}", addr);
-
 		self.is_bootstrapping = false;
 	}
 }
@@ -67,28 +56,9 @@ pub struct Allocator;
 unsafe impl<'a> GlobalAlloc for &'a Allocator {
 	unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
 		if ALLOCATOR_INFO.is_bootstrapping {
-			let ptr = &mut ALLOCATOR_INFO.heap[align_up!(ALLOCATOR_INFO.index, layout.align())]
-				as *mut u8;
-			debug!(
-				"Allocating {:#X} bytes at {:#X}, index {}",
-				layout.size(),
-				ptr as usize,
-				ALLOCATOR_INFO.index
-			);
-
-			if ALLOCATOR_INFO.index + layout.size() >= BOOTSTRAP_HEAP_SIZE {
-				panic!("Bootstrap Allocator Overflow! Increase BOOTSTRAP_HEAP_SIZE.");
-			}
-
-			ALLOCATOR_INFO.index = align_up!(ALLOCATOR_INFO.index, layout.align()) + layout.size();
-
-			ptr
+			alloc_bootstrap(layout)
 		} else {
-			ALLOCATOR_INFO
-				.free_list
-				.allocate(layout.size(), Some(layout.align()))
-				.expect("Out of memory!")
-				.as_mut_ptr()
+			alloc_system(layout)
 		}
 	}
 
@@ -101,9 +71,51 @@ unsafe impl<'a> GlobalAlloc for &'a Allocator {
 		// So check if this is a pointer allocated by the System Allocator.
 		debug!("Deallocate {} bytes at {:#X}", layout.size(), ptr as usize);
 		if !crate::arch::mm::is_kernel(address) {
-			ALLOCATOR_INFO.free_list.deallocate(address, layout.size())
+			dealloc_system(address, layout);
 		}
 	}
+}
+
+/// An allocation using the always available Bootstrap Allocator.
+unsafe fn alloc_bootstrap(layout: Layout) -> *mut u8 {
+	let ptr = &mut ALLOCATOR_INFO.heap[align_up!(ALLOCATOR_INFO.index, layout.align())] as *mut u8;
+	debug!(
+		"Allocating {:#X} bytes at {:#X}, index {}",
+		layout.size(),
+		ptr as usize,
+		ALLOCATOR_INFO.index
+	);
+
+	if ALLOCATOR_INFO.index + layout.size() >= BOOTSTRAP_HEAP_SIZE {
+		panic!("Bootstrap Allocator Overflow! Increase BOOTSTRAP_HEAP_SIZE.");
+	}
+
+	ALLOCATOR_INFO.index = align_up!(ALLOCATOR_INFO.index, layout.align()) + layout.size();
+
+	ptr
+}
+
+/// An allocation using the initialized System Allocator.
+fn alloc_system(layout: Layout) -> *mut u8 {
+	debug!(
+		"Allocating {} bytes using the System Allocator",
+		layout.size()
+	);
+
+	let size = align_up!(layout.size(), BasePageSize::SIZE);
+	mm::allocate(size, true).as_mut_ptr()
+}
+
+/// A deallocation using the initialized System Allocator.
+fn dealloc_system(virtual_address: VirtAddr, layout: Layout) {
+	debug!(
+		"Deallocating {} bytes at {:#X} using the System Allocator",
+		layout.size(),
+		virtual_address
+	);
+
+	let size = align_up!(layout.size(), BasePageSize::SIZE);
+	mm::deallocate(virtual_address, size);
 }
 
 pub fn init() {
