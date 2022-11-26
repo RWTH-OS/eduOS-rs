@@ -17,6 +17,7 @@ run-args = []
 
 [dependencies]
 spin = "0.9"
+simple-chunk-allocator = "0.1.5"
 qemu-exit = "3.0"	# Spinlocks.
 bootloader = "0.9.23"
 

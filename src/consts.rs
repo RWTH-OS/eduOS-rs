@@ -21,3 +21,9 @@ pub const PAGE_SIZE: usize = 4096;
 
 /// Maximum number of priorities
 pub const NO_PRIORITIES: usize = 32;
+
+/// frequency of the timer interrupt
+pub const TIMER_FREQ: u32 = 100; /* in HZ */
+
+/// Size of the kernel heap
+pub const HEAP_SIZE: usize = 8 * 1024 * 1024;
