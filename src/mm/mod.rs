@@ -5,12 +5,10 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be
 // copied, modified, or distributed except according to those terms.
 
-pub mod allocator;
-
+#[cfg(not(test))]
 use alloc::alloc::Layout;
 
 pub fn init() {
-	self::allocator::init();
 }
 
 #[cfg(not(test))]

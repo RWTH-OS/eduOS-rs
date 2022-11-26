@@ -9,9 +9,8 @@ extern crate eduos_rs;
 
 #[allow(unused_imports)]
 use core::fmt::Write;
-use core::panic::PanicInfo;
 use eduos_rs::arch;
-use eduos_rs::arch::processor::{halt, shutdown};
+use eduos_rs::arch::processor::shutdown;
 use eduos_rs::scheduler;
 use eduos_rs::scheduler::task::NORMAL_PRIORITY;
 use eduos_rs::syscall;
@@ -26,6 +25,7 @@ extern "C" fn user_foo() {
 	}*/
 
 	syscall!(SYSNO_WRITE, str.as_ptr() as u64, str.len());
+	core::mem::forget(str);
 	syscall!(SYSNO_EXIT);
 }
 
@@ -64,25 +64,4 @@ pub extern "C" fn main() -> ! {
 
 	// shutdown system
 	shutdown();
-}
-
-/// This function is called on panic.
-#[cfg(not(test))]
-#[panic_handler]
-pub fn panic(info: &PanicInfo) -> ! {
-	print!("[!!!PANIC!!!] ");
-
-	if let Some(location) = info.location() {
-		print!("{}:{}: ", location.file(), location.line());
-	}
-
-	if let Some(message) = info.message() {
-		print!("{}", message);
-	}
-
-	print!("\n");
-
-	loop {
-		halt();
-	}
 }
