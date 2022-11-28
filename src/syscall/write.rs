@@ -29,10 +29,10 @@ pub unsafe extern "C" fn sys_writev(_fd: i32, ptr: *const IoVec, cnt: i32) -> is
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn sys_write(_fd: i32, s: *const u8, len: usize) -> isize {
-	let text = core::slice::from_raw_parts(s, len);
-
-	print!("{}", String::from_utf8_lossy(text));
+pub unsafe extern "C" fn sys_write(_fd: i32, s: *mut u8, len: usize) -> isize {
+	let str = unsafe { String::from_raw_parts(s, len, len) };
+	print!("{}", str);
+	core::mem::forget(str);
 
 	len as isize
 }
