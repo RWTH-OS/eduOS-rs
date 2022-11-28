@@ -11,7 +11,9 @@ use alloc::string::String;
 #[no_mangle]
 pub extern "C" fn sys_write(s: *mut u8, len: usize) -> isize {
 	debug!("enter syscall write");
-	print!("{}", unsafe { String::from_raw_parts(s, len, len) });
+	let str = unsafe { String::from_raw_parts(s, len, len) };
+	print!("{}", str);
+	core::mem::forget(str);
 
 	len as isize
 }
