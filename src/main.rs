@@ -25,7 +25,6 @@ extern "C" fn user_foo() {
 	}*/
 
 	syscall!(SYSNO_WRITE, str.as_ptr() as u64, str.len());
-	core::mem::forget(str);
 	syscall!(SYSNO_EXIT);
 }
 
