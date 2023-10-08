@@ -36,7 +36,7 @@ jobs:
         choco install qemu
         echo "$Env:Programfiles\qemu" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       shell: pwsh
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
          submodules: true
     - name: Check Cargo availability
