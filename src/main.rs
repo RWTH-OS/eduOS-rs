@@ -20,9 +20,9 @@ use eduos_rs::{LogLevel, LOGGER};
 extern "C" fn user_foo() {
 	let str = b"Hello from user_foo!\n\0";
 
-	unsafe {
+	/*unsafe {
 		let _ = crate::arch::x86_64::kernel::serial::COM1.write_str("Hello from COM1!\n");
-	}
+	}*/
 
 	syscall!(SYSNO_WRITE, str.as_ptr() as u64, str.len());
 	core::mem::forget(str);
