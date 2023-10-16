@@ -3,11 +3,11 @@ name: Check format
 on:
   push:
     branches:
-      - master
+      - main
       - stage8
   pull_request:
     branches:
-      - master
+      - main
       - stage8
 
 jobs:
