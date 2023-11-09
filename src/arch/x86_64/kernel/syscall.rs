@@ -21,24 +21,12 @@ pub unsafe extern "C" fn syscall_handler() {
 		"push r9",
 		"push r10",
 		"push r11",
-		// save ds/es and set to kernel data descriptor \n\t\
-		"mov rcx, ds",
-		"push rcx",
-		"mov rcx, es",
-		"push rcx",
-		"mov rcx, {kernel_ds}",
-		"mov ds, rcx",
-		"mov es, rcx",
 		// copy 4th argument to rcx to adhere x86_64 ABI \n\t\
 		"mov rcx, r10",
 		"sti",
 		"call [{sys_handler}+8*rax]",
 		// restore context, see x86_64 ABI \n\t\
 		"cli",
-		"pop rcx",
-		"mov es, rcx",
-		"pop rcx",
-		"mov ds, rcx",
 		"pop r11",
 		"pop r10",
 		"pop r9",
@@ -49,6 +37,5 @@ pub unsafe extern "C" fn syscall_handler() {
 		"pop rcx",
 		"sysretq",
 		sys_handler = sym SYSHANDLER_TABLE,
-		kernel_ds = const 0x10,
 		options(noreturn));
 }
