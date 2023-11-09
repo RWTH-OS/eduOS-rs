@@ -21,15 +21,8 @@ pub unsafe extern "C" fn syscall_handler() {
 		"push r9",
 		"push r10",
 		"push r11",
-		// save ds/es and set to kernel data descriptor
-		"mov rcx, ds",
-		"push rcx",
-		"mov rcx, es",
-		"push rcx",
-		"mov rcx, {kernel_ds}",
-		"mov ds, rcx",
-		"mov es, rcx",
-		"swapgs", // switch to kernel stack
+		// switch to kernel stack
+		"swapgs",
 		"mov rcx, rsp",
 		"rdgsbase rsp",
 		"push rcx",
@@ -43,11 +36,6 @@ pub unsafe extern "C" fn syscall_handler() {
 		"pop rcx",
 		"mov rsp, rcx",
 		"swapgs",
-		// restore context
-		"pop rcx",
-		"mov es, rcx",
-		"pop rcx",
-		"mov ds, rcx",
 		"pop r11",
 		"pop r10",
 		"pop r9",
@@ -58,7 +46,6 @@ pub unsafe extern "C" fn syscall_handler() {
 		"pop rcx",
 		"sysretq",
 		sym SYSHANDLER_TABLE,
-		kernel_ds = const 0x10,
 		options(noreturn)
 	);
 }
