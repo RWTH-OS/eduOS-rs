@@ -61,7 +61,7 @@ $ apt-get install -y git nasm qemu-system-x86 build-essential
 This project uses Rustup to set its Rust toolchain.
 Follow the instructions to [install Rust using Rustup](https://www.rust-lang.org/tools/install).
 
-In addition, the tool https://github.com/rust-osdev/bootimage[bootimage] is required, which creates a bootable diskimage.
+In addition, the [rust-osdev/bootimage](https://github.com/rust-osdev/bootimage) tool is required, which creates a bootable diskimage.
 Please install the tool with following command.
 
 ```sh
