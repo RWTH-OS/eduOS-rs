@@ -51,7 +51,7 @@ $ choco install qemu git
 ### Linux
 
 Linux users should install common developer tools.
-For instance, on Ubuntu 18.04 the following command installs the required tools:
+For instance, on Ubuntu 22.04 the following command installs the required tools:
 
 ```sh
 $ apt-get install -y git nasm qemu-system-x86 build-essential
