@@ -17,7 +17,7 @@ pub extern "C" fn main() -> ! {
 	println!("Hello world!");
 
 	// shutdown system
-	shutdown();
+	shutdown(0);
 }
 
 /// This function is called on panic.
@@ -36,5 +36,5 @@ pub fn panic(info: &PanicInfo) -> ! {
 
 	print!("\n");
 
-	loop {}
+	shutdown(1);
 }

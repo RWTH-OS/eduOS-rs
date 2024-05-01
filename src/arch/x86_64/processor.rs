@@ -1,20 +1,25 @@
-#![allow(dead_code)]
-
-use core::arch::asm;
-use qemu_exit::QEMUExit;
 use x86::controlregs::*;
+use x86_64::instructions::port::Port;
 
 pub fn halt() {
 	unsafe {
-		asm!("hlt", options(nomem, nostack));
+		x86::halt();
+	}
+}
+
+fn qemu_exit(success: bool) {
+	let code = if success { 3 >> 1 } else { 0 };
+	unsafe {
+		Port::<u32>::new(0xf4).write(code);
 	}
 }
 
 #[no_mangle]
-pub extern "C" fn shutdown() -> ! {
-	// shutdown, works like Qemu's shutdown command
-	let qemu_exit_handle = qemu_exit::X86::new(0xf4, 5);
-	qemu_exit_handle.exit_success();
+pub extern "C" fn shutdown(error_code: i32) -> ! {
+	qemu_exit(error_code == 0);
+	loop {
+		halt();
+	}
 }
 
 pub fn cpu_init() {
