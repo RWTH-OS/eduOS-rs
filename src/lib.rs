@@ -1,4 +1,3 @@
-#![feature(lang_items)]
 #![feature(asm_const)]
 #![feature(allocator_api)]
 #![feature(naked_functions)]
