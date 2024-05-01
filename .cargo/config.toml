@@ -9,6 +9,7 @@ target = "x86_64-eduos.json"
 rustflags = [
   "-C", "link-arg=-Tlink_aarch64.ld"
 ]
+runner = "qemu-system-aarch64 -display none -serial stdio -machine virt,gic-version=3 -cpu cortex-a72 -semihosting -smp 1 -m 256M --kernel"
 
 [target.x86_64-eduos]
 runner = "bootimage runner"
