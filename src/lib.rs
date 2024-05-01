@@ -3,6 +3,7 @@
 #![feature(allocator_api)]
 #![feature(naked_functions)]
 #![no_std]
+#![no_main]
 
 extern crate spin;
 #[cfg(target_arch = "x86_64")]
