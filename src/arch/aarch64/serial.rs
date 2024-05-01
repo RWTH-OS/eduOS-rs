@@ -1,6 +1,6 @@
 use core::fmt;
 use core::ptr::write_bytes;
-use spin::Mutex;
+use hermit_sync::SpinMutex;
 
 /// A COM serial port.
 pub struct ComPort {
@@ -33,4 +33,4 @@ impl fmt::Write for ComPort {
 }
 
 /// Our primary serial port.
-pub static COM1: Mutex<ComPort> = Mutex::new(ComPort::new(0x09000000));
+pub static COM1: SpinMutex<ComPort> = SpinMutex::new(ComPort::new(0x09000000));

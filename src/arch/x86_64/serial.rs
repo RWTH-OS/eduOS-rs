@@ -1,5 +1,5 @@
 use core::fmt;
-use spin::Mutex;
+use hermit_sync::SpinMutex;
 use x86::io::*;
 
 /// A COM serial port.
@@ -34,4 +34,4 @@ impl fmt::Write for ComPort {
 }
 
 /// Our primary serial port.
-pub static COM1: Mutex<ComPort> = Mutex::new(ComPort::new(0x3F8));
+pub static COM1: SpinMutex<ComPort> = SpinMutex::new(ComPort::new(0x3F8));
