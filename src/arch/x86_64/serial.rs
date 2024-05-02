@@ -11,10 +11,8 @@ pub struct ComPort {
 
 impl ComPort {
 	/// Create a new COM port with the specified base address.
-	const fn new(base_addr: u16) -> ComPort {
-		ComPort {
-			base_addr: base_addr,
-		}
+	const fn new(base_addr: u16) -> Self {
+		Self { base_addr }
 	}
 }
 
