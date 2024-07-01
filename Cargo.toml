@@ -16,7 +16,7 @@ run-command = ["qemu-system-x86_64", "-display", "none", "-smp", "1", "-m", "128
 run-args = []
 
 [dependencies]
-bitflags = "1.0"
+bitflags = "2.6"
 spin = "0.9"
 simple-chunk-allocator = "0.1.5"
 qemu-exit = "3.0"	# Spinlocks.
