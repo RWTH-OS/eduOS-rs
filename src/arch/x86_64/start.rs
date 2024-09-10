@@ -1,11 +1,13 @@
+use crate::arch::x86_64::processor::shutdown;
+
 extern "C" {
-	fn main();
+	fn main() -> i32;
 }
 
 #[cfg(not(test))]
 #[no_mangle]
 pub unsafe extern "C" fn _start() -> ! {
-	main();
-
-	loop {}
+	let ret = main();
+	// shutdown system
+	shutdown(ret);
 }

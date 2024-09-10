@@ -1,5 +1,5 @@
 use x86::controlregs::*;
-use x86_64::instructions::port::Port;
+use x86::io;
 
 pub fn halt() {
 	unsafe {
@@ -10,7 +10,7 @@ pub fn halt() {
 fn qemu_exit(success: bool) {
 	let code = if success { 3 >> 1 } else { 0 };
 	unsafe {
-		Port::<u32>::new(0xf4).write(code);
+		io::outl(0xf4, code);
 	}
 }
 
