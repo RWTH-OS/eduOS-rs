@@ -1,4 +1,4 @@
-use crate::arch::x86_64::processor::shutdown;
+use crate::arch::x86::processor::shutdown;
 
 extern "C" {
 	fn main() -> i32;

@@ -12,11 +12,12 @@ use core::panic::PanicInfo;
 /// This function is the entry point of the kernel
 #[cfg(not(test))]
 #[no_mangle] // don't mangle the name of this function
-pub extern "C" fn main() -> ! {
+pub extern "C" fn main() -> i32 {
+	eduos_rs::arch::init();
+
 	println!("Hello world!");
 
-	// shutdown system
-	eduos_rs::shutdown(0);
+	0
 }
 
 /// This function is called on panic.

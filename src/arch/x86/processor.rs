@@ -1,12 +1,14 @@
 use x86::controlregs::*;
+#[cfg(feature = "qemu_exit")]
 use x86::io;
 
-pub fn halt() {
+pub(crate) fn halt() {
 	unsafe {
 		x86::halt();
 	}
 }
 
+#[cfg(feature = "qemu_exit")]
 fn qemu_exit(success: bool) {
 	let code = if success { 3 >> 1 } else { 0 };
 	unsafe {
@@ -14,15 +16,17 @@ fn qemu_exit(success: bool) {
 	}
 }
 
+#[allow(unused_variables)]
 #[no_mangle]
 pub extern "C" fn shutdown(error_code: i32) -> ! {
+	#[cfg(feature = "qemu_exit")]
 	qemu_exit(error_code == 0);
 	loop {
 		halt();
 	}
 }
 
-pub fn cpu_init() {
+pub(crate) fn cpu_init() {
 	let mut cr0 = unsafe { cr0() };
 
 	// be sure that AM, NE and MP is enabled

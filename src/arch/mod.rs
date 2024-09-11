@@ -1,15 +1,13 @@
 // Export our platform-specific modules.
-#[cfg(target_arch = "x86_64")]
-pub use self::x86_64::{processor, serial};
+#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
+pub use self::x86::{init, processor};
 
-// Implementations for x86_64.
-#[cfg(target_arch = "x86_64")]
-pub mod x86_64;
+#[cfg(all(target_arch = "x86", feature = "vga"))]
+pub use self::x86::vga;
 
-// Export our platform-specific modules.
-#[cfg(target_arch = "x86")]
-pub use self::x86_64::{processor, serial};
+#[cfg(not(all(target_arch = "x86", feature = "vga")))]
+pub use self::x86::serial;
 
-// Implementations for x86_64.
-#[cfg(target_arch = "x86")]
-pub mod x86_64;
+// Implementations for x86.
+#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
+pub mod x86;
