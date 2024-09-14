@@ -73,6 +73,12 @@ jobs:
     needs: build
 
     steps:
+      - uses: dev-drprasad/delete-tag-and-release@v1.1
+        with:
+          delete_release: true
+          tag_name: stage0
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Get artifacts
         uses: actions/download-artifact@v4
         with:
@@ -88,8 +94,8 @@ jobs:
       - name: Release to GitHub
         uses: ncipollo/release-action@v1
         with:
-          name: Latest Release
-          tag: latest
+          name: Latest Stage0 Release
+          tag: stage0
           commit: stage0
           body: ${{ github.event.head_commit.message }}
           artifacts: "i686-eduos-stage0"
