@@ -64,9 +64,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@v4
+      - name: Check Cargo availability
+        run: cargo --version
       - name: Build release version (i686)
         run:
-          cargo build --target=i686-eduos.json --release
+          cargo build --target=i686-eduos.json --release --features vga --no-default-features
       - name: Create artifacts
         run: |
           mkdir -p i686/stage0
