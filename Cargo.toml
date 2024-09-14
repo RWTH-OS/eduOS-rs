@@ -16,13 +16,13 @@ run-command = ["qemu-system-x86_64", "-display", "none", "-smp", "1", "-m", "256
 run-args = []
 
 [features]
-default = ["qemu_exit"]
+default = ["qemu-exit"]
 vga = []
-qemu_exit = []
 
 [dependencies]
 spinning_top = "0.3.0"
 cfg-if = "1.0"
+qemu-exit = { version = "3.0", optional = true }
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 bootloader = "0.9.29"

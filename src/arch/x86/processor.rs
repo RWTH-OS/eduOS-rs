@@ -1,28 +1,22 @@
+#[cfg(feature = "qemu-exit")]
+use qemu_exit::QEMUExit;
 use x86::controlregs::*;
-#[cfg(feature = "qemu_exit")]
-use x86::io;
-
-pub(crate) fn halt() {
-	unsafe {
-		x86::halt();
-	}
-}
-
-#[cfg(feature = "qemu_exit")]
-fn qemu_exit(success: bool) {
-	let code = if success { 3 >> 1 } else { 0 };
-	unsafe {
-		io::outl(0xf4, code);
-	}
-}
 
 #[allow(unused_variables)]
 #[no_mangle]
 pub extern "C" fn shutdown(error_code: i32) -> ! {
-	#[cfg(feature = "qemu_exit")]
-	qemu_exit(error_code == 0);
+	#[cfg(feature = "qemu-exit")]
+	{
+		// shutdown, works like Qemu's shutdown command
+		let qemu_exit_handle = qemu_exit::X86::new(0xf4, 5);
+		qemu_exit_handle.exit_success();
+	}
+
+	#[cfg(not(feature = "qemu-exit"))]
 	loop {
-		halt();
+		unsafe {
+			x86::halt();
+		}
 	}
 }
 

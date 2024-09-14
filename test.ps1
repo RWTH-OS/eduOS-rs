@@ -1,5 +1,5 @@
 Invoke-Command -Script { cargo run } -ErrorAction SilentlyContinue
-IF( $LASTEXITCODE -EQ 3 ) {
+IF( $LASTEXITCODE -EQ 5 ) {
   Write-Output "eduOS-rs runs succesfully within Qemu"
   Exit 0
 } else {
