@@ -10,16 +10,19 @@ build-command = ["build"]
 # The command invoked with the created bootimage (the "{}" will be replaced
 # with the path to the bootable disk image)
 # Applies to `bootimage run` and `bootimage runner`
-run-command = ["qemu-system-x86_64", "-display", "none", "-smp", "1", "-m", "128M", "-serial", "stdio", "-cpu", "qemu64,apic,fsgsbase,rdtscp,xsave,xsaveopt,fxsr", "-device", "isa-debug-exit,iobase=0xf4,iosize=0x04", "-drive", "format=raw,file={}"]
+run-command = ["qemu-system-x86_64", "-display", "none", "-smp", "1", "-m", "256M", "-serial", "stdio", "-cpu", "qemu64,apic,fsgsbase,rdtscp,xsave,xsaveopt,fxsr", "-device", "isa-debug-exit,iobase=0xf4,iosize=0x04", "-drive", "format=raw,file={}"]
 # Additional arguments passed to the run command for non-test executables
 # Applies to `bootimage run` and `bootimage runner`
 run-args = []
 
+[features]
+default = ["qemu-exit"]
+
 [dependencies]
 spin = "0.9"
 simple-chunk-allocator = "0.1.5"
-qemu-exit = "3.0"	# Spinlocks.
-bootloader = "0.9.23"
+qemu-exit = { version = "3.0", optional = true }
+bootloader = "0.9.29"
 
 [target.'cfg(target_arch = "x86_64")'.dependencies.x86]
 version = "0.52"

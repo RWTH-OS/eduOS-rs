@@ -5,10 +5,11 @@ build-std-features = ["compiler-builtins-mem"]
 [build]
 target = "x86_64-eduos.json"
 
-[target.aarch64-eduos]
+[target.i686-eduos]
 rustflags = [
-  "-C", "link-arg=-Tlink_aarch64.ld"
+  "-C", "link-arg=-Tsrc/arch/x86/link_i686.ld", "-C", "relocation-model=static"
 ]
+runner = "qemu-system-x86_64 -display none -serial stdio -smp 1 -m 256M -device isa-debug-exit,iobase=0xf4,iosize=0x04 -kernel"
 
 [target.x86_64-eduos]
 runner = "bootimage runner"
