@@ -17,6 +17,7 @@ run-args = []
 
 [features]
 default = ["qemu-exit"]
+vga = []
 
 [dependencies]
 spin = "0.9"
