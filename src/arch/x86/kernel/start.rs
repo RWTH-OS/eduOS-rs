@@ -12,7 +12,7 @@ extern "C" {
 #[cfg(not(test))]
 #[no_mangle]
 pub unsafe extern "C" fn _start(boot_info: &'static bootloader::BootInfo) -> ! {
-	crate::arch::x86_64::kernel::BOOT_INFO = Some(boot_info);
+	crate::arch::x86::kernel::BOOT_INFO = Some(boot_info);
 
 	main();
 
