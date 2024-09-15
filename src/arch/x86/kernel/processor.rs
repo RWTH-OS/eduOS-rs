@@ -5,6 +5,7 @@ use crate::arch::x86::kernel::syscall_handler;
 use crate::logging::*;
 use crate::scheduler::task::Stack;
 use core::arch::asm;
+#[cfg(feature = "qemu-exit")]
 use qemu_exit::QEMUExit;
 use x86::controlregs::*;
 use x86::cpuid::*;
