@@ -14,7 +14,11 @@ pub use self::x86::kernel::switch::switch;
 pub use self::x86::mm;
 
 // Export our platform-specific modules.
-#[cfg(target_arch = "x86_64")]
+#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
 pub use self::x86_64::mm::paging::{
 	drop_user_space, get_kernel_root_page_table, BasePageSize, PageSize,
 };
+
+pub fn init() {
+	processor::cpu_init();
+}
