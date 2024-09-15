@@ -1,4 +1,4 @@
-use crate::arch::x86_64::mm::paging::page_fault_handler;
+use crate::arch::x86::mm::paging::page_fault_handler;
 use crate::logging::*;
 use crate::scheduler::*;
 use crate::synch::spinlock::*;

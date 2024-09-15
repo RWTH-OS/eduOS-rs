@@ -276,11 +276,11 @@ impl TaskStack {
 
 impl Stack for TaskStack {
 	fn top(&self) -> VirtAddr {
-		VirtAddr::from((&(self.buffer[STACK_SIZE - 16]) as *const _) as u64)
+		VirtAddr::from((&(self.buffer[STACK_SIZE - 16]) as *const _) as usize)
 	}
 
 	fn bottom(&self) -> VirtAddr {
-		VirtAddr::from((&(self.buffer[0]) as *const _) as u64)
+		VirtAddr::from((&(self.buffer[0]) as *const _) as usize)
 	}
 }
 

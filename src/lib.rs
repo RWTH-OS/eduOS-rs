@@ -14,9 +14,8 @@ extern crate bitflags;
 extern crate num_traits;
 
 // These need to be visible to the linker, so we need to export them.
+use crate::arch::processor::shutdown;
 use crate::consts::HEAP_SIZE;
-#[cfg(target_arch = "x86_64")]
-use arch::processor::*;
 use core::panic::PanicInfo;
 pub use logging::*;
 use simple_chunk_allocator::{heap, heap_bitmap, GlobalChunkAllocator, PageAligned};

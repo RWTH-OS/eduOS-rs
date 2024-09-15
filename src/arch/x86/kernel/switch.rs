@@ -1,7 +1,8 @@
 use crate::arch::mm::VirtAddr;
-use crate::arch::x86_64::kernel::gdt::set_current_kernel_stack;
+use crate::arch::x86::kernel::gdt::set_current_kernel_stack;
 use core::arch::asm;
 
+#[cfg(target_arch = "x86_64")]
 macro_rules! save_context {
 	() => {
 		concat!(
@@ -28,6 +29,7 @@ macro_rules! save_context {
 	};
 }
 
+#[cfg(target_arch = "x86_64")]
 macro_rules! restore_context {
 	() => {
 		concat!(
@@ -55,6 +57,7 @@ macro_rules! restore_context {
 	};
 }
 
+#[cfg(target_arch = "x86_64")]
 #[naked]
 pub unsafe extern "C" fn switch(_old_stack: *mut VirtAddr, _new_stack: VirtAddr) {
 	// rdi = old_stack => the address to store the old rsp
@@ -82,6 +85,24 @@ pub unsafe extern "C" fn switch(_old_stack: *mut VirtAddr, _new_stack: VirtAddr)
 		"wrfsbase r15",
 		restore_context!(),
 		set_stack = sym set_current_kernel_stack,
+		options(noreturn)
+	);
+}
+
+#[cfg(target_arch = "x86")]
+pub unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
+	asm!(
+		// store all registers
+		"pushfd",
+		"pushad",
+		// switch stack
+		"mov edi, [esp+10*4]",
+		"mov [edi], esp",
+		"mov esp, [esp+11*4]",
+		// restore registers
+		"popad",
+		"popfd",
+		"ret",
 		options(noreturn)
 	);
 }

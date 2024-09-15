@@ -30,11 +30,11 @@ extern "C" fn user_foo() {
 
 extern "C" fn create_user_foo() {
 	unsafe {
-		controlregs::cr3_write(arch::x86_64::mm::paging::create_usr_pgd().as_u64());
+		controlregs::cr3_write(arch::x86::mm::paging::create_usr_pgd().as_u64());
 	}
 
 	// Map demo code in our user-space
-	arch::x86_64::mm::paging::map_usr_entry(user_foo);
+	arch::x86::mm::paging::map_usr_entry(user_foo);
 
 	debug!("jump to user land");
 	unsafe {

@@ -1,24 +1,22 @@
-// Copyright (c) 2017-2018 Stefan Lankes, RWTH Aachen University
-//
-// Licensed under the Apache License, Version 2.0, <LICENSE-APACHE or
-// http://apache.org/licenses/LICENSE-2.0> or the MIT license <LICENSE-MIT or
-// http://opensource.org/licenses/MIT>, at your option. This file may not be
-// copied, modified, or distributed except according to those terms.
-
 pub mod gdt;
 pub mod irq;
 mod pit;
 pub mod processor;
 pub mod serial;
+#[cfg(target_arch = "x86_64")]
 mod start;
-pub mod switch;
+pub(crate) mod switch;
 mod syscall;
-pub mod task;
+pub(crate) mod task;
 
-pub use crate::arch::x86_64::kernel::syscall::syscall_handler;
+pub use crate::arch::x86::kernel::syscall::syscall_handler;
 use crate::consts::USER_ENTRY;
 use bootloader::BootInfo;
 use core::arch::asm;
+
+
+#[cfg(target_arch = "x86")]
+core::arch::global_asm!(include_str!("entry32.s"));
 
 pub(crate) static mut BOOT_INFO: Option<&'static BootInfo> = None;
 
@@ -67,7 +65,7 @@ macro_rules! syscall {
 	};
 
 	($arg0:expr, $arg1:expr, $arg2:expr) => {
-		arch::x86_64::kernel::syscall2($arg0 as u64, $arg1 as u64, $arg2 as u64)
+		arch::x86::kernel::syscall2($arg0 as u64, $arg1 as u64, $arg2 as u64)
 	};
 
 	($arg0:expr, $arg1:expr, $arg2:expr, $arg3:expr) => {

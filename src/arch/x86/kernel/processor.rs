@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use crate::arch::mm::get_boot_stack;
-use crate::arch::x86_64::kernel::syscall_handler;
+use crate::arch::x86::kernel::syscall_handler;
 use crate::logging::*;
 use crate::scheduler::task::Stack;
 use core::arch::asm;
