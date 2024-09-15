@@ -45,9 +45,12 @@ jobs:
       run: cargo --version
     - name: Install bootimage
       run: cargo install bootimage
-    - name: Build
+    - name: Build (x86_64)
       run:
          cargo build
+    - name: Build (i686)
+      run:
+        cargo build --target=i686-eduos.json
     - name: run (ubuntu)
       if: ${{ matrix.os == 'ubuntu-latest' }}
       run: ./test.sh
