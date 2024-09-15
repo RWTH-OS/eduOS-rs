@@ -17,6 +17,7 @@ run-args = []
 
 [features]
 default = ["qemu-exit"]
+vga = []
 
 [dependencies]
 simple-chunk-allocator = "0.1.5"

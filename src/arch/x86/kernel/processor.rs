@@ -3,6 +3,7 @@
 use crate::arch::x86_64::kernel::syscall_handler;
 use crate::logging::*;
 use core::arch::asm;
+#[cfg(feature = "qemu-exit")]
 use qemu_exit::QEMUExit;
 use x86::controlregs::*;
 use x86::cpuid::*;
