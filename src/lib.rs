@@ -1,7 +1,4 @@
-#![feature(lang_items)]
-#![feature(asm_const)]
 #![feature(const_mut_refs)]
-#![feature(panic_info_message)]
 #![feature(linked_list_cursors)]
 #![feature(alloc_error_handler)]
 #![feature(naked_functions)]
@@ -47,7 +44,7 @@ static mut HEAP_BITMAP: PageAligned<[u8; CHUNK_AMOUNT / 8]> = heap_bitmap!(chunk
 static ALLOCATOR: GlobalChunkAllocator =
 	unsafe { GlobalChunkAllocator::new(HEAP.deref_mut_const(), HEAP_BITMAP.deref_mut_const()) };
 
-/// This function is called on panic.
+//// This function is called on panic.
 #[cfg(not(test))]
 #[panic_handler]
 pub fn panic(info: &PanicInfo) -> ! {
@@ -57,13 +54,11 @@ pub fn panic(info: &PanicInfo) -> ! {
 		print!("{}:{}: ", location.file(), location.line());
 	}
 
-	if let Some(message) = info.message() {
+	if let Some(message) = info.message().as_str() {
 		print!("{}", message);
 	}
 
 	print!("\n");
 
-	loop {
-		halt();
-	}
+	shutdown(1);
 }
