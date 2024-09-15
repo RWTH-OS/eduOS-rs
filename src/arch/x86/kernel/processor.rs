@@ -2,6 +2,7 @@
 
 use crate::logging::*;
 use core::arch::asm;
+#[cfg(feature = "qemu-exit")]
 use qemu_exit::QEMUExit;
 use x86::controlregs::*;
 
@@ -82,13 +83,9 @@ pub extern "C" fn shutdown(error_code: i32) -> ! {
 	}
 }
 
-<<<<<<< HEAD
 pub fn init() {
 	debug!("enable supported processor features");
 
-=======
-pub(crate) fn cpu_init() {
->>>>>>> dd0e01d (switch to the latest rust toolchain)
 	let mut cr0 = unsafe { cr0() };
 
 	// be sure that AM, NE and MP is enabled

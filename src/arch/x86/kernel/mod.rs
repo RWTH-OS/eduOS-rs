@@ -2,11 +2,14 @@ mod gdt;
 pub mod irq;
 mod pit;
 pub mod processor;
+#[cfg(not(all(target_arch = "x86", feature = "vga")))]
 pub mod serial;
 #[cfg(target_arch = "x86_64")]
 mod start;
 pub(crate) mod switch;
 pub(crate) mod task;
+#[cfg(all(target_arch = "x86", feature = "vga"))]
+pub mod vga;
 
 #[cfg(target_arch = "x86_64")]
 use bootloader::BootInfo;
@@ -22,4 +25,7 @@ pub fn init() {
 	gdt::init();
 	irq::init();
 	pit::init();
+
+	#[cfg(all(target_arch = "x86", feature = "vga"))]
+	vga::init();
 }
