@@ -1,6 +1,7 @@
+use crate::arch::x86::kernel::processor::shutdown;
+
 extern "C" {
-	#[allow(dead_code)]
-	pub fn main();
+	pub fn main() -> i32;
 }
 
 #[cfg(not(test))]
@@ -8,7 +9,7 @@ extern "C" {
 pub unsafe extern "C" fn _start(boot_info: &'static bootloader::BootInfo) -> ! {
 	crate::arch::x86::kernel::BOOT_INFO = Some(boot_info);
 
-	main();
+	let ret = main();
 
-	loop {}
+	shutdown(ret)
 }
