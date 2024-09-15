@@ -26,10 +26,17 @@ version = "0.9.23"
 source = "git+https://github.com/RWTH-OS/bootloader.git?branch=eduos#51805b19574e844c359d2cf153488d8b442b5e81"
 
 [[package]]
+name = "cfg-if"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
+
+[[package]]
 name = "eduos-rs"
 version = "0.1.0"
 dependencies = [
  "bootloader",
+ "cfg-if",
  "qemu-exit",
  "simple-chunk-allocator",
  "x86",

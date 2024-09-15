@@ -24,3 +24,4 @@ qemu-exit = { version = "3.0", optional = true }
 bootloader = { git="https://github.com/RWTH-OS/bootloader.git", branch="eduos" }
 x86 = { version = "0.52", default-features = false }
 
+cfg-if = "1.0"

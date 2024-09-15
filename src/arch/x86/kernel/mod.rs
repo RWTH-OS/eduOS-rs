@@ -3,14 +3,21 @@ pub mod irq;
 mod pit;
 pub mod processor;
 pub mod serial;
+#[cfg(target_arch = "x86_64")]
 mod start;
-pub mod switch;
+pub(crate) mod switch;
 mod syscall;
-pub mod task;
+pub(crate) mod task;
 
-pub use crate::arch::x86_64::kernel::syscall::syscall_handler;
-use bootloader::BootInfo;
 use core::arch::asm;
+pub use crate::arch::x86::kernel::syscall::syscall_handler;
+#[cfg(target_arch = "x86_64")]
+use bootloader::BootInfo;
+#[cfg(target_arch = "x86_64")]
+pub(crate) static mut BOOT_INFO: Option<&'static BootInfo> = None;
+
+#[cfg(target_arch = "x86")]
+core::arch::global_asm!(include_str!("entry32.s"));
 
 pub(crate) static mut BOOT_INFO: Option<&'static BootInfo> = None;
 
