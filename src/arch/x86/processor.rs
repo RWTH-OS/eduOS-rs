@@ -7,8 +7,10 @@ use x86::controlregs::*;
 pub extern "C" fn shutdown(error_code: i32) -> ! {
 	#[cfg(feature = "qemu-exit")]
 	{
+		let code = if error_code == 0 { 5 } else { 1 };
+
 		// shutdown, works like Qemu's shutdown command
-		let qemu_exit_handle = qemu_exit::X86::new(0xf4, 5);
+		let qemu_exit_handle = qemu_exit::X86::new(0xf4, code);
 		qemu_exit_handle.exit_success();
 	}
 
