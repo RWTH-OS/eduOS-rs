@@ -1,8 +1,8 @@
-use crate::arch::x86::kernel::BOOT_INFO;
 use crate::scheduler::task::Stack;
-use bootloader::bootinfo::MemoryRegionType;
-use core::ops::Deref;
 
+#[cfg(target_arch = "x86")]
+pub use x86::bits32::paging::VAddr as VirtAddr;
+#[cfg(target_arch = "x86_64")]
 pub use x86::bits64::paging::VAddr as VirtAddr;
 
 #[derive(Copy, Clone)]
@@ -19,7 +19,13 @@ impl BootStack {
 
 impl Stack for BootStack {
 	fn top(&self) -> VirtAddr {
-		self.end - 16u64
+		cfg_if::cfg_if! {
+			if #[cfg(target_arch = "x86")] {
+				self.end - 16u32
+			} else {
+				self.end - 16u64
+			}
+		}
 	}
 
 	fn bottom(&self) -> VirtAddr {
@@ -27,7 +33,12 @@ impl Stack for BootStack {
 	}
 }
 
-pub fn get_boot_stack() -> BootStack {
+#[cfg(target_arch = "x86_64")]
+pub(crate) fn get_boot_stack() -> BootStack {
+	use crate::arch::x86::kernel::BOOT_INFO;
+	use bootloader::bootinfo::MemoryRegionType;
+	use core::ops::Deref;
+
 	unsafe {
 		let regions = BOOT_INFO.unwrap().memory_map.deref();
 
@@ -42,4 +53,17 @@ pub fn get_boot_stack() -> BootStack {
 
 		panic!("Unable to determine the kernel stack");
 	}
+}
+
+#[cfg(target_arch = "x86")]
+extern "C" {
+	static BOOT_STACK: usize;
+}
+
+#[cfg(target_arch = "x86")]
+pub(crate) fn get_boot_stack() -> BootStack {
+	BootStack::new(
+		unsafe { VirtAddr(BOOT_STACK.try_into().unwrap()) },
+		unsafe { VirtAddr((BOOT_STACK + 0x1000).try_into().unwrap()) },
+	)
 }
