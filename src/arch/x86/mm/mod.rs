@@ -1,4 +1,4 @@
-use crate::arch::x86_64::kernel::BOOT_INFO;
+use crate::arch::x86::kernel::BOOT_INFO;
 use crate::scheduler::task::Stack;
 use bootloader::bootinfo::MemoryRegionType;
 use core::ops::Deref;
