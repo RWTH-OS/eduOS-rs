@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use core::arch::asm;
+#[cfg(feature = "qemu-exit")]
 use qemu_exit::QEMUExit;
 use x86::controlregs::*;
 
