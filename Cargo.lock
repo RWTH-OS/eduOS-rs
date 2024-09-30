@@ -149,9 +149,9 @@ dependencies = [
 
 [[package]]
 name = "simple-chunk-allocator"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "973e52fd54df6336f798ab685cd26c71fcb9d065e2fba5f9ac311c3ad43b85b5"
+checksum = "66d477da26cf432725275b5bc6e92f27ac4d31f759ffbc8710e84954899e9c69"
 dependencies = [
  "libm",
  "log",
