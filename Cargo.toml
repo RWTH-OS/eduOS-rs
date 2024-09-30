@@ -18,7 +18,7 @@ run-args = []
 [dependencies]
 bitflags = "1.0"
 spin = "0.9"
-simple-chunk-allocator = "0.1.5"
+simple-chunk-allocator = "0.1.6"
 qemu-exit = "3.0"	# Spinlocks.
 
 [target.'cfg(target_arch = "x86_64")'.dependencies.bootloader]
