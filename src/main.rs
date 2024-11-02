@@ -6,7 +6,8 @@
 #[macro_use]
 extern crate eduos_rs;
 
-/// This function is the entry point of the kernel
+/// This function isn't the entry point, since the linker looks for a function
+/// named `_start` by default. But `_start` jumps directly to `main`
 #[cfg(not(test))]
 #[no_mangle] // don't mangle the name of this function
 pub extern "C" fn main() -> i32 {
