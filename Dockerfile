@@ -1,5 +1,5 @@
-# Download base image ubuntu 22.04
-FROM ubuntu:22.04
+# Download base image ubuntu 24.04
+FROM ubuntu:latest
 
 ENV DEBIAN_FRONTEND=noninteractive
 
