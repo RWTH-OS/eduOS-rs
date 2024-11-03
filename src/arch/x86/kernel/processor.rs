@@ -7,7 +7,7 @@ use x86::controlregs::*;
 
 /// Search the most significant bit
 #[inline(always)]
-pub fn msb(value: u64) -> Option<u64> {
+pub(crate) fn msb(value: u64) -> Option<u64> {
 	if value > 0 {
 		let ret: u64;
 
@@ -26,7 +26,7 @@ pub fn msb(value: u64) -> Option<u64> {
 
 /// Search the least significant bit
 #[inline(always)]
-pub fn lsb(value: u64) -> Option<u64> {
+pub(crate) fn lsb(value: u64) -> Option<u64> {
 	if value > 0 {
 		let ret: u64;
 		unsafe {
@@ -48,16 +48,12 @@ pub(crate) fn halt() {
 	}
 }
 
-<<<<<<< HEAD
-pub fn pause() {
+pub(crate) fn pause() {
 	unsafe {
 		asm!("pause", options(nomem, nostack));
 	}
 }
 
-=======
-#[allow(unused_variables)]
->>>>>>> 3c6f8b9 (switch to the latest rust toolchain)
 #[no_mangle]
 pub extern "C" fn shutdown(error_code: i32) -> ! {
 	#[cfg(feature = "qemu-exit")]
