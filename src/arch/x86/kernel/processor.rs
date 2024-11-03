@@ -7,11 +7,11 @@ use x86::controlregs::*;
 
 /// Search the least significant bit
 #[inline(always)]
-pub(crate) fn lsb(i: u64) -> u64 {
+pub(crate) fn lsb(i: usize) -> usize {
 	let ret;
 
 	if i == 0 {
-		ret = !0u64;
+		ret = !0usize;
 	} else {
 		unsafe {
 			asm!("bsf {0}, {1}",

@@ -20,7 +20,7 @@ pub struct Scheduler {
 	/// queue of tasks, which are ready
 	ready_queues: [TaskQueue; NO_PRIORITIES],
 	/// Bitmap to show, which queue is uesed
-	prio_bitmap: u64,
+	prio_bitmap: usize,
 	/// queue of tasks, which are finished and can be released
 	finished_tasks: VecDeque<TaskId>,
 	// map between task id and task controll block
@@ -99,7 +99,7 @@ impl Scheduler {
 		let i = lsb(self.prio_bitmap);
 		let mut task = None;
 
-		if i <= prio.into() as u64 {
+		if i <= prio.into().into() {
 			task = self.ready_queues[i as usize].pop();
 
 			// clear bitmap entry for the priority i if the queus is empty
