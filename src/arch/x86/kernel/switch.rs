@@ -81,6 +81,7 @@ pub unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
 }
 
 #[cfg(target_arch = "x86")]
+#[naked]
 pub unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
 	asm!(
 		// store all registers
