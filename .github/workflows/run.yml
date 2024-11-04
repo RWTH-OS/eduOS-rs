@@ -65,7 +65,7 @@ jobs:
       if: ${{ matrix.os == 'ubuntu-latest' }}
       uses: actions/upload-artifact@v4
       with:
-        name: i686-eduos-stage1
+        name: i686-eduos-stage6
         path: |
           target/i686-eduos/release/eduos-rs
 
@@ -78,17 +78,17 @@ jobs:
       - uses: dev-drprasad/delete-tag-and-release@v1.1
         with:
           delete_release: true
-          tag_name: stage1
+          tag_name: stage6
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get artifacts
         uses: actions/download-artifact@v4
         with:
-          name: i686-eduos-stage1
+          name: i686-eduos-stage6
           path: .
 
       - name: Rename file
-        run: mv eduos-rs i686-eduos-stage1
+        run: mv eduos-rs i686-eduos-stage6
 
       - name: Display structure of downloaded files
         run: ls -R
@@ -96,9 +96,9 @@ jobs:
       - name: Release to GitHub
         uses: ncipollo/release-action@v1
         with:
-          name: Latest Stage0 Release
-          tag: stage1
-          commit: stage1
+          name: Latest Stage6 Release
+          tag: stage6
+          commit: stage6
           body: ${{ github.event.head_commit.message }}
-          artifacts: "i686-eduos-stage1"
+          artifacts: "i686-eduos-stage6"
           prerelease: true
