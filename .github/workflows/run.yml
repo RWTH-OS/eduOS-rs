@@ -96,9 +96,9 @@ jobs:
       - name: Release to GitHub
         uses: ncipollo/release-action@v1
         with:
-          name: Latest Stage0 Release
-          tag: stage1
-          commit: stage1
+          name: Latest Stage2 Release
+          tag: stage2
+          commit: stage2
           body: ${{ github.event.head_commit.message }}
           artifacts: "i686-eduos-stage1"
           prerelease: true
