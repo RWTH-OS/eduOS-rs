@@ -98,7 +98,7 @@ jobs:
       - name: Release to GitHub
         uses: ncipollo/release-action@v1
         with:
-          name: Latest Stage0 Release
+          name: Latest Stage1 Release
           tag: stage1
           commit: stage1
           body: ${{ github.event.head_commit.message }}
