@@ -19,11 +19,11 @@ pub struct Scheduler {
 	idle_task: Rc<RefCell<Task>>,
 	/// queue of tasks, which are ready
 	ready_queues: [TaskQueue; NO_PRIORITIES],
-	/// Bitmap to show, which queue is uesed
+	/// Bitmap to show, which queue is used
 	prio_bitmap: usize,
 	/// queue of tasks, which are finished and can be released
 	finished_tasks: VecDeque<TaskId>,
-	// map between task id and task controll block
+	/// map between task id and task control block
 	tasks: BTreeMap<TaskId, Rc<RefCell<Task>>>,
 }
 
