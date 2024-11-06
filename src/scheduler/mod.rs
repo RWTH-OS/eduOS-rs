@@ -11,7 +11,7 @@ use crate::scheduler::task::TaskPriority;
 
 static mut SCHEDULER: Option<scheduler::Scheduler> = None;
 
-/// Initialite module, must be called once, and only once
+/// Initialize module, must be called once, and only once
 pub fn init() {
 	unsafe {
 		SCHEDULER = Some(scheduler::Scheduler::new());
