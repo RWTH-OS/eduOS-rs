@@ -3,7 +3,7 @@
 use crate::arch::mm::VirtAddr;
 use crate::consts::*;
 use alloc::boxed::Box;
-use alloc::collections::LinkedList;
+use alloc::collections::VecDeque;
 use alloc::rc::Rc;
 use core::cell::RefCell;
 use core::fmt;
@@ -70,7 +70,7 @@ impl Stack for TaskStack {
 }
 
 pub struct TaskQueue {
-	queue: LinkedList<Rc<RefCell<Task>>>,
+	queue: VecDeque<Rc<RefCell<Task>>>,
 }
 
 impl TaskQueue {
