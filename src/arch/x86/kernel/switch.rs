@@ -1,4 +1,4 @@
-use core::arch::asm;
+use core::arch::naked_asm;
 
 #[cfg(target_arch = "x86_64")]
 macro_rules! save_context {
@@ -61,21 +61,20 @@ pub unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
 	// rdi = old_stack => the address to store the old rsp
 	// rsi = new_stack => stack pointer of the new task
 
-	asm!(
+	naked_asm!(
 		save_context!(),
 		// Store the old `rsp` behind `old_stack`
 		"mov [rdi], rsp",
 		// Set `rsp` to `new_stack`
 		"mov rsp, rsi",
 		restore_context!(),
-		options(noreturn)
 	);
 }
 
 #[cfg(target_arch = "x86")]
 #[naked]
 pub unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
-	asm!(
+	naked_asm!(
 		// store all registers
 		"pushfd",
 		"pushad",
@@ -86,7 +85,5 @@ pub unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
 		// restore registers
 		"popad",
 		"popfd",
-		"ret",
-		options(noreturn)
 	);
 }
