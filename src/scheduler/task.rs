@@ -1,9 +1,7 @@
-#![allow(dead_code)]
-
 use crate::arch::mm::VirtAddr;
 use crate::consts::*;
 use alloc::boxed::Box;
-use alloc::collections::LinkedList;
+use alloc::collections::VecDeque;
 use alloc::rc::Rc;
 use core::cell::RefCell;
 use core::fmt;
@@ -94,8 +92,15 @@ impl Stack for TaskStack {
 	}
 }
 
+impl Default for TaskStack {
+	fn default() -> Self {
+		Self::new()
+	}
+}
+
+#[derive(Default)]
 pub struct TaskQueue {
-	queue: LinkedList<Rc<RefCell<Task>>>,
+	queue: VecDeque<Rc<RefCell<Task>>>,
 }
 
 impl TaskQueue {
@@ -119,30 +124,8 @@ impl TaskQueue {
 	pub fn is_empty(&self) -> bool {
 		self.queue.is_empty()
 	}
-
-	/// Remove a specific task from the priority queue.
-	pub fn remove(&mut self, task: Rc<RefCell<Task>>) {
-		let mut cursor = self.queue.cursor_front_mut();
-
-		// Loop through all blocked tasks to find it.
-		while let Some(node) = cursor.current() {
-			if Rc::ptr_eq(&node, &task) {
-				// Remove it from the list
-				cursor.remove_current();
-
-				break;
-			}
-		}
-	}
 }
 
-impl Default for TaskQueue {
-	fn default() -> Self {
-		Self {
-			queue: Default::default(),
-		}
-	}
-}
 /// A task control block, which identifies either a process or a thread
 #[repr(align(64))]
 pub struct Task {
@@ -161,7 +144,7 @@ pub struct Task {
 impl Task {
 	pub fn new_idle(id: TaskId) -> Task {
 		Task {
-			id: id,
+			id,
 			prio: LOW_PRIORITY,
 			status: TaskStatus::TaskIdle,
 			last_stack_pointer: 0,
@@ -171,9 +154,9 @@ impl Task {
 
 	pub fn new(id: TaskId, status: TaskStatus, prio: TaskPriority) -> Task {
 		Task {
-			id: id,
-			prio: prio,
-			status: status,
+			id,
+			prio,
+			status,
 			last_stack_pointer: 0,
 			stack: Box::new(TaskStack::new()),
 		}

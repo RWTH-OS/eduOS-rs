@@ -41,7 +41,7 @@ impl Scheduler {
 			ready_queues: Default::default(),
 			prio_bitmap: 0,
 			finished_tasks: VecDeque::<TaskId>::new(),
-			tasks: tasks,
+			tasks,
 		}
 	}
 
@@ -49,7 +49,7 @@ impl Scheduler {
 		loop {
 			let id = TaskId::from(TID_COUNTER.fetch_add(1, Ordering::SeqCst));
 
-			if self.tasks.contains_key(&id) == false {
+			if !self.tasks.contains_key(&id) {
 				return id;
 			}
 		}
@@ -100,10 +100,10 @@ impl Scheduler {
 		let mut task = None;
 
 		if i <= prio.into().into() {
-			task = self.ready_queues[i as usize].pop();
+			task = self.ready_queues[i].pop();
 
 			// clear bitmap entry for the priority i if the queus is empty
-			if self.ready_queues[i as usize].is_empty() == true {
+			if self.ready_queues[i].is_empty() {
 				self.prio_bitmap &= !(1 << i);
 			}
 		}
@@ -113,13 +113,12 @@ impl Scheduler {
 
 	pub fn schedule(&mut self) {
 		// do we have finished tasks? => drop tasks => deallocate implicitly the stack
-		match self.finished_tasks.pop_front() {
-			Some(id) => {
-				if self.tasks.remove(&id).is_none() == true {
-					info!("Unable to drop task {}", id);
-				}
+		while let Some(id) = self.finished_tasks.pop_front() {
+			if self.tasks.remove(&id).is_none() {
+				info!("Unable to drop task {}", id);
+			} else {
+				debug!("Unable to drop task {}", id);
 			}
-			_ => {}
 		}
 
 		// Get information about the current task.
@@ -141,52 +140,50 @@ impl Scheduler {
 			next_task = self.get_next_task(LOW_PRIORITY);
 		}
 
-		if next_task.is_none() == true {
-			if current_status != TaskStatus::TaskRunning && current_status != TaskStatus::TaskIdle {
-				debug!("Switch to idle task");
-				// current task isn't able to run and no other task available
-				// => switch to the idle task
-				next_task = Some(self.idle_task.clone());
-			}
+		if next_task.is_none()
+			&& current_status != TaskStatus::TaskRunning
+			&& current_status != TaskStatus::TaskIdle
+		{
+			debug!("Switch to idle task");
+			// current task isn't able to run and no other task available
+			// => switch to the idle task
+			next_task = Some(self.idle_task.clone());
 		}
 
-		match next_task {
-			Some(new_task) => {
-				let (new_id, new_stack_pointer) = {
-					let mut borrowed = new_task.borrow_mut();
-					borrowed.status = TaskStatus::TaskRunning;
-					(borrowed.id, borrowed.last_stack_pointer)
-				};
+		if let Some(next_task) = next_task {
+			let (new_id, new_stack_pointer) = {
+				let mut borrowed = next_task.borrow_mut();
+				borrowed.status = TaskStatus::TaskRunning;
+				(borrowed.id, borrowed.last_stack_pointer)
+			};
 
-				if current_status == TaskStatus::TaskRunning {
-					debug!("Add task {} to ready queue", current_id);
-					self.current_task.borrow_mut().status = TaskStatus::TaskReady;
-					self.ready_queues[current_prio.into() as usize].push(self.current_task.clone());
-					self.prio_bitmap |= 1 << current_prio.into() as usize;
-				} else if current_status == TaskStatus::TaskFinished {
-					debug!("Task {} finished", current_id);
-					self.current_task.borrow_mut().status = TaskStatus::TaskInvalid;
-					// release the task later, because the stack is required
-					// to call the function "switch"
-					// => push id to a queue and release the task later
-					self.finished_tasks.push_back(current_id);
-				}
-
-				debug!(
-					"Switching task from {} to {} (stack {:#X} => {:#X})",
-					current_id,
-					new_id,
-					unsafe { *current_stack_pointer },
-					new_stack_pointer
-				);
-
-				self.current_task = new_task;
-
-				unsafe {
-					switch(current_stack_pointer, new_stack_pointer);
-				}
+			if current_status == TaskStatus::TaskRunning {
+				debug!("Add task {} to ready queue", current_id);
+				self.current_task.borrow_mut().status = TaskStatus::TaskReady;
+				self.ready_queues[current_prio.into() as usize].push(self.current_task.clone());
+				self.prio_bitmap |= 1 << current_prio.into() as usize;
+			} else if current_status == TaskStatus::TaskFinished {
+				debug!("Task {} finished", current_id);
+				self.current_task.borrow_mut().status = TaskStatus::TaskInvalid;
+				// release the task later, because the stack is required
+				// to call the function "switch"
+				// => push id to a queue and release the task later
+				self.finished_tasks.push_back(current_id);
 			}
-			_ => {}
+
+			debug!(
+				"Switching task from {} to {} (stack {:#X} => {:#X})",
+				current_id,
+				new_id,
+				unsafe { *current_stack_pointer },
+				new_stack_pointer
+			);
+
+			self.current_task = next_task;
+
+			unsafe {
+				switch(current_stack_pointer, new_stack_pointer);
+			}
 		}
 	}
 

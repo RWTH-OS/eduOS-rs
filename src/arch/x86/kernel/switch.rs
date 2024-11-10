@@ -57,6 +57,12 @@ macro_rules! restore_context {
 
 #[cfg(target_arch = "x86_64")]
 #[naked]
+/// # Safety
+///
+/// Only the scheduler itself should call this function to switch the
+/// context. `old_stack` is a pointer, where the address to the old
+/// stack is stored. `new_stack` provides the stack pointer of the
+/// next task.
 pub unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
 	// rdi = old_stack => the address to store the old rsp
 	// rsi = new_stack => stack pointer of the new task
@@ -74,6 +80,12 @@ pub unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
 
 #[cfg(target_arch = "x86")]
 #[naked]
+/// # Safety
+///
+/// Only the scheduler itself should call this function to switch the
+/// context. `old_stack` is a pointer, where the address to the old
+/// stack is stored. `new_stack` provides the stack pointer of the
+/// next task.
 pub unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
 	asm!(
 		// store all registers
