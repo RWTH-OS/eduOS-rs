@@ -6,10 +6,9 @@ use alloc::rc::Rc;
 use core::cell::RefCell;
 use core::sync::atomic::{AtomicU32, Ordering};
 
-static NO_TASKS: AtomicU32 = AtomicU32::new(0);
 static TID_COUNTER: AtomicU32 = AtomicU32::new(0);
 
-pub struct Scheduler {
+pub(crate) struct Scheduler {
 	/// task id which is currently running
 	current_task: Rc<RefCell<Task>>,
 	/// task id of the idle task
@@ -18,7 +17,7 @@ pub struct Scheduler {
 	ready_queue: TaskQueue,
 	/// queue of tasks, which are finished and can be released
 	finished_tasks: VecDeque<TaskId>,
-	// map between task id and task controll block
+	/// map between task id and task control block
 	tasks: BTreeMap<TaskId, Rc<RefCell<Task>>>,
 }
 
@@ -34,7 +33,7 @@ impl Scheduler {
 			current_task: idle_task.clone(),
 			idle_task: idle_task.clone(),
 			ready_queue: TaskQueue::new(),
-			finished_tasks: VecDeque::<TaskId>::new(),
+			finished_tasks: VecDeque::new(),
 			tasks,
 		}
 	}
@@ -52,29 +51,30 @@ impl Scheduler {
 	pub fn spawn(&mut self, func: extern "C" fn()) -> TaskId {
 		// Create the new task.
 		let tid = self.get_tid();
-		let task = Rc::new(RefCell::new(Task::new(tid, TaskStatus::TaskReady)));
+		let task = Rc::new(RefCell::new(Task::new(tid, TaskStatus::Ready)));
 
 		task.borrow_mut().create_stack_frame(func);
 
 		// Add it to the task lists.
 		self.ready_queue.push(task.clone());
 		self.tasks.insert(tid, task);
-		NO_TASKS.fetch_add(1, Ordering::SeqCst);
 
 		info!("Creating task {}", tid);
 
 		tid
 	}
 
-	pub fn exit(&mut self) {
-		if self.current_task.borrow().status != TaskStatus::TaskIdle {
+	pub fn exit(&mut self) -> ! {
+		if self.current_task.borrow().status != TaskStatus::Idle {
 			info!("finish task with id {}", self.current_task.borrow().id);
-			self.current_task.borrow_mut().status = TaskStatus::TaskFinished;
+			self.current_task.borrow_mut().status = TaskStatus::Finished;
 		} else {
 			panic!("unable to terminate idle task");
 		}
 
 		self.reschedule();
+
+		panic!("Terminated task gets computation time");
 	}
 
 	pub fn get_current_taskid(&self) -> TaskId {
@@ -86,11 +86,13 @@ impl Scheduler {
 		while let Some(id) = self.finished_tasks.pop_front() {
 			if self.tasks.remove(&id).is_none() {
 				warn!("Unable to drop task {}", id);
+			} else {
+				debug!("Drop task {}", id);
 			}
 		}
 
 		// Get information about the current task.
-		let (old_id, old_stack_pointer, current_status) = {
+		let (current_id, current_stack_pointer, current_status) = {
 			let mut borrowed = self.current_task.borrow_mut();
 			(
 				borrowed.id,
@@ -102,8 +104,8 @@ impl Scheduler {
 		// do we have a task, which is ready?
 		let mut next_task = self.ready_queue.pop();
 		if next_task.is_none()
-			&& current_status != TaskStatus::TaskRunning
-			&& current_status != TaskStatus::TaskIdle
+			&& current_status != TaskStatus::Running
+			&& current_status != TaskStatus::Idle
 		{
 			debug!("Switch to idle task");
 			// current task isn't able to run and no other task available
@@ -114,35 +116,35 @@ impl Scheduler {
 		if let Some(next_task) = next_task {
 			let (new_id, new_stack_pointer) = {
 				let mut borrowed = next_task.borrow_mut();
-				borrowed.status = TaskStatus::TaskRunning;
+				borrowed.status = TaskStatus::Running;
 				(borrowed.id, borrowed.last_stack_pointer)
 			};
 
-			if current_status == TaskStatus::TaskRunning {
-				debug!("Add task {} to ready queue", old_id);
-				self.current_task.borrow_mut().status = TaskStatus::TaskReady;
+			if current_status == TaskStatus::Running {
+				debug!("Add task {} to ready queue", current_id);
+				self.current_task.borrow_mut().status = TaskStatus::Ready;
 				self.ready_queue.push(self.current_task.clone());
-			} else if current_status == TaskStatus::TaskFinished {
-				debug!("Task {} finished", old_id);
-				self.current_task.borrow_mut().status = TaskStatus::TaskInvalid;
+			} else if current_status == TaskStatus::Finished {
+				debug!("Task {} finished", current_id);
+				self.current_task.borrow_mut().status = TaskStatus::Invalid;
 				// release the task later, because the stack is required
 				// to call the function "switch"
 				// => push id to a queue and release the task later
-				self.finished_tasks.push_back(old_id);
+				self.finished_tasks.push_back(current_id);
 			}
 
 			debug!(
 				"Switching task from {} to {} (stack {:#X} => {:#X})",
-				old_id,
+				current_id,
 				new_id,
-				unsafe { *old_stack_pointer },
+				unsafe { *current_stack_pointer },
 				new_stack_pointer
 			);
 
 			self.current_task = next_task;
 
 			unsafe {
-				switch(old_stack_pointer, new_stack_pointer);
+				switch(current_stack_pointer, new_stack_pointer);
 			}
 		}
 	}

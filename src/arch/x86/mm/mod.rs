@@ -6,7 +6,7 @@ pub use x86::bits32::paging::VAddr as VirtAddr;
 pub use x86::bits64::paging::VAddr as VirtAddr;
 
 #[derive(Copy, Clone)]
-pub struct BootStack {
+pub(crate) struct BootStack {
 	start: VirtAddr,
 	end: VirtAddr,
 }

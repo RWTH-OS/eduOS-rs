@@ -27,7 +27,7 @@ pub mod consts;
 pub mod mm;
 pub mod scheduler;
 
-// Using the Simple Chunk Allocator for heap managment of the kernel
+// Using the Simple Chunk Allocator for heap management of the kernel
 // see
 const CHUNK_SIZE: usize = 256;
 const CHUNK_AMOUNT: usize = HEAP_SIZE / CHUNK_SIZE;

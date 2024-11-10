@@ -1,8 +1,6 @@
 #[cfg(not(test))]
 use alloc::alloc::Layout;
 
-pub fn init() {}
-
 #[cfg(not(test))]
 #[alloc_error_handler]
 pub fn rust_oom(layout: Layout) -> ! {

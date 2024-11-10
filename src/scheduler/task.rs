@@ -8,13 +8,12 @@ use core::fmt;
 
 /// The status of the task - used for scheduling
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum TaskStatus {
-	TaskInvalid,
-	TaskReady,
-	TaskRunning,
-	TaskBlocked,
-	TaskFinished,
-	TaskIdle,
+pub(crate) enum TaskStatus {
+	Invalid,
+	Ready,
+	Running,
+	Finished,
+	Idle,
 }
 
 /// Unique identifier for a task (i.e. `pid`).
@@ -37,15 +36,14 @@ impl alloc::fmt::Display for TaskId {
 	}
 }
 
-pub trait Stack {
+pub(crate) trait Stack {
 	fn top(&self) -> VirtAddr;
 	fn bottom(&self) -> VirtAddr;
 }
 
 #[derive(Copy, Clone)]
-#[repr(align(64))]
-#[repr(C)]
-pub struct TaskStack {
+#[repr(C, align(64))]
+pub(crate) struct TaskStack {
 	buffer: [u8; STACK_SIZE],
 }
 
@@ -73,7 +71,7 @@ impl Default for TaskStack {
 	}
 }
 
-pub struct TaskQueue {
+pub(crate) struct TaskQueue {
 	queue: VecDeque<Rc<RefCell<Task>>>,
 }
 
@@ -103,14 +101,14 @@ impl Default for TaskQueue {
 
 /// A task control block, which identifies either a process or a thread
 #[repr(align(64))]
-pub struct Task {
+pub(crate) struct Task {
 	/// The ID of this context
 	pub id: TaskId,
 	/// Status of a task, e.g. if the task is ready or blocked
 	pub status: TaskStatus,
 	/// Last stack pointer before a context switch to another task
 	pub last_stack_pointer: usize,
-	// Stack of the task
+	/// Stack of the task
 	pub stack: Box<dyn Stack>,
 }
 
@@ -118,7 +116,7 @@ impl Task {
 	pub fn new_idle(id: TaskId) -> Task {
 		Task {
 			id,
-			status: TaskStatus::TaskIdle,
+			status: TaskStatus::Idle,
 			last_stack_pointer: 0,
 			stack: Box::new(crate::arch::mm::get_boot_stack()),
 		}
@@ -134,7 +132,7 @@ impl Task {
 	}
 }
 
-pub trait TaskFrame {
+pub(crate) trait TaskFrame {
 	/// Create the initial stack frame for a new task
 	fn create_stack_frame(&mut self, func: extern "C" fn());
 }

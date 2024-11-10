@@ -10,7 +10,7 @@ macro_rules! save_context {
 			push rcx
 			push rdx
 			push rbx
-			sub rsp, 8
+			sub  rsp, 8
 			push rbp
 			push rsi
 			push rdi
@@ -42,8 +42,8 @@ macro_rules! restore_context {
 			pop r8
 			pop rdi
 			pop rsi
-			add rsp, 8
 			pop rbp
+			add rsp, 8
 			pop rbx
 			pop rdx
 			pop rcx
@@ -63,7 +63,7 @@ macro_rules! restore_context {
 /// context. `old_stack` is a pointer, where the address to the old
 /// stack is stored. `new_stack` provides the stack pointer of the
 /// next task.
-pub unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
+pub(crate) unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
 	// rdi = old_stack => the address to store the old rsp
 	// rsi = new_stack => stack pointer of the new task
 
@@ -85,7 +85,7 @@ pub unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
 /// context. `old_stack` is a pointer, where the address to the old
 /// stack is stored. `new_stack` provides the stack pointer of the
 /// next task.
-pub unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
+pub(crate) unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
 	naked_asm!(
 		// store all registers
 		"pushfd",
@@ -97,5 +97,6 @@ pub unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
 		// restore registers
 		"popad",
 		"popfd",
+		"ret",
 	);
 }
