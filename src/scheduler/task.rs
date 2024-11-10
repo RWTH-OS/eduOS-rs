@@ -62,7 +62,7 @@ pub const HIGH_PRIORITY: TaskPriority = TaskPriority::from(0);
 pub const NORMAL_PRIORITY: TaskPriority = TaskPriority::from(24);
 pub const LOW_PRIORITY: TaskPriority = TaskPriority::from(NO_PRIORITIES as u8 - 1);
 
-pub trait Stack {
+pub(crate) trait Stack {
 	fn top(&self) -> VirtAddr;
 	fn bottom(&self) -> VirtAddr;
 }
@@ -70,7 +70,7 @@ pub trait Stack {
 #[derive(Copy, Clone)]
 #[repr(align(64))]
 #[repr(C)]
-pub struct TaskStack {
+pub(crate) struct TaskStack {
 	buffer: [u8; STACK_SIZE],
 }
 
@@ -99,17 +99,11 @@ impl Default for TaskStack {
 }
 
 #[derive(Default)]
-pub struct TaskQueue {
+pub(crate) struct TaskQueue {
 	queue: VecDeque<Rc<RefCell<Task>>>,
 }
 
 impl TaskQueue {
-	pub fn new() -> TaskQueue {
-		TaskQueue {
-			queue: Default::default(),
-		}
-	}
-
 	/// Add a task to the queue
 	pub fn push(&mut self, task: Rc<RefCell<Task>>) {
 		self.queue.push_back(task);
@@ -128,7 +122,7 @@ impl TaskQueue {
 
 /// A task control block, which identifies either a process or a thread
 #[repr(align(64))]
-pub struct Task {
+pub(crate) struct Task {
 	/// The ID of this context
 	pub id: TaskId,
 	/// Task Priority

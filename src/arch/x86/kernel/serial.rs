@@ -3,7 +3,7 @@ use spin::Mutex;
 use x86::io::*;
 
 /// A COM serial port.
-pub struct ComPort {
+pub(crate) struct ComPort {
 	/// COM ports are identified by the base address of their associated
 	/// I/O registers.
 	base_addr: u16,
@@ -32,4 +32,4 @@ impl fmt::Write for ComPort {
 }
 
 /// Our primary serial port.
-pub static COM1: Mutex<ComPort> = Mutex::new(ComPort::new(0x3F8));
+pub(crate) static COM1: Mutex<ComPort> = Mutex::new(ComPort::new(0x3F8));

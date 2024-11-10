@@ -1,6 +1,6 @@
-pub mod processor;
+pub(crate) mod processor;
 #[cfg(not(all(target_arch = "x86", feature = "vga")))]
-pub mod serial;
+pub(crate) mod serial;
 #[cfg(target_arch = "x86_64")]
 mod start;
 pub(crate) mod switch;

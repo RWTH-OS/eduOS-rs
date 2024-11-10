@@ -26,12 +26,12 @@ pub enum LogLevel {
 }
 
 /// Data structures to filter kernel messages
-pub struct KernelLogger {
+pub(crate) struct KernelLogger {
 	pub log_level: LogLevel,
 }
 
 /// default logger to handle kernel messages
-pub const LOGGER: KernelLogger = KernelLogger {
+pub(crate) const LOGGER: KernelLogger = KernelLogger {
 	log_level: LogLevel::INFO,
 };
 

@@ -63,7 +63,7 @@ macro_rules! restore_context {
 /// context. `old_stack` is a pointer, where the address to the old
 /// stack is stored. `new_stack` provides the stack pointer of the
 /// next task.
-pub unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
+pub(crate) unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
 	// rdi = old_stack => the address to store the old rsp
 	// rsi = new_stack => stack pointer of the new task
 
@@ -86,7 +86,7 @@ pub unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
 /// context. `old_stack` is a pointer, where the address to the old
 /// stack is stored. `new_stack` provides the stack pointer of the
 /// next task.
-pub unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
+pub(crate) unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
 	asm!(
 		// store all registers
 		"pushfd",

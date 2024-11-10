@@ -12,7 +12,7 @@ use core::sync::atomic::{AtomicU32, Ordering};
 static NO_TASKS: AtomicU32 = AtomicU32::new(0);
 static TID_COUNTER: AtomicU32 = AtomicU32::new(0);
 
-pub struct Scheduler {
+pub(crate) struct Scheduler {
 	/// task id which is currently running
 	current_task: Rc<RefCell<Task>>,
 	/// task id of the idle task
@@ -94,7 +94,7 @@ impl Scheduler {
 		self.current_task.borrow().id
 	}
 
-	// determine the next task, which is ready and priority is a greater than or equal to prio
+	/// determine the next task, which is ready and priority is a greater than or equal to prio
 	fn get_next_task(&mut self, prio: TaskPriority) -> Option<Rc<RefCell<Task>>> {
 		let i = lsb(self.prio_bitmap);
 		let mut task = None;
@@ -102,7 +102,7 @@ impl Scheduler {
 		if i <= prio.into().into() {
 			task = self.ready_queues[i].pop();
 
-			// clear bitmap entry for the priority i if the queus is empty
+			// clear bitmap entry for the priority i if the queues is empty
 			if self.ready_queues[i].is_empty() {
 				self.prio_bitmap &= !(1 << i);
 			}
@@ -112,12 +112,13 @@ impl Scheduler {
 	}
 
 	pub fn schedule(&mut self) {
+		info!("Schedule");
 		// do we have finished tasks? => drop tasks => deallocate implicitly the stack
 		while let Some(id) = self.finished_tasks.pop_front() {
 			if self.tasks.remove(&id).is_none() {
-				info!("Unable to drop task {}", id);
+				warn!("Unable to drop task {}", id);
 			} else {
-				debug!("Unable to drop task {}", id);
+				debug!("Drop task {}", id);
 			}
 		}
 
