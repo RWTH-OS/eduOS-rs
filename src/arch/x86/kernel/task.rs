@@ -1,10 +1,8 @@
 //! Architecture dependent interface to initialize a task
 
-use crate::arch::processor::halt;
 use crate::consts::*;
-use crate::logging::*;
+use crate::scheduler::do_exit;
 use crate::scheduler::task::*;
-use crate::scheduler::{do_exit, get_current_taskid};
 use core::mem::size_of;
 use core::ptr::write_bytes;
 
@@ -75,13 +73,7 @@ struct State {
 }
 
 extern "C" fn leave_task() -> ! {
-	debug!("finish task {}", get_current_taskid());
-
 	do_exit();
-
-	loop {
-		halt();
-	}
 }
 
 impl TaskFrame for Task {

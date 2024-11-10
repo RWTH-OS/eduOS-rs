@@ -5,7 +5,7 @@
 
 .code32
 
-.set BOOT_STACK_SIZE, 4096
+.set BOOT_STACK_SIZE, 0x3000
 
 # We use a special name to map this section at the begin of our kernel
 # =>  Multiboot expects its magic number at the beginning of the kernel.

@@ -3,6 +3,11 @@
 //! Configuration parameter of the kernel eduOS-rs
 
 /// Define the size of the kernel stack
+#[cfg(target_arch = "x86_64")]
+pub(crate) const STACK_SIZE: usize = 0x3000;
+
+/// Define the size of the kernel stack
+#[cfg(target_arch = "x86")]
 pub(crate) const STACK_SIZE: usize = 0x2000;
 
 /// Size of a cache line

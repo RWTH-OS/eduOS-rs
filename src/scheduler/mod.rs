@@ -27,7 +27,7 @@ pub fn reschedule() {
 }
 
 /// Terminate the current running task
-pub fn do_exit() {
+pub fn do_exit() -> ! {
 	unsafe {
 		SCHEDULER.as_mut().unwrap().exit();
 	}

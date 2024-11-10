@@ -9,7 +9,6 @@ use alloc::rc::Rc;
 use core::cell::RefCell;
 use core::sync::atomic::{AtomicU32, Ordering};
 
-static NO_TASKS: AtomicU32 = AtomicU32::new(0);
 static TID_COUNTER: AtomicU32 = AtomicU32::new(0);
 
 pub(crate) struct Scheduler {
@@ -64,7 +63,7 @@ impl Scheduler {
 
 		// Create the new task.
 		let tid = self.get_tid();
-		let task = Rc::new(RefCell::new(Task::new(tid, TaskStatus::TaskReady, prio)));
+		let task = Rc::new(RefCell::new(Task::new(tid, TaskStatus::Ready, prio)));
 
 		task.borrow_mut().create_stack_frame(func);
 
@@ -72,22 +71,23 @@ impl Scheduler {
 		self.ready_queues[prio_number].push(task.clone());
 		self.prio_bitmap |= 1 << prio_number;
 		self.tasks.insert(tid, task);
-		NO_TASKS.fetch_add(1, Ordering::SeqCst);
 
 		info!("Creating task {}", tid);
 
 		Ok(tid)
 	}
 
-	pub fn exit(&mut self) {
-		if self.current_task.borrow().status != TaskStatus::TaskIdle {
+	pub fn exit(&mut self) -> ! {
+		if self.current_task.borrow().status != TaskStatus::Idle {
 			info!("finish task with id {}", self.current_task.borrow().id);
-			self.current_task.borrow_mut().status = TaskStatus::TaskFinished;
+			self.current_task.borrow_mut().status = TaskStatus::Finished;
 		} else {
 			panic!("unable to terminate idle task");
 		}
 
 		self.reschedule();
+
+		panic!("Terminated task gets computation time");
 	}
 
 	pub fn get_current_taskid(&self) -> TaskId {
@@ -112,7 +112,6 @@ impl Scheduler {
 	}
 
 	pub fn schedule(&mut self) {
-		info!("Schedule");
 		// do we have finished tasks? => drop tasks => deallocate implicitly the stack
 		while let Some(id) = self.finished_tasks.pop_front() {
 			if self.tasks.remove(&id).is_none() {
@@ -135,15 +134,15 @@ impl Scheduler {
 
 		// do we have a task, which is ready?
 		let mut next_task;
-		if current_status == TaskStatus::TaskRunning {
+		if current_status == TaskStatus::Running {
 			next_task = self.get_next_task(current_prio);
 		} else {
 			next_task = self.get_next_task(LOW_PRIORITY);
 		}
 
 		if next_task.is_none()
-			&& current_status != TaskStatus::TaskRunning
-			&& current_status != TaskStatus::TaskIdle
+			&& current_status != TaskStatus::Running
+			&& current_status != TaskStatus::Idle
 		{
 			debug!("Switch to idle task");
 			// current task isn't able to run and no other task available
@@ -154,18 +153,18 @@ impl Scheduler {
 		if let Some(next_task) = next_task {
 			let (new_id, new_stack_pointer) = {
 				let mut borrowed = next_task.borrow_mut();
-				borrowed.status = TaskStatus::TaskRunning;
+				borrowed.status = TaskStatus::Running;
 				(borrowed.id, borrowed.last_stack_pointer)
 			};
 
-			if current_status == TaskStatus::TaskRunning {
+			if current_status == TaskStatus::Running {
 				debug!("Add task {} to ready queue", current_id);
-				self.current_task.borrow_mut().status = TaskStatus::TaskReady;
+				self.current_task.borrow_mut().status = TaskStatus::Ready;
 				self.ready_queues[current_prio.into() as usize].push(self.current_task.clone());
 				self.prio_bitmap |= 1 << current_prio.into() as usize;
-			} else if current_status == TaskStatus::TaskFinished {
+			} else if current_status == TaskStatus::Finished {
 				debug!("Task {} finished", current_id);
-				self.current_task.borrow_mut().status = TaskStatus::TaskInvalid;
+				self.current_task.borrow_mut().status = TaskStatus::Invalid;
 				// release the task later, because the stack is required
 				// to call the function "switch"
 				// => push id to a queue and release the task later

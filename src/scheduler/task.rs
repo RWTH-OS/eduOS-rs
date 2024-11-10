@@ -8,13 +8,12 @@ use core::fmt;
 
 /// The status of the task - used for scheduling
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum TaskStatus {
-	TaskInvalid,
-	TaskReady,
-	TaskRunning,
-	TaskBlocked,
-	TaskFinished,
-	TaskIdle,
+pub(crate) enum TaskStatus {
+	Invalid,
+	Ready,
+	Running,
+	Finished,
+	Idle,
 }
 
 /// Unique identifier for a task (i.e. `pid`).
@@ -68,15 +67,14 @@ pub(crate) trait Stack {
 }
 
 #[derive(Copy, Clone)]
-#[repr(align(64))]
-#[repr(C)]
+#[repr(C, align(64))]
 pub(crate) struct TaskStack {
 	buffer: [u8; STACK_SIZE],
 }
 
 impl TaskStack {
-	pub const fn new() -> TaskStack {
-		TaskStack {
+	pub const fn new() -> Self {
+		Self {
 			buffer: [0; STACK_SIZE],
 		}
 	}
@@ -131,23 +129,23 @@ pub(crate) struct Task {
 	pub status: TaskStatus,
 	/// Last stack pointer before a context switch to another task
 	pub last_stack_pointer: usize,
-	// Stack of the task
+	/// Stack of the task
 	pub stack: Box<dyn Stack>,
 }
 
 impl Task {
-	pub fn new_idle(id: TaskId) -> Task {
-		Task {
+	pub fn new_idle(id: TaskId) -> Self {
+		Self {
 			id,
 			prio: LOW_PRIORITY,
-			status: TaskStatus::TaskIdle,
+			status: TaskStatus::Idle,
 			last_stack_pointer: 0,
 			stack: Box::new(crate::arch::mm::get_boot_stack()),
 		}
 	}
 
-	pub fn new(id: TaskId, status: TaskStatus, prio: TaskPriority) -> Task {
-		Task {
+	pub fn new(id: TaskId, status: TaskStatus, prio: TaskPriority) -> Self {
+		Self {
 			id,
 			prio,
 			status,
@@ -157,7 +155,7 @@ impl Task {
 	}
 }
 
-pub trait TaskFrame {
+pub(crate) trait TaskFrame {
 	/// Create the initial stack frame for a new task
 	fn create_stack_frame(&mut self, func: extern "C" fn());
 }
