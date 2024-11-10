@@ -1,0 +1,29 @@
+name: Clippy
+
+on:
+  push:
+    branches:
+      - stage2
+  pull_request:
+    branches:
+      - stage2
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+         submodules: true
+    - name: Check Cargo availability
+      run: cargo --version
+    - name: Check clippy (x86_64)
+      run: cargo clippy
+    - name: Check clippy (i688)
+      run: cargo clippy --target i686-eduos.json
