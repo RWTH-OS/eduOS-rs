@@ -11,5 +11,7 @@ pub fn rust_oom(layout: Layout) -> ! {
 		layout.size()
 	);
 
-	loop {}
+	loop {
+		crate::arch::processor::halt();
+	}
 }

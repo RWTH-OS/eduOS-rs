@@ -2,6 +2,7 @@
 #![feature(linked_list_cursors)]
 #![feature(alloc_error_handler)]
 #![feature(naked_functions)]
+#![allow(clippy::module_inception)]
 #![no_std]
 
 extern crate alloc;
@@ -39,7 +40,7 @@ static mut HEAP_BITMAP: PageAligned<[u8; CHUNK_AMOUNT / 8]> = heap_bitmap!(chunk
 static ALLOCATOR: GlobalChunkAllocator =
 	unsafe { GlobalChunkAllocator::new(HEAP.deref_mut_const(), HEAP_BITMAP.deref_mut_const()) };
 
-//// This function is called on panic.
+/// This function is called on panic.
 #[cfg(not(test))]
 #[panic_handler]
 pub fn panic(info: &PanicInfo) -> ! {

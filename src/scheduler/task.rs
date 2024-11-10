@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use crate::arch::mm::VirtAddr;
 use crate::consts::*;
 use alloc::boxed::Box;
@@ -52,8 +50,8 @@ pub struct TaskStack {
 }
 
 impl TaskStack {
-	pub const fn new() -> TaskStack {
-		TaskStack {
+	pub const fn new() -> Self {
+		Self {
 			buffer: [0; STACK_SIZE],
 		}
 	}
@@ -69,13 +67,19 @@ impl Stack for TaskStack {
 	}
 }
 
+impl Default for TaskStack {
+	fn default() -> Self {
+		Self::new()
+	}
+}
+
 pub struct TaskQueue {
 	queue: VecDeque<Rc<RefCell<Task>>>,
 }
 
 impl TaskQueue {
-	pub fn new() -> TaskQueue {
-		TaskQueue {
+	pub fn new() -> Self {
+		Self {
 			queue: Default::default(),
 		}
 	}
@@ -88,6 +92,12 @@ impl TaskQueue {
 	/// Pop the task from the queue
 	pub fn pop(&mut self) -> Option<Rc<RefCell<Task>>> {
 		self.queue.pop_front()
+	}
+}
+
+impl Default for TaskQueue {
+	fn default() -> Self {
+		Self::new()
 	}
 }
 
@@ -107,7 +117,7 @@ pub struct Task {
 impl Task {
 	pub fn new_idle(id: TaskId) -> Task {
 		Task {
-			id: id,
+			id,
 			status: TaskStatus::TaskIdle,
 			last_stack_pointer: 0,
 			stack: Box::new(crate::arch::mm::get_boot_stack()),
@@ -116,8 +126,8 @@ impl Task {
 
 	pub fn new(id: TaskId, status: TaskStatus) -> Task {
 		Task {
-			id: id,
-			status: status,
+			id,
+			status,
 			last_stack_pointer: 0,
 			stack: Box::new(TaskStack::new()),
 		}
