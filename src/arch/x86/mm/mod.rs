@@ -64,6 +64,6 @@ extern "C" {
 pub(crate) fn get_boot_stack() -> BootStack {
 	BootStack::new(
 		unsafe { VirtAddr(BOOT_STACK.try_into().unwrap()) },
-		unsafe { VirtAddr((BOOT_STACK + 0x1000).try_into().unwrap()) },
+		unsafe { VirtAddr((BOOT_STACK + 0x3000).try_into().unwrap()) },
 	)
 }
