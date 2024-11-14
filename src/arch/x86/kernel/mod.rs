@@ -1,11 +1,11 @@
 pub(crate) mod irq;
 pub(crate) mod processor;
-#[cfg(not(all(target_arch = "x86", feature = "vga")))]
+#[cfg(not(feature = "vga"))]
 pub(crate) mod serial;
 mod start;
 pub(crate) mod switch;
 pub(crate) mod task;
-#[cfg(all(target_arch = "x86", feature = "vga"))]
+#[cfg(feature = "vga")]
 pub(crate) mod vga;
 
 #[cfg(target_arch = "x86_64")]
