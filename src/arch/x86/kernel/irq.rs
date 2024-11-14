@@ -12,10 +12,10 @@ pub fn irq_disable() {
 
 /// Determines, if the interrupt flags (IF) is set
 pub fn is_irq_enabled() -> bool {
-	let rflags: u64;
+	let eflags: usize;
 
-	unsafe { asm!("pushf; pop {}", lateout(reg) rflags, options(nomem, nostack, preserves_flags)) };
-	if (rflags & (1u64 << 9)) != 0 {
+	unsafe { asm!("pushf; pop {}", lateout(reg) eflags, options(nomem, nostack, preserves_flags)) };
+	if (eflags & (1usize << 9)) != 0 {
 		return true;
 	}
 
@@ -39,7 +39,7 @@ pub fn irq_nested_disable() -> bool {
 /// Can be used in conjunction with irq_nested_disable() to only enable
 /// interrupts again if they were enabled before.
 pub fn irq_nested_enable(was_enabled: bool) {
-	if was_enabled == true {
+	if was_enabled {
 		irq_enable();
 	}
 }

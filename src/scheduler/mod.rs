@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 //! Interface to the scheduler
 
 mod scheduler;
@@ -13,7 +11,7 @@ use core::cell::RefCell;
 
 static mut SCHEDULER: Option<scheduler::Scheduler> = None;
 
-/// Initialite module, must be called once, and only once
+/// Initialize module, must be called once, and only once
 pub fn init() {
 	unsafe {
 		SCHEDULER = Some(scheduler::Scheduler::new());
@@ -31,17 +29,17 @@ pub fn reschedule() {
 }
 
 /// Terminate the current running task
-pub fn do_exit() {
+pub fn do_exit() -> ! {
 	unsafe {
 		SCHEDULER.as_mut().unwrap().exit();
 	}
 }
 
-pub fn block_current_task() -> Rc<RefCell<Task>> {
+pub(crate) fn block_current_task() -> Rc<RefCell<Task>> {
 	unsafe { SCHEDULER.as_mut().unwrap().block_current_task() }
 }
 
-pub fn wakeup_task(task: Rc<RefCell<Task>>) {
+pub(crate) fn wakeup_task(task: Rc<RefCell<Task>>) {
 	unsafe { SCHEDULER.as_mut().unwrap().wakeup_task(task) }
 }
 

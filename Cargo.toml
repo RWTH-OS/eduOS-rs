@@ -21,7 +21,7 @@ vga = []
 
 [dependencies]
 spin = "0.9"
-simple-chunk-allocator = "0.1.5"
+simple-chunk-allocator = "0.1"
 qemu-exit = { version = "3.0", optional = true }
 x86 = { version = "0.52", default-features = false }
 cfg-if = "1.0"

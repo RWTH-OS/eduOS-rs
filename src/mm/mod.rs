@@ -1,8 +1,6 @@
 #[cfg(not(test))]
 use alloc::alloc::Layout;
 
-pub fn init() {}
-
 #[cfg(not(test))]
 #[alloc_error_handler]
 pub fn rust_oom(layout: Layout) -> ! {
@@ -11,5 +9,7 @@ pub fn rust_oom(layout: Layout) -> ! {
 		layout.size()
 	);
 
-	loop {}
+	loop {
+		crate::arch::processor::halt();
+	}
 }

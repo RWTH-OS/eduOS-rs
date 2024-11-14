@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use core::arch::asm;
 #[cfg(feature = "qemu-exit")]
 use qemu_exit::QEMUExit;
@@ -7,9 +5,10 @@ use x86::controlregs::*;
 
 /// Search the most significant bit
 #[inline(always)]
-pub(crate) fn msb(value: u64) -> Option<u64> {
+#[allow(dead_code)]
+pub(crate) fn msb(value: usize) -> Option<usize> {
 	if value > 0 {
-		let ret: u64;
+		let ret: usize;
 
 		unsafe {
 			asm!("bsr {0}, {1}",
@@ -26,9 +25,11 @@ pub(crate) fn msb(value: u64) -> Option<u64> {
 
 /// Search the least significant bit
 #[inline(always)]
-pub(crate) fn lsb(value: u64) -> Option<u64> {
+#[allow(dead_code)]
+pub(crate) fn lsb(value: usize) -> Option<usize> {
 	if value > 0 {
-		let ret: u64;
+		let ret: usize;
+
 		unsafe {
 			asm!("bsf {0}, {1}",
 				out(reg) ret,
@@ -55,7 +56,7 @@ pub(crate) fn pause() {
 }
 
 #[no_mangle]
-pub extern "C" fn shutdown(error_code: i32) -> ! {
+pub(crate) extern "C" fn shutdown(error_code: i32) -> ! {
 	#[cfg(feature = "qemu-exit")]
 	{
 		let code = if error_code == 0 { 5 } else { 1 };
@@ -77,11 +78,11 @@ pub(crate) fn cpu_init() {
 	let mut cr0 = unsafe { cr0() };
 
 	// be sure that AM, NE and MP is enabled
-	cr0 = cr0 | Cr0::CR0_ALIGNMENT_MASK;
-	cr0 = cr0 | Cr0::CR0_NUMERIC_ERROR;
-	cr0 = cr0 | Cr0::CR0_MONITOR_COPROCESSOR;
+	cr0 |= Cr0::CR0_ALIGNMENT_MASK;
+	cr0 |= Cr0::CR0_NUMERIC_ERROR;
+	cr0 |= Cr0::CR0_MONITOR_COPROCESSOR;
 	// enable cache
-	cr0 = cr0 & !(Cr0::CR0_CACHE_DISABLE | Cr0::CR0_NOT_WRITE_THROUGH);
+	cr0 &= !(Cr0::CR0_CACHE_DISABLE | Cr0::CR0_NOT_WRITE_THROUGH);
 
 	unsafe { cr0_write(cr0) };
 }

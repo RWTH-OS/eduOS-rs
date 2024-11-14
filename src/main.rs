@@ -1,4 +1,3 @@
-#![feature(abi_x86_interrupt)]
 #![no_std] // don't link the Rust standard library
 #![cfg_attr(not(test), no_main)] // disable all Rust-level entry points
 #![cfg_attr(test, allow(dead_code, unused_macros, unused_imports))]
@@ -29,8 +28,8 @@ extern "C" fn foo() {
 		println!(
 			"hello from task {}, counter {}",
 			scheduler::get_current_taskid(),
-			0
-		); //*guard);
+			*guard
+		);
 		scheduler::reschedule();
 	}
 }

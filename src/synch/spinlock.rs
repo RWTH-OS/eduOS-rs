@@ -1,10 +1,3 @@
-// Copyright (c) 2017-2018 Stefan Lankes, RWTH Aachen University
-//
-// Licensed under the Apache License, Version 2.0, <LICENSE-APACHE or
-// http://apache.org/licenses/LICENSE-2.0> or the MIT license <LICENSE-MIT or
-// http://opensource.org/licenses/MIT>, at your option. This file may not be
-// copied, modified, or distributed except according to those terms.
-
 use crate::arch;
 use core::cell::UnsafeCell;
 use core::fmt;
@@ -106,7 +99,7 @@ impl<T: ?Sized + fmt::Debug> fmt::Debug for Spinlock<T> {
 	}
 }
 
-impl<T: ?Sized + Default> Default for Spinlock<T> {
+impl<T: Default> Default for Spinlock<T> {
 	fn default() -> Spinlock<T> {
 		Spinlock::new(Default::default())
 	}
@@ -114,13 +107,13 @@ impl<T: ?Sized + Default> Default for Spinlock<T> {
 
 impl<'a, T: ?Sized> Deref for SpinlockGuard<'a, T> {
 	type Target = T;
-	fn deref<'b>(&'b self) -> &'b T {
+	fn deref(&self) -> &T {
 		&*self.data
 	}
 }
 
 impl<'a, T: ?Sized> DerefMut for SpinlockGuard<'a, T> {
-	fn deref_mut<'b>(&'b mut self) -> &'b mut T {
+	fn deref_mut(&mut self) -> &mut T {
 		&mut *self.data
 	}
 }
@@ -237,7 +230,7 @@ impl<T: ?Sized + fmt::Debug> fmt::Debug for SpinlockIrqSave<T> {
 	}
 }
 
-impl<T: ?Sized + Default> Default for SpinlockIrqSave<T> {
+impl<T: Default> Default for SpinlockIrqSave<T> {
 	fn default() -> SpinlockIrqSave<T> {
 		SpinlockIrqSave::new(Default::default())
 	}
@@ -245,13 +238,13 @@ impl<T: ?Sized + Default> Default for SpinlockIrqSave<T> {
 
 impl<'a, T: ?Sized> Deref for SpinlockIrqSaveGuard<'a, T> {
 	type Target = T;
-	fn deref<'b>(&'b self) -> &'b T {
+	fn deref(&self) -> &T {
 		&*self.data
 	}
 }
 
 impl<'a, T: ?Sized> DerefMut for SpinlockIrqSaveGuard<'a, T> {
-	fn deref_mut<'b>(&'b mut self) -> &'b mut T {
+	fn deref_mut(&mut self) -> &mut T {
 		&mut *self.data
 	}
 }

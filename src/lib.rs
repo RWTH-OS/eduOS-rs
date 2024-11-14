@@ -2,6 +2,7 @@
 #![feature(linked_list_cursors)]
 #![feature(alloc_error_handler)]
 #![feature(naked_functions)]
+#![allow(clippy::module_inception)]
 #![no_std]
 
 extern crate alloc;
@@ -13,13 +14,12 @@ extern crate x86;
 use crate::arch::processor::shutdown;
 use crate::consts::HEAP_SIZE;
 use core::panic::PanicInfo;
-pub use logging::*;
 use simple_chunk_allocator::{heap, heap_bitmap, GlobalChunkAllocator, PageAligned};
 
 #[macro_use]
 pub mod macros;
 #[macro_use]
-pub mod logging;
+mod logging;
 pub mod arch;
 pub mod console;
 pub mod consts;
@@ -28,11 +28,9 @@ pub mod mm;
 pub mod scheduler;
 pub mod synch;
 
-// Using the Simple Chunk Allocator for heap managment of the kernel
-// see
+// Using the Simple Chunk Allocator for heap management of the kernel
 const CHUNK_SIZE: usize = 256;
 const CHUNK_AMOUNT: usize = HEAP_SIZE / CHUNK_SIZE;
-
 static mut HEAP: PageAligned<[u8; HEAP_SIZE]> =
 	heap!(chunks = CHUNK_AMOUNT, chunksize = CHUNK_SIZE);
 static mut HEAP_BITMAP: PageAligned<[u8; CHUNK_AMOUNT / 8]> = heap_bitmap!(chunks = CHUNK_AMOUNT);
@@ -41,7 +39,7 @@ static mut HEAP_BITMAP: PageAligned<[u8; CHUNK_AMOUNT / 8]> = heap_bitmap!(chunk
 static ALLOCATOR: GlobalChunkAllocator =
 	unsafe { GlobalChunkAllocator::new(HEAP.deref_mut_const(), HEAP_BITMAP.deref_mut_const()) };
 
-//// This function is called on panic.
+/// This function is called on panic.
 #[cfg(not(test))]
 #[panic_handler]
 pub fn panic(info: &PanicInfo) -> ! {
