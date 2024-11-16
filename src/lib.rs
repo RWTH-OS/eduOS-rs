@@ -14,8 +14,9 @@ extern crate x86;
 use crate::arch::processor::shutdown;
 use crate::consts::HEAP_SIZE;
 use core::panic::PanicInfo;
+use core::ptr::addr_of;
 pub use logging::*;
-use simple_chunk_allocator::{heap, heap_bitmap, GlobalChunkAllocator, PageAligned};
+use talc::*;
 
 #[macro_use]
 pub mod macros;
@@ -27,18 +28,13 @@ pub mod consts;
 pub mod mm;
 pub mod scheduler;
 
-// Using the Simple Chunk Allocator for heap management of the kernel
-// see
-const CHUNK_SIZE: usize = 256;
-const CHUNK_AMOUNT: usize = HEAP_SIZE / CHUNK_SIZE;
-
-static mut HEAP: PageAligned<[u8; HEAP_SIZE]> =
-	heap!(chunks = CHUNK_AMOUNT, chunksize = CHUNK_SIZE);
-static mut HEAP_BITMAP: PageAligned<[u8; CHUNK_AMOUNT / 8]> = heap_bitmap!(chunks = CHUNK_AMOUNT);
+static mut ARENA: [u8; HEAP_SIZE] = [0; HEAP_SIZE];
 
 #[global_allocator]
-static ALLOCATOR: GlobalChunkAllocator =
-	unsafe { GlobalChunkAllocator::new(HEAP.deref_mut_const(), HEAP_BITMAP.deref_mut_const()) };
+static ALLOCATOR: Talck<spin::Mutex<()>, ClaimOnOom> = Talc::new(unsafe {
+	ClaimOnOom::new(Span::from_array(addr_of!(ARENA) as *mut [u8; HEAP_SIZE]))
+})
+.lock();
 
 /// This function is called on panic.
 #[cfg(not(test))]
