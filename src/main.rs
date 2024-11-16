@@ -5,22 +5,14 @@
 #[macro_use]
 extern crate eduos_rs;
 
-use eduos_rs::arch;
 use eduos_rs::scheduler;
 use eduos_rs::scheduler::task::{HIGH_PRIORITY, NORMAL_PRIORITY};
 use eduos_rs::synch::mutex::Mutex;
 
-static mut COUNTER: Option<Mutex<u64>> = None;
+static COUNTER: Mutex<u64> = Mutex::new(0);
 
 extern "C" fn foo() {
-	let mut guard = unsafe {
-		match COUNTER {
-			Some(ref mut c) => c.lock(),
-			None => {
-				panic!("Mutex isn't initialized");
-			}
-		}
-	};
+	let mut guard = COUNTER.lock();
 
 	for _i in 0..5 {
 		*guard += 1;
@@ -39,14 +31,9 @@ extern "C" fn foo() {
 #[cfg(not(test))]
 #[no_mangle] // don't mangle the name of this function
 pub extern "C" fn main() -> i32 {
-	arch::init();
 	scheduler::init();
 
 	println!("Hello from eduOS-rs!");
-
-	unsafe {
-		COUNTER = Some(Mutex::new(0));
-	}
 
 	for _i in 0..2 {
 		scheduler::spawn(foo, NORMAL_PRIORITY).unwrap();

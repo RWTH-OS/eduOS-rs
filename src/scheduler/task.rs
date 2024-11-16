@@ -71,9 +71,11 @@ pub(crate) struct PriorityTaskQueue {
 
 impl PriorityTaskQueue {
 	/// Creates an empty priority queue for tasks
-	pub fn new() -> PriorityTaskQueue {
+	pub const fn new() -> PriorityTaskQueue {
+		const VALUE: VecDeque<Rc<RefCell<Task>>> = VecDeque::new();
+
 		PriorityTaskQueue {
-			queues: Default::default(),
+			queues: [VALUE; NO_PRIORITIES],
 			prio_bitmap: 0,
 		}
 	}
@@ -125,7 +127,7 @@ pub(crate) trait Stack {
 
 #[derive(Copy, Clone)]
 #[repr(C, align(64))]
-pub struct TaskStack {
+pub(crate) struct TaskStack {
 	buffer: [u8; STACK_SIZE],
 }
 
@@ -190,7 +192,7 @@ impl Task {
 	}
 }
 
-pub trait TaskFrame {
+pub(crate) trait TaskFrame {
 	/// Create the initial stack frame for a new task
 	fn create_stack_frame(&mut self, func: extern "C" fn());
 }
