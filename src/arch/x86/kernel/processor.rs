@@ -55,6 +55,7 @@ pub(crate) fn pause() {
 	}
 }
 
+#[allow(unused_variables)]
 #[no_mangle]
 pub(crate) extern "C" fn shutdown(error_code: i32) -> ! {
 	#[cfg(feature = "qemu-exit")]
