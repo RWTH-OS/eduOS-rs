@@ -4,14 +4,10 @@ pub mod x86;
 
 // Export our platform-specific modules.
 #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
-pub use self::x86::kernel::{init, processor};
+pub(crate) use self::x86::kernel::{init, processor};
 
 #[cfg(feature = "vga")]
-pub use self::x86::kernel::vga;
+pub(crate) use self::x86::kernel::vga;
 
 #[cfg(not(feature = "vga"))]
-pub use self::x86::kernel::serial;
-
-// Export our platform-specific modules.
-#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
-pub use self::x86::mm;
+pub(crate) use self::x86::kernel::serial;

@@ -9,7 +9,6 @@
 
 # This part MUST be 4 byte aligned, so we solve that issue using '.align 4'.
 .align 4
-.global mboot
 mboot:
     # Multiboot macros to make a few lines more readable later
     .set MULTIBOOT_PAGE_ALIGN,    (1 << 0)

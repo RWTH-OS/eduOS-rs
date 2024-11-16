@@ -53,7 +53,7 @@ pub unsafe extern "C" fn _start() -> ! {
 /// This function is the entry point of the kernel.
 /// The kernel itself should not call this function.
 pub unsafe extern "C" fn _start() -> ! {
-	use crate::arch::mm::{BOOT_STACK, BOOT_STACK_SIZE};
+	use crate::arch::x86::mm::{BOOT_STACK, BOOT_STACK_SIZE};
 	use core::arch::naked_asm;
 
 	naked_asm!(
