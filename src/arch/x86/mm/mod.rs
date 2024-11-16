@@ -69,9 +69,9 @@ impl<T> Aligned<T> {
 }
 
 #[cfg(target_arch = "x86")]
-pub(crate) const BOOT_STACK_SIZE: usize = 0x3000;
+pub(crate) const BOOT_STACK_SIZE: usize = 0x10000;
 #[cfg(target_arch = "x86")]
-#[no_mangle]
+#[link_section = ".data"]
 pub(crate) static mut BOOT_STACK: Aligned<[u8; BOOT_STACK_SIZE]> =
 	Aligned::new([0; BOOT_STACK_SIZE]);
 

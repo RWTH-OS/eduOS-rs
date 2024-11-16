@@ -1,11 +1,33 @@
+use crate::arch;
 use crate::arch::x86::kernel::processor::shutdown;
 
 extern "C" {
-	pub fn main() -> i32;
+	fn main() -> i32;
+}
+
+#[cfg(target_arch = "x86")]
+extern "C" {
+	static mut __bss_start: u8;
+	static __bss_end: u8;
+}
+
+/// initialize bss section
+#[cfg(target_arch = "x86")]
+unsafe fn bss_init() {
+	core::ptr::write_bytes(
+		core::ptr::addr_of_mut!(__bss_start),
+		0,
+		core::ptr::addr_of!(__bss_end) as usize - core::ptr::addr_of!(__bss_start) as usize,
+	);
 }
 
 #[cfg(not(test))]
 unsafe extern "C" fn entry() -> ! {
+	arch::init();
+
+	#[cfg(target_arch = "x86")]
+	bss_init();
+
 	let ret = main();
 
 	shutdown(ret)
