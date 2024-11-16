@@ -6,7 +6,6 @@
 #[macro_use]
 extern crate eduos_rs;
 
-use eduos_rs::arch;
 use eduos_rs::scheduler;
 use eduos_rs::scheduler::task::{HIGH_PRIORITY, NORMAL_PRIORITY};
 
@@ -22,7 +21,6 @@ extern "C" fn foo() {
 #[cfg(not(test))]
 #[no_mangle] // don't mangle the name of this function
 pub extern "C" fn main() -> i32 {
-	arch::init();
 	scheduler::init();
 
 	println!("Hello from eduOS-rs!");
