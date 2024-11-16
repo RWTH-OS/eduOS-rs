@@ -5,7 +5,7 @@
 ## Introduction
 
 eduOS-rs is a Unix-like operating system based on a monolithic architecture for educational purposes.
-It is developed for the course [Operating Systems][acsos] at RWTH Aachen University and includes a modified hypervisor that simplifies the boot process to increase the intelligibility of the OS.
+It is developed for the course [Operating Systems][acsos] at RWTH Aachen University.
 eduOS-rs is derived from following tutorials and software distributions:
 
 1. Philipp Oppermann's [excellent series of blog posts][opp].
@@ -47,10 +47,10 @@ $ choco install qemu git
 
 ### Linux
 Linux users should install common developer tools.
-For instance, on Ubuntu 18.04 the following command installs the required tools:
+For instance, on Ubuntu 22.04 the following command installs the required tools:
 
 ```sh
-$ apt-get install -y git nasm qemu-system-x86 build-essential
+$ apt-get install -y git qemu-system-x86 build-essential
 ```
 
 ### Common for macOS, Windows and Linux
