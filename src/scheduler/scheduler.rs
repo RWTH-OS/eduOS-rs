@@ -100,6 +100,8 @@ impl Scheduler {
 
 			task.borrow_mut().status = TaskStatus::Ready;
 			self.ready_queue.push(task.clone());
+		} else {
+			warn!("Unable to wakeup {}", task.borrow().id);
 		}
 	}
 
