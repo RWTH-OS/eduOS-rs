@@ -1,3 +1,6 @@
+use crate::logging::*;
+use crate::scheduler::*;
+use crate::synch::spinlock::SpinlockIrqSave;
 use core::arch::asm;
 use core::fmt;
 use x86::bits64::paging::VAddr;
@@ -12,12 +15,16 @@ const KERNEL_CODE_SELECTOR: SegmentSelector = SegmentSelector::new(1, Ring::Ring
 
 /// Enable Interrupts
 pub fn irq_enable() {
-	unsafe { asm!("sti", options(nomem, nostack, preserves_flags)) };
+	// Omit `nomem` to imitate a lock release. Otherwise, the compiler
+	// is free to move reads and writes through this asm block.
+	unsafe { asm!("sti", options(nostack, preserves_flags)) };
 }
 
 /// Disable Interrupts
 pub fn irq_disable() {
-	unsafe { asm!("cli", options(nomem, nostack, preserves_flags)) };
+	// Omit `nomem` to imitate a lock release. Otherwise, the compiler
+	// is free to move reads and writes through this asm block.
+	unsafe { asm!("cli", options(nostack, preserves_flags)) };
 }
 
 /// Determines, if the interrupt flags (IF) is set
@@ -49,7 +56,7 @@ pub fn irq_nested_disable() -> bool {
 /// Can be used in conjunction with irq_nested_disable() to only enable
 /// interrupts again if they were enabled before.
 pub fn irq_nested_enable(was_enabled: bool) {
-	if was_enabled == true {
+	if was_enabled {
 		irq_enable();
 	}
 }
@@ -359,6 +366,7 @@ struct IdtEntry {
 	pub reserved1: u16,
 }
 
+#[allow(dead_code)]
 enum Type {
 	InterruptGate,
 	TrapGate,
@@ -407,7 +415,7 @@ impl IdtEntry {
 			base_lo: ((handler.as_usize() as u64) & 0xFFFF) as u16,
 			base_hi: handler.as_usize() as u64 >> 16,
 			selector: gdt_code_selector,
-			ist_index: ist_index,
+			ist_index,
 			flags: dpl as u8 | ty.pack() | (1 << 7),
 			reserved1: 0,
 		}
@@ -430,6 +438,7 @@ impl InteruptHandler {
 		}
 	}
 
+	#[allow(dead_code)]
 	pub fn add_handler(
 		&mut self,
 		int_no: usize,
@@ -448,6 +457,7 @@ impl InteruptHandler {
 		}
 	}
 
+	#[allow(dead_code)]
 	pub fn remove_handler(&mut self, int_no: usize) {
 		if int_no < IDT_ENTRIES {
 			if int_no < 40 {
@@ -671,7 +681,7 @@ unsafe fn irq_remap() {
 	outb(0xA1, 0x00);
 }
 
-pub fn init() {
+pub(crate) fn init() {
 	debug!("initialize interrupt descriptor table");
 
 	unsafe {
@@ -687,7 +697,7 @@ pub fn init() {
 
 /// Represents the exception stack frame pushed by the CPU on exception entry.
 #[repr(C)]
-pub struct ExceptionStackFrame {
+pub(crate) struct ExceptionStackFrame {
 	/// This value points to the instruction that should be executed when the interrupt
 	/// handler returns. For most interrupts, this value points to the instruction immediately
 	/// following the last executed instruction. However, for some exceptions (e.g., page faults),

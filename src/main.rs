@@ -1,4 +1,3 @@
-#![feature(abi_x86_interrupt)]
 #![no_std] // don't link the Rust standard library
 #![cfg_attr(not(test), no_main)] // disable all Rust-level entry points
 #![cfg_attr(test, allow(dead_code, unused_macros, unused_imports))]
@@ -9,7 +8,6 @@ extern crate eduos_rs;
 #[allow(unused_imports)]
 use core::fmt::Write;
 use eduos_rs::arch;
-use eduos_rs::arch::processor::shutdown;
 use eduos_rs::scheduler;
 use eduos_rs::scheduler::task::NORMAL_PRIORITY;
 use eduos_rs::syscall;
@@ -44,7 +42,6 @@ extern "C" fn foo() {
 #[cfg(not(test))]
 #[no_mangle] // don't mangle the name of this function
 pub extern "C" fn main() -> i32 {
-	arch::init();
 	scheduler::init();
 
 	println!("Hello from eduOS-rs!");

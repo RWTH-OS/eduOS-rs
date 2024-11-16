@@ -1,12 +1,12 @@
 use crate::arch::mm::VirtAddr;
 use crate::consts::*;
+use crate::scheduler;
 use core::mem;
 use x86::bits64::segmentation::*;
 use x86::bits64::task::*;
 use x86::dtables::{self, DescriptorTablePointer};
 use x86::segmentation::*;
 use x86::Ring;
-use crate::scheduler;
 
 const GDT_NULL: usize = 0;
 const GDT_KERNEL_CODE: usize = 1;
@@ -32,6 +32,7 @@ static mut TSS: Tss = Tss::from(TaskStateSegment::new());
 pub struct Tss(TaskStateSegment);
 
 impl Tss {
+	#[allow(dead_code)]
 	pub const fn into(self) -> TaskStateSegment {
 		self.0
 	}

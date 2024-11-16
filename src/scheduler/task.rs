@@ -1,9 +1,8 @@
-#![allow(dead_code)]
-
 use crate::arch::mm::VirtAddr;
 use crate::arch::processor::msb;
 use crate::consts::*;
 use alloc::boxed::Box;
+use alloc::collections::VecDeque;
 use alloc::rc::Rc;
 use core::cell::RefCell;
 use core::fmt;
@@ -14,13 +13,13 @@ extern "C" {
 
 /// The status of the task - used for scheduling
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum TaskStatus {
-	TaskInvalid,
-	TaskReady,
-	TaskRunning,
-	TaskBlocked,
-	TaskFinished,
-	TaskIdle,
+pub(crate) enum TaskStatus {
+	Invalid,
+	Ready,
+	Running,
+	Blocked,
+	Finished,
+	Idle,
 }
 
 /// Unique identifier for a task (i.e. `pid`).
@@ -68,111 +67,45 @@ pub const HIGH_PRIORITY: TaskPriority = TaskPriority::from(24);
 pub const NORMAL_PRIORITY: TaskPriority = TaskPriority::from(16);
 pub const LOW_PRIORITY: TaskPriority = TaskPriority::from(0);
 
-struct QueueHead {
-	head: Option<Rc<RefCell<Task>>>,
-	tail: Option<Rc<RefCell<Task>>>,
-}
-
-impl QueueHead {
-	pub const fn new() -> Self {
-		QueueHead {
-			head: None,
-			tail: None,
-		}
-	}
-}
-
-impl Default for QueueHead {
-	fn default() -> Self {
-		Self {
-			head: None,
-			tail: None,
-		}
-	}
-}
-
 /// Realize a priority queue for tasks
-pub struct PriorityTaskQueue {
-	queues: [QueueHead; NO_PRIORITIES],
-	prio_bitmap: u64,
+pub(crate) struct PriorityTaskQueue {
+	queues: [VecDeque<Rc<RefCell<Task>>>; NO_PRIORITIES],
+	prio_bitmap: usize,
 }
 
 impl PriorityTaskQueue {
 	/// Creates an empty priority queue for tasks
-	pub fn new() -> PriorityTaskQueue {
+	pub const fn new() -> PriorityTaskQueue {
+		const VALUE: VecDeque<Rc<RefCell<Task>>> = VecDeque::new();
+
 		PriorityTaskQueue {
-			queues: Default::default(),
+			queues: [VALUE; NO_PRIORITIES],
 			prio_bitmap: 0,
 		}
 	}
 
 	/// Add a task by its priority to the queue
 	pub fn push(&mut self, task: Rc<RefCell<Task>>) {
-		let i = task.borrow().prio.into() as usize;
+		let i: usize = task.borrow().prio.into().into();
 		//assert!(i < NO_PRIORITIES, "Priority {} is too high", i);
 
 		self.prio_bitmap |= 1 << i;
-		match self.queues[i].tail {
-			None => {
-				// first element in the queue
-				self.queues[i].head = Some(task.clone());
-
-				let mut borrow = task.borrow_mut();
-				borrow.next = None;
-				borrow.prev = None;
-			}
-			Some(ref mut tail) => {
-				// add task at the end of the node
-				tail.borrow_mut().next = Some(task.clone());
-
-				let mut borrow = task.borrow_mut();
-				borrow.next = None;
-				borrow.prev = Some(tail.clone());
-			}
-		}
-
-		self.queues[i].tail = Some(task.clone());
+		self.queues[i].push_back(task.clone());
 	}
 
 	fn pop_from_queue(&mut self, queue_index: usize) -> Option<Rc<RefCell<Task>>> {
-		let new_head;
-		let task;
-
-		match self.queues[queue_index].head {
-			None => {
-				return None;
-			}
-			Some(ref mut head) => {
-				let mut borrow = head.borrow_mut();
-
-				match borrow.next {
-					Some(ref mut nhead) => {
-						nhead.borrow_mut().prev = None;
-					}
-					None => {}
-				}
-
-				new_head = borrow.next.clone();
-				borrow.next = None;
-				borrow.prev = None;
-
-				task = head.clone();
-			}
+		let task = self.queues[queue_index].pop_front();
+		if self.queues[queue_index].is_empty() {
+			self.prio_bitmap &= !(1 << queue_index);
 		}
 
-		self.queues[queue_index].head = new_head;
-		if self.queues[queue_index].head.is_none() {
-			self.queues[queue_index].tail = None;
-			self.prio_bitmap &= !(1 << queue_index as u64);
-		}
-
-		Some(task)
+		task
 	}
 
 	/// Pop the task with the highest priority from the queue
 	pub fn pop(&mut self) -> Option<Rc<RefCell<Task>>> {
 		if let Some(i) = msb(self.prio_bitmap) {
-			return self.pop_from_queue(i as usize);
+			return self.pop_from_queue(i);
 		}
 
 		None
@@ -181,89 +114,31 @@ impl PriorityTaskQueue {
 	/// Pop the next task, which has a higher or the same priority as `prio`
 	pub fn pop_with_prio(&mut self, prio: TaskPriority) -> Option<Rc<RefCell<Task>>> {
 		if let Some(i) = msb(self.prio_bitmap) {
-			if i >= prio.into() as u64 {
-				return self.pop_from_queue(i as usize);
+			if i >= prio.into().into() {
+				return self.pop_from_queue(i);
 			}
 		}
 
 		None
 	}
-
-	/// Remove a specific task from the priority queue.
-	pub fn remove(&mut self, task: Rc<RefCell<Task>>) {
-		let i = task.borrow().prio.into() as usize;
-		//assert!(i < NO_PRIORITIES, "Priority {} is too high", i);
-
-		let mut curr = self.queues[i].head.clone();
-		let mut next_curr;
-
-		loop {
-			match curr {
-				None => {
-					break;
-				}
-				Some(ref curr_task) => {
-					if Rc::ptr_eq(&curr_task, &task) {
-						let (mut prev, mut next) = {
-							let borrowed = curr_task.borrow_mut();
-							(borrowed.prev.clone(), borrowed.next.clone())
-						};
-
-						match prev {
-							Some(ref mut t) => {
-								t.borrow_mut().next = next.clone();
-							}
-							None => {}
-						};
-
-						match next {
-							Some(ref mut t) => {
-								t.borrow_mut().prev = prev.clone();
-							}
-							None => {}
-						};
-
-						break;
-					}
-
-					next_curr = curr_task.borrow().next.clone();
-				}
-			}
-
-			curr = next_curr.clone();
-		}
-
-		let new_head = match self.queues[i].head {
-			Some(ref curr_task) => {
-				if Rc::ptr_eq(&curr_task, &task) {
-					true
-				} else {
-					false
-				}
-			}
-			None => false,
-		};
-
-		if new_head == true {
-			self.queues[i].head = task.borrow().next.clone();
-
-			if self.queues[i].head.is_none() {
-				self.prio_bitmap &= !(1 << i as u64);
-			}
-		}
-	}
 }
 
-pub trait Stack {
+#[allow(dead_code)]
+pub(crate) trait Stack {
 	fn top(&self) -> VirtAddr;
 	fn bottom(&self) -> VirtAddr;
 }
 
 #[derive(Copy, Clone)]
-#[repr(align(64))]
-#[repr(C)]
-pub struct TaskStack {
+#[repr(C, align(64))]
+pub(crate) struct TaskStack {
 	buffer: [u8; STACK_SIZE],
+}
+
+impl Default for TaskStack {
+	fn default() -> Self {
+		Self::new()
+	}
 }
 
 impl TaskStack {
@@ -286,7 +161,7 @@ impl Stack for TaskStack {
 
 /// A task control block, which identifies either a process or a thread
 #[repr(align(64))]
-pub struct Task {
+pub(crate) struct Task {
 	/// The ID of this context
 	pub id: TaskId,
 	/// Task Priority
@@ -295,41 +170,33 @@ pub struct Task {
 	pub status: TaskStatus,
 	/// Last stack pointer before a context switch to another task
 	pub last_stack_pointer: usize,
-	// Stack of the task
+	/// Stack of the task
 	pub stack: Box<dyn Stack>,
-	// next task in queue
-	pub next: Option<Rc<RefCell<Task>>>,
-	// previous task in queue
-	pub prev: Option<Rc<RefCell<Task>>>,
 }
 
 impl Task {
 	pub fn new_idle(id: TaskId) -> Task {
 		Task {
-			id: id,
+			id,
 			prio: LOW_PRIORITY,
-			status: TaskStatus::TaskIdle,
+			status: TaskStatus::Idle,
 			last_stack_pointer: 0,
 			stack: Box::new(crate::arch::mm::get_boot_stack()),
-			next: None,
-			prev: None,
 		}
 	}
 
 	pub fn new(id: TaskId, status: TaskStatus, prio: TaskPriority) -> Task {
 		Task {
-			id: id,
-			prio: prio,
-			status: status,
+			id,
+			prio,
+			status,
 			last_stack_pointer: 0,
 			stack: Box::new(TaskStack::new()),
-			next: None,
-			prev: None,
 		}
 	}
 }
 
-pub trait TaskFrame {
+pub(crate) trait TaskFrame {
 	/// Create the initial stack frame for a new task
 	fn create_stack_frame(&mut self, func: extern "C" fn());
 }

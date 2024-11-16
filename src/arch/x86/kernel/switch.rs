@@ -1,5 +1,5 @@
 use crate::arch::x86_64::kernel::gdt::set_current_kernel_stack;
-use core::arch::asm;
+use core::arch::naked_asm;
 
 #[cfg(target_arch = "x86_64")]
 macro_rules! save_context {
@@ -58,11 +58,17 @@ macro_rules! restore_context {
 
 #[cfg(target_arch = "x86_64")]
 #[naked]
-pub unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
+/// # Safety
+///
+/// Only the scheduler itself should call this function to switch the
+/// context. `old_stack` is a pointer, where the address to the old
+/// stack is stored. `new_stack` provides the stack pointer of the
+/// next task.
+pub(crate) unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
 	// rdi = old_stack => the address to store the old rsp
 	// rsi = new_stack => stack pointer of the new task
 
-	asm!(
+	naked_asm!(
 		save_context!(),
 		// Store the old `rsp` behind `old_stack`
 		"mov [rdi], rsp",
@@ -76,14 +82,19 @@ pub unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
 		"call {set_stack}",
 		restore_context!(),
 		set_stack = sym set_current_kernel_stack,
-		options(noreturn)
 	);
 }
 
 #[cfg(target_arch = "x86")]
 #[naked]
-pub unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
-	asm!(
+/// # Safety
+///
+/// Only the scheduler itself should call this function to switch the
+/// context. `old_stack` is a pointer, where the address to the old
+/// stack is stored. `new_stack` provides the stack pointer of the
+/// next task.
+pub(crate) unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
+	naked_asm!(
 		// store all registers
 		"pushfd",
 		"pushad",
@@ -95,6 +106,5 @@ pub unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
 		"popad",
 		"popfd",
 		"ret",
-		options(noreturn)
 	);
 }
