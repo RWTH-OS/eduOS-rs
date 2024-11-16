@@ -15,7 +15,6 @@ use crate::arch::processor::shutdown;
 use crate::consts::HEAP_SIZE;
 use core::panic::PanicInfo;
 use core::ptr::addr_of;
-pub use logging::*;
 use talc::*;
 
 #[macro_use]
