@@ -7,7 +7,7 @@ pub(crate) enum LogLevel {
 	/// Disable all our put messages
 	///
 	/// Designates without information
-	Disable = 0,
+	Disabled = 0,
 	/// The "error" level.
 	///
 	/// Designates very serious errors.

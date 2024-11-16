@@ -61,6 +61,7 @@ pub const HIGH_PRIORITY: TaskPriority = TaskPriority::from(0);
 pub const NORMAL_PRIORITY: TaskPriority = TaskPriority::from(24);
 pub const LOW_PRIORITY: TaskPriority = TaskPriority::from(NO_PRIORITIES as u8 - 1);
 
+#[allow(dead_code)]
 pub(crate) trait Stack {
 	fn top(&self) -> VirtAddr;
 	fn bottom(&self) -> VirtAddr;

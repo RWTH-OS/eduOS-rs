@@ -1,10 +1,8 @@
 //! Architecture dependent interface to initialize a task
 
-use crate::consts::*;
 use crate::scheduler::do_exit;
 use crate::scheduler::task::*;
 use core::mem::size_of;
-use core::ptr::write_bytes;
 
 #[cfg(target_arch = "x86_64")]
 #[repr(C, packed)]
@@ -79,10 +77,10 @@ extern "C" fn leave_task() -> ! {
 impl TaskFrame for Task {
 	#[cfg(target_arch = "x86_64")]
 	fn create_stack_frame(&mut self, func: extern "C" fn()) {
+		// note, stack is already zeroed
+
 		unsafe {
 			let mut stack: *mut u64 = ((*self.stack).top()).as_mut_ptr();
-
-			write_bytes((*self.stack).bottom().as_mut_ptr::<u8>(), 0xCD, STACK_SIZE);
 
 			/* Only marker for debugging purposes, ... */
 			*stack = 0xDEADBEEFu64;
@@ -97,8 +95,6 @@ impl TaskFrame for Task {
 			stack = (stack as usize - size_of::<State>()) as *mut u64;
 
 			let state: *mut State = stack as *mut State;
-			write_bytes(state, 0x00, 1);
-
 			(*state).rsp = (stack as usize + size_of::<State>()) as u64;
 			(*state).rbp = (*state).rsp + size_of::<u64>() as u64;
 
@@ -112,10 +108,10 @@ impl TaskFrame for Task {
 
 	#[cfg(target_arch = "x86")]
 	fn create_stack_frame(&mut self, func: extern "C" fn()) {
+		// note, stack is already zeroed
+
 		unsafe {
 			let mut stack: *mut u32 = ((*self.stack).top()).as_mut_ptr();
-
-			write_bytes((*self.stack).bottom().as_mut_ptr::<u8>(), 0xCD, STACK_SIZE);
 
 			/* Only marker for debugging purposes, ... */
 			*stack = 0xDEADBEEFu32;
@@ -130,8 +126,6 @@ impl TaskFrame for Task {
 			stack = (stack as usize - size_of::<State>()) as *mut u32;
 
 			let state: *mut State = stack as *mut State;
-			write_bytes(state, 0x00, 1);
-
 			(*state).esp = (stack as usize + size_of::<State>()) as u32;
 			(*state).ebp = (*state).esp + size_of::<u32>() as u32;
 

@@ -5,6 +5,7 @@ pub use x86::bits32::paging::VAddr as VirtAddr;
 #[cfg(target_arch = "x86_64")]
 pub use x86::bits64::paging::VAddr as VirtAddr;
 
+#[allow(dead_code)]
 #[derive(Copy, Clone)]
 pub(crate) struct BootStack {
 	start: VirtAddr,
