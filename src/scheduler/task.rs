@@ -36,6 +36,7 @@ impl alloc::fmt::Display for TaskId {
 	}
 }
 
+#[allow(dead_code)]
 pub(crate) trait Stack {
 	fn top(&self) -> VirtAddr;
 	fn bottom(&self) -> VirtAddr;

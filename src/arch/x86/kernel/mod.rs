@@ -1,4 +1,3 @@
-#[cfg(target_arch = "x86_64")]
 pub(crate) mod processor;
 #[cfg(not(feature = "vga"))]
 pub(crate) mod serial;

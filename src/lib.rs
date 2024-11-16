@@ -1,5 +1,4 @@
 #![feature(const_mut_refs)]
-#![feature(linked_list_cursors)]
 #![feature(alloc_error_handler)]
 #![feature(naked_functions)]
 #![allow(clippy::module_inception)]
@@ -20,7 +19,7 @@ use talc::*;
 #[macro_use]
 pub mod macros;
 #[macro_use]
-pub mod logging;
+mod logging;
 pub mod arch;
 pub mod console;
 pub mod consts;
