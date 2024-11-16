@@ -36,9 +36,9 @@ use core::ops::{Deref, DerefMut, Drop};
 /// ```
 pub struct Mutex<T: ?Sized> {
 	/// in principle a binary semaphore
-	value: SpinlockIrqSave<bool>,
+	value: Spinlock<bool>,
 	/// Priority queue of waiting tasks
-	queue: SpinlockIrqSave<PriorityTaskQueue>,
+	queue: Spinlock<PriorityTaskQueue>,
 	/// protected data
 	data: UnsafeCell<T>,
 }
@@ -47,8 +47,8 @@ pub struct Mutex<T: ?Sized> {
 ///
 /// When the guard falls out of scope it will release the lock.
 pub struct MutexGuard<'a, T: ?Sized + 'a> {
-	value: &'a SpinlockIrqSave<bool>,
-	queue: &'a SpinlockIrqSave<PriorityTaskQueue>,
+	value: &'a Spinlock<bool>,
+	queue: &'a Spinlock<PriorityTaskQueue>,
 	data: &'a mut T,
 }
 
@@ -62,10 +62,10 @@ impl<T> Mutex<T> {
 	/// The count specified can be thought of as a number of resources, and a
 	/// call to `acquire` or `access` will block until at least one resource is
 	/// available. It is valid to initialize a semaphore with a negative count.
-	pub fn new(user_data: T) -> Mutex<T> {
+	pub const fn new(user_data: T) -> Mutex<T> {
 		Mutex {
-			value: SpinlockIrqSave::new(true),
-			queue: SpinlockIrqSave::new(PriorityTaskQueue::new()),
+			value: Spinlock::new(true),
+			queue: Spinlock::new(PriorityTaskQueue::new()),
 			data: UnsafeCell::new(user_data),
 		}
 	}
