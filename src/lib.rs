@@ -1,8 +1,11 @@
-#![feature(const_mut_refs)]
-#![feature(linked_list_cursors)]
-#![feature(alloc_error_handler)]
-#![feature(naked_functions)]
 #![feature(abi_x86_interrupt)]
+#![feature(alloc_error_handler)]
+#![feature(const_mut_refs)]
+#![feature(const_refs_to_static)]
+#![feature(const_trait_impl)]
+#![feature(naked_functions)]
+#![allow(clippy::module_inception)]
+#![allow(static_mut_refs)]
 #![no_std]
 
 extern crate alloc;
@@ -13,20 +16,19 @@ extern crate x86;
 use crate::arch::processor::shutdown;
 use crate::consts::HEAP_SIZE;
 use core::panic::PanicInfo;
-pub use logging::*;
 use core::ptr::addr_of;
 use talc::*;
 
 #[macro_use]
 pub mod macros;
 #[macro_use]
-pub mod logging;
+mod logging;
 pub mod arch;
-pub mod collections;
+pub(crate) mod collections;
 pub mod console;
-pub mod consts;
+pub(crate) mod consts;
 pub mod errno;
-pub mod mm;
+pub(crate) mod mm;
 pub mod scheduler;
 pub mod synch;
 
@@ -38,7 +40,7 @@ static ALLOCATOR: Talck<spin::Mutex<()>, ClaimOnOom> = Talc::new(unsafe {
 })
 .lock();
 
-//// This function is called on panic.
+/// This function is called on panic.
 #[cfg(not(test))]
 #[panic_handler]
 pub fn panic(info: &PanicInfo) -> ! {

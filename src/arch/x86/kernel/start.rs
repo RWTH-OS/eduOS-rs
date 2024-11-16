@@ -1,5 +1,5 @@
 use crate::arch;
-use crate::arch::x86::kernel::processor::shutdown;
+use crate::arch::processor::shutdown;
 
 extern "C" {
 	fn main() -> i32;
@@ -39,9 +39,7 @@ unsafe extern "C" fn entry() -> ! {
 pub unsafe extern "C" fn _start(boot_info: &'static bootloader::BootInfo) -> ! {
 	crate::arch::x86::kernel::BOOT_INFO = Some(boot_info);
 
-	let ret = main();
-
-	shutdown(ret)
+	entry();
 }
 
 #[cfg(not(test))]

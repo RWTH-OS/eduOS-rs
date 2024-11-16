@@ -5,8 +5,6 @@
 
 .code32
 
-.set BOOT_STACK_SIZE, 4096
-
 # We use a special name to map this section at the begin of our kernel
 # =>  Multiboot expects its magic number at the beginning of the kernel.
 .section .mboot, "a"
@@ -26,29 +24,3 @@ mboot:
     .4byte MULTIBOOT_HEADER_FLAGS
     .4byte MULTIBOOT_CHECKSUM
     .4byte 0, 0, 0, 0, 0 # address fields
-
-.section .text
-.align 4
-.extern main
-.extern shutdown
-.global _start
-_start:
-    cli # avoid any interrupt
-
-    # Initialize stack pointer
-    mov esp, OFFSET BOOT_STACK
-    add esp, BOOT_STACK_SIZE - 16
-
-    call main
-    # eax has the return value of main
-    push eax
-    call shutdown
-L0:
-    hlt
-    jmp L0
-
-.section .data
-.align 4096
-.global BOOT_STACK
-BOOT_STACK:
-    .fill BOOT_STACK_SIZE, 1, 0xcd

@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use crate::logging::*;
 use core::arch::asm;
 #[cfg(feature = "qemu-exit")]
@@ -16,9 +14,9 @@ pub fn mb() {
 
 /// Search the most significant bit
 #[inline(always)]
-pub(crate) fn msb(value: u64) -> Option<u64> {
+pub(crate) fn msb(value: usize) -> Option<usize> {
 	if value > 0 {
-		let ret: u64;
+		let ret: usize;
 
 		unsafe {
 			asm!("bsr {0}, {1}",
@@ -34,10 +32,12 @@ pub(crate) fn msb(value: u64) -> Option<u64> {
 }
 
 /// Search the least significant bit
+#[allow(dead_code)]
 #[inline(always)]
-pub(crate) fn lsb(value: u64) -> Option<u64> {
+pub(crate) fn lsb(value: usize) -> Option<usize> {
 	if value > 0 {
-		let ret: u64;
+		let ret: usize;
+
 		unsafe {
 			asm!("bsf {0}, {1}",
 				out(reg) ret,
@@ -51,12 +51,15 @@ pub(crate) fn lsb(value: u64) -> Option<u64> {
 	}
 }
 
+#[allow(dead_code)]
+#[inline(always)]
 pub(crate) fn halt() {
 	unsafe {
 		asm!("hlt", options(nomem, nostack));
 	}
 }
 
+#[inline(always)]
 pub(crate) fn pause() {
 	unsafe {
 		asm!("pause", options(nomem, nostack));
@@ -77,23 +80,21 @@ pub extern "C" fn shutdown(error_code: i32) -> ! {
 
 	#[cfg(not(feature = "qemu-exit"))]
 	loop {
-		unsafe {
-			x86::halt();
-		}
+		halt();
 	}
 }
 
-pub fn init() {
+pub(crate) fn init() {
 	debug!("enable supported processor features");
 
 	let mut cr0 = unsafe { cr0() };
 
 	// be sure that AM, NE and MP is enabled
-	cr0 = cr0 | Cr0::CR0_ALIGNMENT_MASK;
-	cr0 = cr0 | Cr0::CR0_NUMERIC_ERROR;
-	cr0 = cr0 | Cr0::CR0_MONITOR_COPROCESSOR;
+	cr0 |= Cr0::CR0_ALIGNMENT_MASK;
+	cr0 |= Cr0::CR0_NUMERIC_ERROR;
+	cr0 |= Cr0::CR0_MONITOR_COPROCESSOR;
 	// enable cache
-	cr0 = cr0 & !(Cr0::CR0_CACHE_DISABLE | Cr0::CR0_NOT_WRITE_THROUGH);
+	cr0 &= !(Cr0::CR0_CACHE_DISABLE | Cr0::CR0_NOT_WRITE_THROUGH);
 
 	debug!("set CR0 to {:?}", cr0);
 

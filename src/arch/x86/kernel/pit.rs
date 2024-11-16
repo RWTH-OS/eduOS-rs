@@ -1,4 +1,4 @@
-use crate::arch::processor::*;
+use crate::arch::x86::kernel::processor::*;
 use crate::consts::*;
 use crate::logging::*;
 use x86::io::*;

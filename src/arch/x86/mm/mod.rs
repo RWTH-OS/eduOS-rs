@@ -6,7 +6,7 @@ pub use x86::bits32::paging::VAddr as VirtAddr;
 pub use x86::bits64::paging::VAddr as VirtAddr;
 
 #[derive(Copy, Clone)]
-pub struct BootStack {
+pub(crate) struct BootStack {
 	start: VirtAddr,
 	end: VirtAddr,
 }
@@ -68,11 +68,6 @@ impl<T> Aligned<T> {
 }
 
 #[cfg(target_arch = "x86")]
-extern "C" {
-	static BOOT_STACK: usize;
-}
-
-#[cfg(target_arch = "x86")]
 pub(crate) const BOOT_STACK_SIZE: usize = 0x10000;
 #[cfg(target_arch = "x86")]
 #[link_section = ".data"]
@@ -82,7 +77,13 @@ pub(crate) static mut BOOT_STACK: Aligned<[u8; BOOT_STACK_SIZE]> =
 #[cfg(target_arch = "x86")]
 pub(crate) fn get_boot_stack() -> BootStack {
 	BootStack::new(
-		unsafe { VirtAddr(BOOT_STACK.try_into().unwrap()) },
-		unsafe { VirtAddr((BOOT_STACK + 0x1000).try_into().unwrap()) },
+		unsafe { VirtAddr((BOOT_STACK.0.as_ptr() as usize).try_into().unwrap()) },
+		unsafe {
+			VirtAddr(
+				(BOOT_STACK.0.as_ptr() as usize + BOOT_STACK_SIZE)
+					.try_into()
+					.unwrap(),
+			)
+		},
 	)
 }
