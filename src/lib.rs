@@ -7,13 +7,13 @@
 #![no_std]
 
 extern crate alloc;
-extern crate spin;
 #[cfg(target_arch = "x86_64")]
 extern crate x86;
 
 // These need to be visible to the linker, so we need to export them.
 use crate::arch::processor::shutdown;
 use crate::consts::HEAP_SIZE;
+use crate::synch::spinlock::RawSpinlock;
 use core::panic::PanicInfo;
 use core::ptr::addr_of;
 use talc::*;
@@ -33,7 +33,7 @@ pub mod synch;
 static mut ARENA: [u8; HEAP_SIZE] = [0; HEAP_SIZE];
 
 #[global_allocator]
-static ALLOCATOR: Talck<spin::Mutex<()>, ClaimOnOom> = Talc::new(unsafe {
+static ALLOCATOR: Talck<RawSpinlock, ClaimOnOom> = Talc::new(unsafe {
 	ClaimOnOom::new(Span::from_array(addr_of!(ARENA) as *mut [u8; HEAP_SIZE]))
 })
 .lock();

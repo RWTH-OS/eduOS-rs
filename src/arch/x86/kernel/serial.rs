@@ -1,5 +1,5 @@
+use crate::synch::spinlock::Spinlock;
 use core::fmt;
-use spin::Mutex;
 use x86::io::*;
 
 /// A COM serial port.
@@ -32,4 +32,4 @@ impl fmt::Write for ComPort {
 }
 
 /// Our primary serial port.
-pub(crate) static COM1: Mutex<ComPort> = Mutex::new(ComPort::new(0x3F8));
+pub(crate) static COM1: Spinlock<ComPort> = Spinlock::new(ComPort::new(0x3F8));
