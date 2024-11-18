@@ -11,6 +11,6 @@ core::arch::global_asm!(include_str!("entry.s"));
 pub(crate) fn init() {
 	processor::cpu_init();
 
-	#[cfg(all(target_arch = "x86", feature = "vga"))]
+	#[cfg(feature = "vga")]
 	vga::init();
 }
