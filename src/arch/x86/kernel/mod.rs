@@ -260,6 +260,6 @@ pub(crate) fn init() {
 	irq::init();
 	pit::init();
 
-	#[cfg(all(target_arch = "x86", feature = "vga"))]
+	#[cfg(feature = "vga")]
 	vga::init();
 }
