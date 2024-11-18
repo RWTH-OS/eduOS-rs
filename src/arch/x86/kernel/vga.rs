@@ -1,5 +1,5 @@
+use crate::synch::spinlock::Spinlock;
 use core::fmt;
-use spin::Mutex;
 use x86::io::*;
 
 const CRT_CONTROLLER_ADDRESS_PORT: u16 = 0x3D4;
@@ -13,7 +13,7 @@ const COLS: usize = 80;
 const ROWS: usize = 25;
 const VGA_BUFFER_ADDRESS: u64 = 0xB8000;
 
-pub(crate) static VGA_SCREEN: Mutex<VgaScreen> = Mutex::new(VgaScreen::new());
+pub(crate) static VGA_SCREEN: Spinlock<VgaScreen> = Spinlock::new(VgaScreen::new());
 
 #[derive(Clone, Copy)]
 #[repr(C, packed)]
