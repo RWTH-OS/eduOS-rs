@@ -5,7 +5,6 @@ use crate::consts::*;
 use crate::errno::*;
 use crate::logging::*;
 use crate::scheduler::task::*;
-use crate::synch::spinlock::*;
 use alloc::collections::{BTreeMap, VecDeque};
 use alloc::rc::Rc;
 use core::cell::RefCell;
@@ -19,26 +18,26 @@ pub(crate) struct Scheduler {
 	/// task id of the idle task
 	idle_task: Rc<RefCell<Task>>,
 	/// queue of tasks, which are ready
-	ready_queue: SpinlockIrqSave<PriorityTaskQueue>,
+	ready_queue: PriorityTaskQueue,
 	/// queue of tasks, which are finished and can be released
-	finished_tasks: SpinlockIrqSave<VecDeque<TaskId>>,
-	// map between task id and task controll block
-	tasks: SpinlockIrqSave<BTreeMap<TaskId, Rc<RefCell<Task>>>>,
+	finished_tasks: VecDeque<TaskId>,
+	// map between task id and task control block
+	tasks: BTreeMap<TaskId, Rc<RefCell<Task>>>,
 }
 
 impl Scheduler {
 	pub fn new() -> Scheduler {
 		let tid = TaskId::from(TID_COUNTER.fetch_add(1, Ordering::SeqCst));
 		let idle_task = Rc::new(RefCell::new(Task::new_idle(tid)));
-		let tasks = SpinlockIrqSave::new(BTreeMap::new());
+		let mut tasks = BTreeMap::new();
 
-		tasks.lock().insert(tid, idle_task.clone());
+		tasks.insert(tid, idle_task.clone());
 
 		Scheduler {
 			current_task: idle_task.clone(),
 			idle_task: idle_task.clone(),
-			ready_queue: SpinlockIrqSave::new(PriorityTaskQueue::new()),
-			finished_tasks: SpinlockIrqSave::new(VecDeque::<TaskId>::new()),
+			ready_queue: PriorityTaskQueue::new(),
+			finished_tasks: VecDeque::<TaskId>::new(),
 			tasks,
 		}
 	}
@@ -47,7 +46,7 @@ impl Scheduler {
 		loop {
 			let id = TaskId::from(TID_COUNTER.fetch_add(1, Ordering::SeqCst));
 
-			if !self.tasks.lock().contains_key(&id) {
+			if !self.tasks.contains_key(&id) {
 				return id;
 			}
 		}
@@ -68,8 +67,8 @@ impl Scheduler {
 			task.borrow_mut().create_stack_frame(func);
 
 			// Add it to the task lists.
-			self.ready_queue.lock().push(task.clone());
-			self.tasks.lock().insert(tid, task);
+			self.ready_queue.push(task.clone());
+			self.tasks.insert(tid, task);
 
 			info!("Creating task {}", tid);
 
@@ -136,7 +135,7 @@ impl Scheduler {
 				debug!("wakeup task {}", task.borrow().id);
 
 				task.borrow_mut().status = TaskStatus::Ready;
-				self.ready_queue.lock().push(task.clone());
+				self.ready_queue.push(task.clone());
 			}
 		};
 
@@ -154,8 +153,8 @@ impl Scheduler {
 
 	pub fn schedule(&mut self) {
 		// do we have finished tasks? => drop tasks => deallocate implicitly the stack
-		if let Some(id) = self.finished_tasks.lock().pop_front() {
-			if self.tasks.lock().remove(&id).is_none() {
+		if let Some(id) = self.finished_tasks.pop_front() {
+			if self.tasks.remove(&id).is_none() {
 				warn!("Unable to drop task {}", id);
 			} else {
 				debug!("Drop task {}", id);
@@ -176,9 +175,9 @@ impl Scheduler {
 		// do we have a task, which is ready?
 		let mut next_task;
 		if current_status == TaskStatus::Running {
-			next_task = self.ready_queue.lock().pop_with_prio(current_prio);
+			next_task = self.ready_queue.pop_with_prio(current_prio);
 		} else {
-			next_task = self.ready_queue.lock().pop();
+			next_task = self.ready_queue.pop();
 		}
 
 		if next_task.is_none()
@@ -201,14 +200,14 @@ impl Scheduler {
 			if current_status == TaskStatus::Running {
 				debug!("Add task {} to ready queue", current_id);
 				self.current_task.borrow_mut().status = TaskStatus::Ready;
-				self.ready_queue.lock().push(self.current_task.clone());
+				self.ready_queue.push(self.current_task.clone());
 			} else if current_status == TaskStatus::Finished {
 				debug!("Task {} finished", current_id);
 				self.current_task.borrow_mut().status = TaskStatus::Invalid;
 				// release the task later, because the stack is required
 				// to call the function "switch"
 				// => push id to a queue and release the task later
-				self.finished_tasks.lock().push_back(current_id);
+				self.finished_tasks.push_back(current_id);
 			}
 
 			debug!(
