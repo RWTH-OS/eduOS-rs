@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 //! Interface to the scheduler
 
 mod scheduler;
