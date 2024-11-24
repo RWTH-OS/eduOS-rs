@@ -37,9 +37,8 @@ version = "0.1.0"
 dependencies = [
  "bootloader",
  "cfg-if",
+ "lock_api",
  "qemu-exit",
- "spin",
- "talc",
  "x86",
 ]
 
@@ -73,24 +72,6 @@ name = "scopeguard"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
-
-[[package]]
-name = "spin"
-version = "0.9.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6980e8d7511241f8acf4aebddbb1ff938df5eebe98691418c4468d0b72a96a67"
-dependencies = [
- "lock_api",
-]
-
-[[package]]
-name = "talc"
-version = "4.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3fcad3be1cfe36eb7d716a04791eba36a197da9d9b6ea1e28e64ac569da3701d"
-dependencies = [
- "lock_api",
-]
 
 [[package]]
 name = "x86"

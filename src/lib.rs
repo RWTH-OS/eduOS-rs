@@ -15,9 +15,8 @@ extern crate x86;
 // These need to be visible to the linker, so we need to export them.
 use crate::arch::processor::shutdown;
 use crate::consts::HEAP_SIZE;
+use crate::mm::buddy::LockedHeap;
 use core::panic::PanicInfo;
-use core::ptr::addr_of;
-use talc::*;
 
 #[macro_use]
 pub mod macros;
@@ -33,13 +32,26 @@ pub mod scheduler;
 pub mod synch;
 pub mod syscall;
 
-static mut ARENA: [u8; HEAP_SIZE] = [0; HEAP_SIZE];
+#[repr(align(256))]
+struct Arena([u8; HEAP_SIZE]);
+
+impl Arena {
+	pub const fn new() -> Self {
+		Self([0; HEAP_SIZE])
+	}
+}
+
+static mut ARENA: Arena = Arena::new();
 
 #[global_allocator]
-static ALLOCATOR: Talck<spin::Mutex<()>, ClaimOnOom> = Talc::new(unsafe {
-	ClaimOnOom::new(Span::from_array(addr_of!(ARENA) as *mut [u8; HEAP_SIZE]))
-})
-.lock();
+static ALLOCATOR: LockedHeap<32> = LockedHeap::<32>::new();
+
+pub fn init() {
+	unsafe {
+		crate::ALLOCATOR.init(ARENA.0.as_mut_ptr(), HEAP_SIZE);
+	}
+	crate::scheduler::init();
+}
 
 /// This function is called on panic.
 #[cfg(not(test))]
