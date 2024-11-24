@@ -1,207 +1,109 @@
 use crate::arch;
-use core::cell::UnsafeCell;
-use core::fmt;
-use core::marker::Sync;
-use core::ops::{Deref, DerefMut, Drop};
 use core::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use lock_api::{GuardSend, RawMutex, RawMutexFair};
 
-/// This type provides a lock based on busy waiting to realize mutual exclusion of tasks.
+/// A [fair] [ticket lock].
 ///
-/// # Description
-///
-/// This structure behaves a lot like a normal Mutex. There are some differences:
-///
-/// - By using busy waiting, it can be used outside the runtime.
-/// - It is a so called ticket lock (https://en.wikipedia.org/wiki/Ticket_lock)
-///   and completly fair.
-///
-/// The interface is derived from https://mvdnes.github.io/rust-docs/spin-rs/spin/index.html.
-///
-/// # Simple examples
-///
-/// ```
-/// let spinlock = synch::Spinlock::new(0);
-///
-/// // Modify the data
-/// {
-///     let mut data = spinlock.lock();
-///     *data = 2;
-/// }
-///
-/// // Read the data
-/// let answer =
-/// {
-///     let data = spinlock.lock();
-///     *data
-/// };
-///
-/// assert_eq!(answer, 2);
-/// ```
-pub struct Spinlock<T: ?Sized> {
+/// [fair]: https://en.wikipedia.org/wiki/Unbounded_nondeterminism
+/// [ticket lock]: https://en.wikipedia.org/wiki/Ticket_lock
+pub struct RawSpinlock {
 	queue: AtomicUsize,
 	dequeue: AtomicUsize,
-	data: UnsafeCell<T>,
 }
 
-/// A guard to which the protected data can be accessed
-///
-/// When the guard falls out of scope it will release the lock.
-pub struct SpinlockGuard<'a, T: ?Sized + 'a> {
-	//queue: &'a AtomicUsize,
-	dequeue: &'a AtomicUsize,
-	data: &'a mut T,
-}
+unsafe impl RawMutex for RawSpinlock {
+	#[allow(clippy::declare_interior_mutable_const)]
+	const INIT: Self = Self {
+		queue: AtomicUsize::new(0),
+		dequeue: AtomicUsize::new(0),
+	};
 
-// Same unsafe impls as `std::sync::Mutex`
-unsafe impl<T: ?Sized + Send> Sync for Spinlock<T> {}
-unsafe impl<T: ?Sized + Send> Send for Spinlock<T> {}
+	type GuardMarker = GuardSend;
 
-impl<T> Spinlock<T> {
-	pub const fn new(user_data: T) -> Spinlock<T> {
-		Spinlock {
-			queue: AtomicUsize::new(0),
-			dequeue: AtomicUsize::new(1),
-			data: UnsafeCell::new(user_data),
-		}
-	}
-
-	/// Consumes this mutex, returning the underlying data.
-	pub fn into_inner(self) -> T {
-		// We know statically that there are no outstanding references to
-		// `self` so there's no need to lock.
-		let Spinlock { data, .. } = self;
-		data.into_inner()
-	}
-}
-
-impl<T: ?Sized> Spinlock<T> {
-	fn obtain_lock(&self) {
-		let ticket = self.queue.fetch_add(1, Ordering::Relaxed) + 1;
+	#[inline]
+	fn lock(&self) {
+		let ticket = self.queue.fetch_add(1, Ordering::Relaxed);
 		while self.dequeue.load(Ordering::Acquire) != ticket {
 			arch::processor::pause();
 		}
 	}
 
-	pub fn lock(&self) -> SpinlockGuard<T> {
-		self.obtain_lock();
-		SpinlockGuard {
-			//queue: &self.queue,
-			dequeue: &self.dequeue,
-			data: unsafe { &mut *self.data.get() },
+	#[inline]
+	fn try_lock(&self) -> bool {
+		let ticket = self
+			.queue
+			.fetch_update(Ordering::SeqCst, Ordering::SeqCst, |ticket| {
+				if self.dequeue.load(Ordering::Acquire) == ticket {
+					Some(ticket + 1)
+				} else {
+					None
+				}
+			});
+
+		ticket.is_ok()
+	}
+
+	#[inline]
+	unsafe fn unlock(&self) {
+		self.dequeue.fetch_add(1, Ordering::Release);
+	}
+
+	#[inline]
+	fn is_locked(&self) -> bool {
+		let ticket = self.dequeue.load(Ordering::Relaxed);
+		self.dequeue.load(Ordering::Relaxed) != ticket
+	}
+}
+
+unsafe impl RawMutexFair for RawSpinlock {
+	#[inline]
+	unsafe fn unlock_fair(&self) {
+		unsafe { self.unlock() }
+	}
+
+	#[inline]
+	unsafe fn bump(&self) {
+		let ticket = self.queue.load(Ordering::Relaxed);
+		let serving = self.dequeue.load(Ordering::Relaxed);
+		if serving + 1 != ticket {
+			unsafe {
+				self.unlock_fair();
+				self.lock();
+			}
 		}
 	}
 }
 
-impl<T: ?Sized + fmt::Debug> fmt::Debug for Spinlock<T> {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		write!(f, "queue: {} ", self.queue.load(Ordering::SeqCst))?;
-		write!(f, "dequeue: {}", self.dequeue.load(Ordering::SeqCst))
-	}
-}
+/// A [`lock_api::Mutex`] based on [`RawSpinlockMutex`].
+pub type Spinlock<T> = lock_api::Mutex<RawSpinlock, T>;
 
-impl<T: Default> Default for Spinlock<T> {
-	fn default() -> Spinlock<T> {
-		Spinlock::new(Default::default())
-	}
-}
+/// A [`lock_api::MutexGuard`] based on [`RawSpinlockMutex`].
+pub type SpinlockGuard<'a, T> = lock_api::MutexGuard<'a, RawSpinlock, T>;
 
-impl<'a, T: ?Sized> Deref for SpinlockGuard<'a, T> {
-	type Target = T;
-	fn deref(&self) -> &T {
-		&*self.data
-	}
-}
-
-impl<'a, T: ?Sized> DerefMut for SpinlockGuard<'a, T> {
-	fn deref_mut(&mut self) -> &mut T {
-		&mut *self.data
-	}
-}
-
-impl<'a, T: ?Sized> Drop for SpinlockGuard<'a, T> {
-	/// The dropping of the SpinlockGuard will release the lock it was created from.
-	fn drop(&mut self) {
-		self.dequeue.fetch_add(1, Ordering::Release);
-	}
-}
-
-/// This type provides a lock based on busy waiting to realize mutual exclusion of tasks.
+/// A [fair] irqsave [ticket lock].
 ///
-/// # Description
-///
-/// This structure behaves a lot like a normal Mutex. There are some differences:
-///
-/// - Interrupts save lock => Interrupts will be disabled
-/// - By using busy waiting, it can be used outside the runtime.
-/// - It is a so called ticket lock (https://en.wikipedia.org/wiki/Ticket_lock)
-///   and completely fair.
-///
-/// The interface is derived from https://mvdnes.github.io/rust-docs/spin-rs/spin/index.html.
-///
-/// # Simple examples
-///
-/// ```
-/// let spinlock = synch::SpinlockIrqSave::new(0);
-///
-/// // Modify the data
-/// {
-///     let mut data = spinlock.lock();
-///     *data = 2;
-/// }
-///
-/// // Read the data
-/// let answer =
-/// {
-///     let data = spinlock.lock();
-///     *data
-/// };
-///
-/// assert_eq!(answer, 2);
-/// ```
-pub struct SpinlockIrqSave<T: ?Sized> {
+/// [fair]: https://en.wikipedia.org/wiki/Unbounded_nondeterminism
+/// [ticket lock]: https://en.wikipedia.org/wiki/Ticket_lock
+pub struct RawSpinlockIrqSave {
 	queue: AtomicUsize,
 	dequeue: AtomicUsize,
 	irq: AtomicBool,
-	data: UnsafeCell<T>,
 }
 
-/// A guard to which the protected data can be accessed
-///
-/// When the guard falls out of scope it will release the lock.
-pub struct SpinlockIrqSaveGuard<'a, T: ?Sized + 'a> {
-	//queue: &'a AtomicUsize,
-	dequeue: &'a AtomicUsize,
-	irq: &'a AtomicBool,
-	data: &'a mut T,
-}
+unsafe impl RawMutex for RawSpinlockIrqSave {
+	#[allow(clippy::declare_interior_mutable_const)]
+	const INIT: Self = Self {
+		queue: AtomicUsize::new(0),
+		dequeue: AtomicUsize::new(0),
+		irq: AtomicBool::new(false),
+	};
 
-// Same unsafe impls as `std::sync::Mutex`
-unsafe impl<T: ?Sized + Send> Sync for SpinlockIrqSave<T> {}
-unsafe impl<T: ?Sized + Send> Send for SpinlockIrqSave<T> {}
+	type GuardMarker = GuardSend;
 
-impl<T> SpinlockIrqSave<T> {
-	pub const fn new(user_data: T) -> SpinlockIrqSave<T> {
-		SpinlockIrqSave {
-			queue: AtomicUsize::new(0),
-			dequeue: AtomicUsize::new(1),
-			irq: AtomicBool::new(false),
-			data: UnsafeCell::new(user_data),
-		}
-	}
-
-	/// Consumes this mutex, returning the underlying data.
-	pub fn into_inner(self) -> T {
-		// We know statically that there are no outstanding references to
-		// `self` so there's no need to lock.
-		let SpinlockIrqSave { data, .. } = self;
-		data.into_inner()
-	}
-}
-
-impl<T: ?Sized> SpinlockIrqSave<T> {
-	fn obtain_lock(&self) {
+	#[inline]
+	fn lock(&self) {
 		let irq = arch::irq::irq_nested_disable();
-		let ticket = self.queue.fetch_add(1, Ordering::Relaxed) + 1;
+		let ticket = self.queue.fetch_add(1, Ordering::Relaxed);
 
 		while self.dequeue.load(Ordering::Acquire) != ticket {
 			arch::irq::irq_nested_enable(irq);
@@ -212,49 +114,61 @@ impl<T: ?Sized> SpinlockIrqSave<T> {
 		self.irq.store(irq, Ordering::SeqCst);
 	}
 
-	pub fn lock(&self) -> SpinlockIrqSaveGuard<T> {
-		self.obtain_lock();
-		SpinlockIrqSaveGuard {
-			//queue: &self.queue,
-			dequeue: &self.dequeue,
-			irq: &self.irq,
-			data: unsafe { &mut *self.data.get() },
-		}
-	}
-}
+	#[inline]
+	fn try_lock(&self) -> bool {
+		let irq = arch::irq::irq_nested_disable();
+		let ticket = self
+			.queue
+			.fetch_update(Ordering::SeqCst, Ordering::SeqCst, |ticket| {
+				if self.dequeue.load(Ordering::Acquire) == ticket {
+					self.irq.store(irq, Ordering::SeqCst);
+					Some(ticket + 1)
+				} else {
+					arch::irq::irq_nested_enable(irq);
+					None
+				}
+			});
 
-impl<T: ?Sized + fmt::Debug> fmt::Debug for SpinlockIrqSave<T> {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		write!(f, "irq: {:?} ", self.irq)?;
-		write!(f, "queue: {} ", self.queue.load(Ordering::SeqCst))?;
-		write!(f, "dequeue: {}", self.dequeue.load(Ordering::SeqCst))
+		ticket.is_ok()
 	}
-}
 
-impl<T: Default> Default for SpinlockIrqSave<T> {
-	fn default() -> SpinlockIrqSave<T> {
-		SpinlockIrqSave::new(Default::default())
-	}
-}
-
-impl<'a, T: ?Sized> Deref for SpinlockIrqSaveGuard<'a, T> {
-	type Target = T;
-	fn deref(&self) -> &T {
-		&*self.data
-	}
-}
-
-impl<'a, T: ?Sized> DerefMut for SpinlockIrqSaveGuard<'a, T> {
-	fn deref_mut(&mut self) -> &mut T {
-		&mut *self.data
-	}
-}
-
-impl<'a, T: ?Sized> Drop for SpinlockIrqSaveGuard<'a, T> {
-	/// The dropping of the SpinlockGuard will release the lock it was created from.
-	fn drop(&mut self) {
+	#[inline]
+	unsafe fn unlock(&self) {
 		let irq = self.irq.swap(false, Ordering::SeqCst);
 		self.dequeue.fetch_add(1, Ordering::Release);
 		arch::irq::irq_nested_enable(irq);
 	}
+
+	#[inline]
+	fn is_locked(&self) -> bool {
+		let ticket = self.dequeue.load(Ordering::Relaxed);
+		self.dequeue.load(Ordering::Relaxed) != ticket
+	}
 }
+
+unsafe impl RawMutexFair for RawSpinlockIrqSave {
+	#[inline]
+	unsafe fn unlock_fair(&self) {
+		unsafe { self.unlock() }
+	}
+
+	#[inline]
+	unsafe fn bump(&self) {
+		let irq = arch::irq::irq_nested_disable();
+		let ticket = self.queue.load(Ordering::Relaxed);
+		let serving = self.dequeue.load(Ordering::Relaxed);
+		if serving + 1 != ticket {
+			unsafe {
+				self.unlock_fair();
+				self.lock();
+			}
+		}
+		arch::irq::irq_nested_enable(irq);
+	}
+}
+
+/// A [`lock_api::Mutex`] based on [`RawSpinlockMutex`].
+pub type SpinlockIrqSave<T> = lock_api::Mutex<RawSpinlockIrqSave, T>;
+
+/// A [`lock_api::MutexGuard`] based on [`RawSpinlockMutex`].
+pub type SpinlockIrqSaveGuard<'a, T> = lock_api::MutexGuard<'a, RawSpinlockIrqSave, T>;
