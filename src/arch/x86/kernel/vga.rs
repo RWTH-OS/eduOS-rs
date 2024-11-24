@@ -1,4 +1,4 @@
-use crate::synch::spinlock::Spinlock;
+use crate::synch::spinlock::SpinlockIrqSave;
 use core::fmt;
 use x86::io::*;
 
@@ -13,7 +13,7 @@ const COLS: usize = 80;
 const ROWS: usize = 25;
 const VGA_BUFFER_ADDRESS: u64 = 0xB8000;
 
-pub(crate) static VGA_SCREEN: Spinlock<VgaScreen> = Spinlock::new(VgaScreen::new());
+pub(crate) static VGA_SCREEN: Spinlock<VgaScreen> = SpinlockIrqSave::new(VgaScreen::new());
 
 #[derive(Clone, Copy)]
 #[repr(C, packed)]
