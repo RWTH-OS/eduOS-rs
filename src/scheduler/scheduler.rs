@@ -148,8 +148,8 @@ impl Scheduler {
 	}
 
 	/// Determines the start address of the stack
-	pub fn get_current_stack(&self) -> VirtAddr {
-		irqsave(|| (*self.current_task.borrow().stack).bottom())
+	pub fn get_current_interrupt_stack(&self) -> VirtAddr {
+		irqsave(|| (*self.current_task.borrow().stack).interrupt_top())
 	}
 
 	pub fn schedule(&mut self) {

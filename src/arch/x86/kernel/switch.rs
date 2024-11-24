@@ -1,4 +1,4 @@
-use crate::arch::x86_64::kernel::gdt::set_current_kernel_stack;
+use crate::arch::x86::kernel::gdt::set_current_kernel_stack;
 use core::arch::naked_asm;
 
 #[cfg(target_arch = "x86_64")]
@@ -102,9 +102,16 @@ pub(crate) unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize
 		"mov edi, [esp+10*4]",
 		"mov [edi], esp",
 		"mov esp, [esp+11*4]",
+		// Set task switched flag
+		"mov eax, cr0",
+		"or eax, 8",
+		"mov cr0, eax",
+		// set stack pointer in TSS
+		"call {set_stack}",
 		// restore registers
 		"popad",
 		"popfd",
 		"ret",
+		set_stack = sym set_current_kernel_stack,
 	);
 }
