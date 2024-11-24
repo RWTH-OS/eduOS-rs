@@ -68,7 +68,7 @@ pub(crate) fn pause() {
 
 #[allow(unused_variables)]
 #[no_mangle]
-pub extern "C" fn shutdown(error_code: i32) -> ! {
+pub(crate) extern "C" fn shutdown(error_code: i32) -> ! {
 	#[cfg(feature = "qemu-exit")]
 	{
 		let code = if error_code == 0 { 5 } else { 1 };
