@@ -7,7 +7,7 @@ pub mod task;
 static mut SCHEDULER: Option<scheduler::Scheduler> = None;
 
 /// Initialize module, must be called once, and only once
-pub fn init() {
+pub(crate) fn init() {
 	unsafe {
 		SCHEDULER = Some(scheduler::Scheduler::new());
 	}
