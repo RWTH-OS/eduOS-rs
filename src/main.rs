@@ -31,7 +31,7 @@ extern "C" fn foo() {
 #[cfg(not(test))]
 #[no_mangle] // don't mangle the name of this function
 pub extern "C" fn main() -> i32 {
-	scheduler::init();
+	eduos_rs::init();
 
 	println!("Hello from eduOS-rs!");
 
