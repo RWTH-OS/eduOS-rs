@@ -1,3 +1,6 @@
+pub(crate) mod buddy;
+pub(crate) mod linked_list;
+
 #[cfg(not(test))]
 use alloc::alloc::Layout;
 
