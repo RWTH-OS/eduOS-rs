@@ -13,7 +13,7 @@ use core::cell::RefCell;
 
 static mut SCHEDULER: Option<scheduler::Scheduler> = None;
 
-/// Initialite module, must be called once, and only once
+/// Initialize module, must be called once, and only once
 pub(crate) fn init() {
 	unsafe {
 		SCHEDULER = Some(scheduler::Scheduler::new());

@@ -4,6 +4,9 @@ use crate::arch;
 use crate::arch::mm::get_memory_size;
 use crate::arch::processor::shutdown;
 use crate::logging::*;
+pub(crate) mod buddy;
+pub(crate) mod linked_list;
+
 #[cfg(not(test))]
 use alloc::alloc::Layout;
 
