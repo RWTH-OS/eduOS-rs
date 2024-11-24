@@ -1,8 +1,15 @@
+use crate::arch::mm::get_boot_stack;
 use crate::arch::mm::VirtAddr;
-use crate::consts::*;
 use crate::scheduler;
+use crate::scheduler::task::Stack;
 use core::mem;
+#[cfg(target_arch = "x86")]
+use x86::bits32::segmentation::*;
+#[cfg(target_arch = "x86")]
+use x86::bits32::task::*;
+#[cfg(target_arch = "x86_64")]
 use x86::bits64::segmentation::*;
+#[cfg(target_arch = "x86_64")]
 use x86::bits64::task::*;
 use x86::dtables::{self, DescriptorTablePointer};
 use x86::segmentation::*;
@@ -26,7 +33,7 @@ static mut TSS: Tss = Tss::from(TaskStateSegment::new());
 // currently, it is only supported by structs
 // => map all task state segments in a struct
 #[repr(align(128))]
-pub struct Tss(TaskStateSegment);
+pub(crate) struct Tss(TaskStateSegment);
 
 impl Tss {
 	#[allow(dead_code)]
@@ -43,44 +50,91 @@ impl Tss {
 /// pointer, set up the entries in our GDT, and then
 /// finally to load the new GDT and to update the
 /// new segment registers
-pub fn init() {
+pub(crate) fn init() {
+	#[cfg(target_arch = "x86_64")]
+	let limit = 0;
+	#[cfg(target_arch = "x86")]
+	let limit = 0xFFFF_FFFF;
+
 	unsafe {
 		// The NULL descriptor is always the first entry.
 		GDT[GDT_NULL] = Descriptor::NULL;
 
-		// The second entry is a 64-bit Code Segment in kernel-space (Ring 0).
+		#[cfg(target_arch = "x86_64")]
+		{
+			// The second entry is a 64bit Code Segment in kernel-space (Ring 0).
+			// All other parameters are ignored.
+			GDT[GDT_KERNEL_CODE] =
+				DescriptorBuilder::code_descriptor(0, limit, CodeSegmentType::ExecuteRead)
+					.present()
+					.dpl(Ring::Ring0)
+					.l()
+					.finish();
+		}
+		#[cfg(target_arch = "x86")]
+		{
+			// The second entry is a 32bit Code Segment in kernel-space (Ring 0).
+			// All other parameters are ignored.
+			GDT[GDT_KERNEL_CODE] =
+				DescriptorBuilder::code_descriptor(0, limit, CodeSegmentType::ExecuteRead)
+					.present()
+					.dpl(Ring::Ring0)
+					.db()
+					.limit_granularity_4kb()
+					.finish();
+		}
+
+		// The third entry is a Data Segment in kernel-space (Ring 0).
 		// All other parameters are ignored.
-		GDT[GDT_KERNEL_CODE] =
-			DescriptorBuilder::code_descriptor(0, 0, CodeSegmentType::ExecuteRead)
+		GDT[GDT_KERNEL_DATA] =
+			DescriptorBuilder::data_descriptor(0, limit, DataSegmentType::ReadWrite)
 				.present()
 				.dpl(Ring::Ring0)
-				.l()
 				.finish();
-
-		// The third entry is a 64-bit Data Segment in kernel-space (Ring 0).
-		// All other parameters are ignored.
-		GDT[GDT_KERNEL_DATA] = DescriptorBuilder::data_descriptor(0, 0, DataSegmentType::ReadWrite)
-			.present()
-			.dpl(Ring::Ring0)
-			.finish();
 
 		/*
 		 * Create TSS for each core (we use these segments for task switching)
 		 */
-		let base = &TSS.0 as *const _ as u64;
-		let tss_descriptor: Descriptor64 =
-			<DescriptorBuilder as GateDescriptorBuilder<u64>>::tss_descriptor(
-				base,
-				base + mem::size_of::<TaskStateSegment>() as u64 - 1,
-				true,
-			)
-			.present()
-			.dpl(Ring::Ring0)
-			.finish();
-		GDT[GDT_FIRST_TSS..GDT_FIRST_TSS + TSS_ENTRIES]
-			.copy_from_slice(&mem::transmute::<Descriptor64, [Descriptor; 2]>(
-				tss_descriptor,
-			));
+		#[cfg(target_arch = "x86_64")]
+		{
+			let base = &TSS.0 as *const _ as u64;
+			let tss_descriptor: Descriptor64 =
+				<DescriptorBuilder as GateDescriptorBuilder<u64>>::tss_descriptor(
+					base,
+					base + mem::size_of::<TaskStateSegment>() as u64 - 1,
+					true,
+				)
+				.present()
+				.dpl(Ring::Ring0)
+				.finish();
+			GDT[GDT_FIRST_TSS..GDT_FIRST_TSS + TSS_ENTRIES]
+				.copy_from_slice(&mem::transmute::<Descriptor64, [Descriptor; 2]>(
+					tss_descriptor,
+				));
+
+			TSS.0.rsp[0] = get_boot_stack().interrupt_top().into();
+		}
+		#[cfg(target_arch = "x86")]
+		{
+			let base = &TSS.0 as *const _ as u64;
+			let tss_descriptor: Descriptor =
+				<DescriptorBuilder as GateDescriptorBuilder<u32>>::tss_descriptor(
+					base,
+					base + mem::size_of::<TaskStateSegment>() as u64 - 1,
+					true,
+				)
+				.present()
+				.dpl(Ring::Ring0)
+				.finish();
+
+			/* set default values */
+			TSS.0.eflags = 0x1202;
+			TSS.0.ss0 = 0x10; // data segment
+			TSS.0.esp0 = get_boot_stack().interrupt_top().into();
+			TSS.0.cs = 0x0b;
+
+			GDT[GDT_FIRST_TSS] = tss_descriptor;
+		}
 
 		// load GDT
 		let gdtr = DescriptorTablePointer::new(&GDT);
@@ -94,12 +148,18 @@ pub fn init() {
 	}
 }
 
+#[cfg(target_arch = "x86_64")]
 #[inline(always)]
-pub unsafe fn set_kernel_stack(stack: VirtAddr) {
+unsafe fn set_kernel_stack(stack: VirtAddr) {
 	TSS.0.rsp[0] = stack.as_u64();
 }
 
-#[no_mangle]
-pub unsafe extern "C" fn set_current_kernel_stack() {
-	set_kernel_stack(scheduler::get_current_stack() + STACK_SIZE - 0x10u64);
+#[cfg(target_arch = "x86")]
+#[inline(always)]
+unsafe fn set_kernel_stack(stack: VirtAddr) {
+	TSS.0.esp = stack.as_u32();
+}
+
+pub(crate) unsafe extern "C" fn set_current_kernel_stack() {
+	set_kernel_stack(scheduler::get_current_interrupt_stack());
 }

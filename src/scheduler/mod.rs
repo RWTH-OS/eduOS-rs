@@ -48,8 +48,8 @@ pub fn abort() -> ! {
 	unsafe { SCHEDULER.as_mut().unwrap().abort() }
 }
 
-pub(crate) fn get_current_stack() -> VirtAddr {
-	unsafe { SCHEDULER.as_mut().unwrap().get_current_stack() }
+pub(crate) fn get_current_interrupt_stack() -> VirtAddr {
+	unsafe { SCHEDULER.as_mut().unwrap().get_current_interrupt_stack() }
 }
 
 pub(crate) fn block_current_task() -> Rc<RefCell<Task>> {
