@@ -7,10 +7,6 @@ use alloc::rc::Rc;
 use core::cell::RefCell;
 use core::fmt;
 
-extern "C" {
-	fn get_bootstack() -> *mut u8;
-}
-
 /// The status of the task - used for scheduling
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub(crate) enum TaskStatus {

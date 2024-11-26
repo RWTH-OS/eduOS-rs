@@ -1,4 +1,4 @@
-use crate::arch::x86_64::kernel::syscall_handler;
+use crate::arch::x86::kernel::syscall_handler;
 use crate::logging::*;
 use core::arch::asm;
 #[cfg(feature = "qemu-exit")]
@@ -8,18 +8,26 @@ use x86::cpuid::*;
 use x86::msr::*;
 
 // MSR EFER bits
+#[allow(dead_code)]
 const EFER_SCE: u64 = 1 << 0;
+#[allow(dead_code)]
 const EFER_LME: u64 = 1 << 8;
+#[allow(dead_code)]
 const EFER_LMA: u64 = 1 << 10;
+#[allow(dead_code)]
 const EFER_NXE: u64 = 1 << 11;
+#[allow(dead_code)]
 const EFER_SVME: u64 = 1 << 12;
+#[allow(dead_code)]
 const EFER_LMSLE: u64 = 1 << 13;
+#[allow(dead_code)]
 const EFER_FFXSR: u64 = 1 << 14;
+#[allow(dead_code)]
 const EFER_TCE: u64 = 1 << 15;
 
 /// Force strict CPU ordering, serializes load and store operations.
 #[inline(always)]
-pub fn mb() {
+pub(crate) fn mb() {
 	unsafe {
 		asm!("mfence", options(preserves_flags, nostack));
 	}
@@ -156,7 +164,7 @@ pub(crate) fn init() {
 		None => false,
 	};
 
-	if has_syscall == false {
+	if !has_syscall {
 		panic!("Syscall support is missing");
 	}
 
@@ -164,7 +172,7 @@ pub(crate) fn init() {
 	unsafe {
 		wrmsr(IA32_EFER, rdmsr(IA32_EFER) | EFER_LMA | EFER_SCE);
 		wrmsr(IA32_STAR, (0x1Bu64 << 48) | (0x08u64 << 32));
-		wrmsr(IA32_LSTAR, syscall_handler as u64);
+		wrmsr(IA32_LSTAR, (syscall_handler as usize).try_into().unwrap());
 		wrmsr(IA32_FMASK, 1 << 9); // clear IF flag during system call
 	}
 
@@ -174,7 +182,7 @@ pub(crate) fn init() {
 		let p0 = unsafe { core::slice::from_raw_parts_mut(0x3000 as *mut usize, 512) };
 		for entry in p0 {
 			if *entry != 0 {
-				*entry = *entry | (1 << 2);
+				*entry |= 1 << 2;
 			}
 		}
 

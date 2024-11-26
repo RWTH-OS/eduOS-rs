@@ -3,7 +3,7 @@ pub mod irq;
 mod pit;
 pub(crate) mod processor;
 #[cfg(not(feature = "vga"))]
-pub(crate) mod serial;
+pub mod serial;
 mod start;
 pub(crate) mod switch;
 mod syscall;
@@ -11,18 +11,20 @@ pub(crate) mod task;
 #[cfg(feature = "vga")]
 pub(crate) mod vga;
 
-use core::arch::asm;
-pub use crate::arch::x86::kernel::syscall::syscall_handler;
-#[cfg(target_arch = "x86_64")]
+pub(crate) use crate::arch::x86::kernel::syscall::syscall_handler;
 use bootloader::BootInfo;
-#[cfg(target_arch = "x86_64")]
+use core::arch::asm;
+
 pub(crate) static mut BOOT_INFO: Option<&'static BootInfo> = None;
 
 #[cfg(target_arch = "x86")]
 core::arch::global_asm!(include_str!("entry32.s"));
 
-pub(crate) static mut BOOT_INFO: Option<&'static BootInfo> = None;
-
+/// Helper function to jump into the user space
+///
+/// # Safety
+///
+/// Be sure the the user-level function mapped into the user space.
 pub unsafe fn jump_to_user_land(func: extern "C" fn()) -> ! {
 	let ds = 0x23u64;
 	let cs = 0x2bu64;
@@ -37,7 +39,7 @@ pub unsafe fn jump_to_user_land(func: extern "C" fn()) -> ! {
 		"iretq",
 		in(reg) ds,
 		in(reg) cs,
-		in(reg) func as u64,
+		in(reg) func as usize,
 		options(nostack)
 	);
 
@@ -57,23 +59,23 @@ pub fn register_task() {
 #[macro_export]
 macro_rules! syscall {
 	($arg0:expr) => {
-		arch::x86_64::kernel::syscall0($arg0 as u64)
+		arch::x86::kernel::syscall0($arg0 as u64)
 	};
 
 	($arg0:expr, $arg1:expr) => {
-		arch::x86_64::kernel::syscall1($arg0 as u64, $arg1 as u64)
+		arch::x86::kernel::syscall1($arg0 as u64, $arg1 as u64)
 	};
 
 	($arg0:expr, $arg1:expr, $arg2:expr) => {
-		arch::x86_64::kernel::syscall2($arg0 as u64, $arg1 as u64, $arg2 as u64)
+		arch::x86::kernel::syscall2($arg0 as u64, $arg1 as u64, $arg2 as u64)
 	};
 
 	($arg0:expr, $arg1:expr, $arg2:expr, $arg3:expr) => {
-		arch::x86_64::kernel::syscall3($arg0 as u64, $arg1 as u64, $arg2 as u64, $arg3 as u64)
+		arch::x86::kernel::syscall3($arg0 as u64, $arg1 as u64, $arg2 as u64, $arg3 as u64)
 	};
 
 	($arg0:expr, $arg1:expr, $arg2:expr, $arg3:expr, $arg4:expr) => {
-		arch::x86_64::syscall4(
+		arch::x86::syscall4(
 			$arg0 as u64,
 			$arg1 as u64,
 			$arg2 as u64,
@@ -83,7 +85,7 @@ macro_rules! syscall {
 	};
 
 	($arg0:expr, $arg1:expr, $arg2:expr, $arg3:expr, $arg4:expr, $arg5:expr) => {
-		arch::x86_64::kernel::syscall5(
+		arch::x86::kernel::syscall5(
 			$arg0 as u64,
 			$arg1 as u64,
 			$arg2 as u64,
@@ -94,7 +96,7 @@ macro_rules! syscall {
 	};
 
 	($arg0:expr, $arg1:expr, $arg2:expr, $arg3:expr, $arg4:expr, $arg5:expr, $arg6:expr) => {
-		arch::x86_64::kernel::syscall6(
+		arch::x86::kernel::syscall6(
 			$arg0 as u64,
 			$arg1 as u64,
 			$arg2 as u64,
@@ -106,7 +108,7 @@ macro_rules! syscall {
 	};
 
 	($arg0:expr, $arg1:expr, $arg2:expr, $arg3:expr, $arg4:expr, $arg5:expr, $arg6:expr, $arg7:expr) => {
-		arch::x86_64::kernel::syscall7(
+		arch::x86::kernel::syscall7(
 			$arg0 as u64,
 			$arg1 as u64,
 			$arg2 as u64,

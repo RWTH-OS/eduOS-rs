@@ -17,17 +17,17 @@ use eduos_rs::{LogLevel, LOGGER};
 extern "C" fn user_foo() {
 	let str = b"Hello from user_foo!\n\0";
 
-	/*unsafe {
-		let _ = crate::arch::x86_64::kernel::serial::COM1.write_str("Hello from COM1!\n");
-	}*/
+	// try to use directly the serial device
+	//println!("Hello from COM1!");
 
 	syscall!(SYSNO_WRITE, str.as_ptr() as u64, str.len());
+	#[allow(forgetting_references)]
 	core::mem::forget(str);
 	syscall!(SYSNO_EXIT);
 }
 
 extern "C" fn create_user_foo() {
-	debug!("jump to user land");
+	info!("jump to user land");
 	unsafe {
 		arch::jump_to_user_land(user_foo);
 	}

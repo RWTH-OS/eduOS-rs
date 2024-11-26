@@ -1,10 +1,3 @@
-// Copyright (c) 2017 Stefan Lankes, RWTH Aachen University
-//
-// Licensed under the Apache License, Version 2.0, <LICENSE-APACHE or
-// http://apache.org/licenses/LICENSE-2.0> or the MIT license <LICENSE-MIT or
-// http://opensource.org/licenses/MIT>, at your option. This file may not be
-// copied, modified, or distributed except according to those terms.
-
 pub mod exit;
 pub mod write;
 
@@ -22,7 +15,7 @@ pub const NO_SYSCALLS: usize = 2;
 
 #[repr(align(64))]
 #[repr(C)]
-pub struct SyscallTable {
+pub(crate) struct SyscallTable {
 	handle: [*const usize; NO_SYSCALLS],
 }
 
@@ -38,4 +31,4 @@ unsafe impl Send for SyscallTable {}
 unsafe impl Sync for SyscallTable {}
 
 #[no_mangle]
-pub static SYSHANDLER_TABLE: SyscallTable = SyscallTable::new();
+pub(crate) static SYSHANDLER_TABLE: SyscallTable = SyscallTable::new();

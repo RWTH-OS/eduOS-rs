@@ -115,12 +115,15 @@ pub(crate) fn init() {
 		/*
 		 * Create code segment for 64bit user-space applications (ring 3)
 		 */
-		GDT[GDT_USER64_CODE] =
-			DescriptorBuilder::code_descriptor(0, 0, CodeSegmentType::ExecuteRead)
-				.present()
-				.dpl(Ring::Ring3)
-				.l()
-				.finish();
+		#[cfg(target_arch = "x86_64")]
+		{
+			GDT[GDT_USER64_CODE] =
+				DescriptorBuilder::code_descriptor(0, 0, CodeSegmentType::ExecuteRead)
+					.present()
+					.dpl(Ring::Ring3)
+					.l()
+					.finish();
+		}
 
 		/*
 		 * Create TSS for each core (we use these segments for task switching)

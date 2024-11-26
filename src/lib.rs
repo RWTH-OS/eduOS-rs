@@ -17,6 +17,7 @@ use crate::arch::processor::shutdown;
 use crate::consts::HEAP_SIZE;
 use crate::mm::buddy::LockedHeap;
 use core::panic::PanicInfo;
+pub use logging::*;
 
 #[macro_use]
 pub mod macros;

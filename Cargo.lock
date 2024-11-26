@@ -22,8 +22,8 @@ checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
 name = "bootloader"
-version = "0.9.23"
-source = "git+https://github.com/RWTH-OS/bootloader.git?branch=eduos#51805b19574e844c359d2cf153488d8b442b5e81"
+version = "0.9.29"
+source = "git+https://github.com/RWTH-OS/bootloader.git?branch=eduos#4d4cd14fd53c06ea748d43a69cd9f44311ef255f"
 
 [[package]]
 name = "cfg-if"

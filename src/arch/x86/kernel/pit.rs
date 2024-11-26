@@ -15,8 +15,8 @@ unsafe fn wait_some_time() {
 	}
 }
 
-// initialize the Programmable Interrupt controller
-pub fn init() {
+/// Initialize the Programmable Interrupt controller (PIC)
+pub(crate) fn init() {
 	debug!("initialize timer");
 
 	let latch = ((CLOCK_TICK_RATE + TIMER_FREQ / 2) / TIMER_FREQ) as u16;
