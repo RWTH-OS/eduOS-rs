@@ -71,11 +71,17 @@ pub fn is_kernel(addr: VirtAddr) -> bool {
 		let regions = BOOT_INFO.unwrap().memory_map.deref();
 
 		for i in regions {
-			if i.region_type == MemoryRegionType::Kernel && addr >= VirtAddr(i.range.start_frame_number * 0x1000) && addr <= VirtAddr(i.range.end_frame_number * 0x1000) {
+			if i.region_type == MemoryRegionType::Kernel
+				&& addr >= VirtAddr(i.range.start_frame_number * 0x1000)
+				&& addr <= VirtAddr(i.range.end_frame_number * 0x1000)
+			{
 				return true;
 			}
 
-			if i.region_type == MemoryRegionType::KernelStack && addr >= VirtAddr(i.range.start_frame_number * 0x1000) && addr <= VirtAddr(i.range.end_frame_number * 0x1000) {
+			if i.region_type == MemoryRegionType::KernelStack
+				&& addr >= VirtAddr(i.range.start_frame_number * 0x1000)
+				&& addr <= VirtAddr(i.range.end_frame_number * 0x1000)
+			{
 				return true;
 			}
 		}
