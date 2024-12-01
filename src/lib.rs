@@ -17,8 +17,8 @@ extern crate num_traits;
 use crate::arch::processor::shutdown;
 use crate::consts::HEAP_SIZE;
 use core::panic::PanicInfo;
-pub use logging::*;
 use core::ptr::addr_of;
+pub use logging::*;
 use talc::*;
 
 #[macro_use]
@@ -43,7 +43,7 @@ static ALLOCATOR: Talck<spin::Mutex<()>, ClaimOnOom> = Talc::new(unsafe {
 })
 .lock();
 
-//// This function is called on panic.
+/// This function is called on panic.
 #[cfg(not(test))]
 #[panic_handler]
 pub fn panic(info: &PanicInfo) -> ! {

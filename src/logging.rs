@@ -3,7 +3,7 @@
 
 /// An enum representing the available verbosity levels of the logger.
 #[derive(Copy, Clone, PartialEq, PartialOrd)]
-pub(crate) enum LogLevel {
+pub enum LogLevel {
 	/// Disable all our put messages
 	///
 	/// Designates without information
@@ -27,12 +27,12 @@ pub(crate) enum LogLevel {
 }
 
 /// Data structures to filter kernel messages
-pub(crate) struct KernelLogger {
+pub struct KernelLogger {
 	pub log_level: LogLevel,
 }
 
 /// default logger to handle kernel messages
-pub(crate) const LOGGER: KernelLogger = KernelLogger {
+pub const LOGGER: KernelLogger = KernelLogger {
 	log_level: LogLevel::Info,
 };
 

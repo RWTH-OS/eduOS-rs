@@ -91,7 +91,7 @@ impl<T: ?Sized> Mutex<T> {
 		loop {
 			let mut count = self.value.lock();
 
-			if *count == true {
+			if *count {
 				*count = false;
 				return;
 			} else {
@@ -114,7 +114,7 @@ impl<T: ?Sized> Mutex<T> {
 	}
 }
 
-impl<T: ?Sized + Default> Default for Mutex<T> {
+impl<T: Default> Default for Mutex<T> {
 	fn default() -> Mutex<T> {
 		Mutex::new(Default::default())
 	}
@@ -122,13 +122,13 @@ impl<T: ?Sized + Default> Default for Mutex<T> {
 
 impl<'a, T: ?Sized> Deref for MutexGuard<'a, T> {
 	type Target = T;
-	fn deref<'b>(&'b self) -> &'b T {
+	fn deref(&self) -> &T {
 		&*self.data
 	}
 }
 
 impl<'a, T: ?Sized> DerefMut for MutexGuard<'a, T> {
-	fn deref_mut<'b>(&'b mut self) -> &'b mut T {
+	fn deref_mut(&mut self) -> &mut T {
 		&mut *self.data
 	}
 }
@@ -140,12 +140,8 @@ impl<'a, T: ?Sized> Drop for MutexGuard<'a, T> {
 		*count = true;
 
 		// try to wakeup next task
-		match self.queue.lock().pop() {
-			Some(task) => {
-				wakeup_task(task);
-				return;
-			}
-			None => {}
+		if let Some(task) = self.queue.lock().pop() {
+			wakeup_task(task);
 		}
 	}
 }

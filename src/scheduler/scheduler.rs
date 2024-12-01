@@ -41,7 +41,7 @@ impl Scheduler {
 			idle_task: idle_task.clone(),
 			ready_queue: SpinlockIrqSave::new(PriorityTaskQueue::new()),
 			finished_tasks: SpinlockIrqSave::new(VecDeque::<TaskId>::new()),
-			tasks: tasks,
+			tasks,
 		}
 	}
 
@@ -204,13 +204,14 @@ impl Scheduler {
 			next_task = self.ready_queue.lock().pop();
 		}
 
-		if next_task.is_none() == true {
-			if current_status != TaskStatus::TaskRunning && current_status != TaskStatus::TaskIdle {
-				debug!("Switch to idle task");
-				// current task isn't able to run and no other task available
-				// => switch to the idle task
-				next_task = Some(self.idle_task.clone());
-			}
+		if next_task.is_none() == true
+			&& current_status != TaskStatus::TaskRunning
+			&& current_status != TaskStatus::TaskIdle
+		{
+			debug!("Switch to idle task");
+			// current task isn't able to run and no other task available
+			// => switch to the idle task
+			next_task = Some(self.idle_task.clone());
 		}
 
 		match next_task {

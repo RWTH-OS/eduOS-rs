@@ -17,7 +17,6 @@ use crate::consts::USER_ENTRY;
 use bootloader::BootInfo;
 use core::arch::asm;
 
-
 #[cfg(target_arch = "x86")]
 core::arch::global_asm!(include_str!("entry32.s"));
 
@@ -60,11 +59,11 @@ pub unsafe fn jump_to_user_land(func: extern "C" fn()) -> ! {
 #[macro_export]
 macro_rules! syscall {
 	($arg0:expr) => {
-		arch::x86_64::kernel::syscall0($arg0 as u64)
+		arch::x86::kernel::syscall0($arg0 as u64)
 	};
 
 	($arg0:expr, $arg1:expr) => {
-		arch::x86_64::kernel::syscall1($arg0 as u64, $arg1 as u64)
+		arch::x86::kernel::syscall1($arg0 as u64, $arg1 as u64)
 	};
 
 	($arg0:expr, $arg1:expr, $arg2:expr) => {
@@ -72,11 +71,11 @@ macro_rules! syscall {
 	};
 
 	($arg0:expr, $arg1:expr, $arg2:expr, $arg3:expr) => {
-		arch::x86_64::kernel::syscall3($arg0 as u64, $arg1 as u64, $arg2 as u64, $arg3 as u64)
+		arch::x86::kernel::syscall3($arg0 as u64, $arg1 as u64, $arg2 as u64, $arg3 as u64)
 	};
 
 	($arg0:expr, $arg1:expr, $arg2:expr, $arg3:expr, $arg4:expr) => {
-		arch::x86_64::kernel::syscall4(
+		arch::x86::kernel::syscall4(
 			$arg0 as u64,
 			$arg1 as u64,
 			$arg2 as u64,
@@ -86,7 +85,7 @@ macro_rules! syscall {
 	};
 
 	($arg0:expr, $arg1:expr, $arg2:expr, $arg3:expr, $arg4:expr, $arg5:expr) => {
-		arch::x86_64::kernel::syscall5(
+		arch::x86::kernel::syscall5(
 			$arg0 as u64,
 			$arg1 as u64,
 			$arg2 as u64,
@@ -97,7 +96,7 @@ macro_rules! syscall {
 	};
 
 	($arg0:expr, $arg1:expr, $arg2:expr, $arg3:expr, $arg4:expr, $arg5:expr, $arg6:expr) => {
-		arch::x86_64::kernel::syscall6(
+		arch::x86::kernel::syscall6(
 			$arg0 as u64,
 			$arg1 as u64,
 			$arg2 as u64,
@@ -109,7 +108,7 @@ macro_rules! syscall {
 	};
 
 	($arg0:expr, $arg1:expr, $arg2:expr, $arg3:expr, $arg4:expr, $arg5:expr, $arg6:expr, $arg7:expr) => {
-		arch::x86_64::kernel::syscall7(
+		arch::x86::kernel::syscall7(
 			$arg0 as u64,
 			$arg1 as u64,
 			$arg2 as u64,

@@ -277,14 +277,14 @@ impl<S: PageSize> Page<S> {
 		assert!(first.virtual_address <= last.virtual_address);
 		PageIter {
 			current: first,
-			last: last,
+			last,
 		}
 	}
 
 	/// Returns the index of this page in the table given by L.
 	fn table_index<L: PageTableLevel>(&self) -> usize {
 		assert!(L::LEVEL >= S::MAP_LEVEL);
-		self.virtual_address.as_usize() >> PAGE_BITS >> L::LEVEL * PAGE_MAP_BITS & PAGE_MAP_MASK
+		self.virtual_address.as_usize() >> PAGE_BITS >> (L::LEVEL * PAGE_MAP_BITS) & PAGE_MAP_MASK
 	}
 }
 

@@ -26,4 +26,3 @@ pub use self::x86::mm;
 pub use self::x86::mm::paging::{
 	drop_user_space, get_kernel_root_page_table, BasePageSize, PageSize,
 };
-

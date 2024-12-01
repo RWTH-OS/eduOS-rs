@@ -308,7 +308,7 @@ pub struct Task {
 impl Task {
 	pub fn new_idle(id: TaskId) -> Task {
 		Task {
-			id: id,
+			id,
 			prio: LOW_PRIORITY,
 			status: TaskStatus::TaskIdle,
 			last_stack_pointer: VirtAddr::zero(),
@@ -321,9 +321,9 @@ impl Task {
 
 	pub fn new(id: TaskId, status: TaskStatus, prio: TaskPriority) -> Task {
 		Task {
-			id: id,
-			prio: prio,
-			status: status,
+			id,
+			prio,
+			status,
 			last_stack_pointer: VirtAddr::zero(),
 			stack: Box::new(TaskStack::new()),
 			root_page_table: arch::get_kernel_root_page_table(),

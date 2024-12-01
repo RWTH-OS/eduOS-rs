@@ -46,5 +46,11 @@ impl SyscallTable {
 unsafe impl Send for SyscallTable {}
 unsafe impl Sync for SyscallTable {}
 
+impl Default for SyscallTable {
+	fn default() -> Self {
+		Self::new()
+	}
+}
+
 #[no_mangle]
 pub static SYSHANDLER_TABLE: SyscallTable = SyscallTable::new();
