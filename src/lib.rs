@@ -44,6 +44,12 @@ static ALLOCATOR: Talck<RawSpinlock, ClaimOnOom> = Talc::new(unsafe {
 })
 .lock();
 
+pub fn init() {
+	crate::arch::init();
+	crate::mm::init();
+	crate::scheduler::init();
+}
+
 /// This function is called on panic.
 #[cfg(not(test))]
 #[panic_handler]
