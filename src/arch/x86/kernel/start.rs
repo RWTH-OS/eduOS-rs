@@ -39,9 +39,7 @@ unsafe extern "C" fn entry() -> ! {
 pub unsafe extern "C" fn _start(boot_info: &'static bootloader::BootInfo) -> ! {
 	crate::arch::x86::kernel::BOOT_INFO = Some(boot_info);
 
-	let ret = main();
-
-	shutdown(ret)
+	entry();
 }
 
 #[cfg(not(test))]

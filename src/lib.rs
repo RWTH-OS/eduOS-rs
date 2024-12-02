@@ -4,6 +4,9 @@
 #![feature(naked_functions)]
 #![feature(abi_x86_interrupt)]
 #![feature(specialization)]
+#![allow(clippy::module_inception)]
+#![allow(incomplete_features)]
+#![allow(static_mut_refs)]
 #![no_std]
 
 extern crate alloc;

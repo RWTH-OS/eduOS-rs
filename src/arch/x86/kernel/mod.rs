@@ -17,20 +17,17 @@ use crate::consts::USER_ENTRY;
 use bootloader::BootInfo;
 use core::arch::asm;
 
-#[cfg(target_arch = "x86")]
-core::arch::global_asm!(include_str!("entry32.s"));
-
 #[cfg(target_arch = "x86_64")]
 pub(crate) static mut BOOT_INFO: Option<&'static BootInfo> = None;
 
-pub fn register_task() {
-	let sel: u16 = 6u16 << 3;
+#[cfg(target_arch = "x86")]
+core::arch::global_asm!(include_str!("entry32.s"));
 
-	unsafe {
-		asm!("ltr ax", in("ax") sel, options(nostack, nomem));
-	}
-}
-
+/// Helper function to jump into the user space
+///
+/// # Safety
+///
+/// Be sure the the user-level function mapped into the user space.
 pub unsafe fn jump_to_user_land(func: extern "C" fn()) -> ! {
 	let ds = 0x23u64;
 	let cs = 0x2bu64;
@@ -53,6 +50,14 @@ pub unsafe fn jump_to_user_land(func: extern "C" fn()) -> ! {
 
 	loop {
 		processor::halt();
+	}
+}
+
+pub fn register_task() {
+	let sel: u16 = 6u16 << 3;
+
+	unsafe {
+		asm!("ltr ax", in("ax") sel, options(nostack, nomem));
 	}
 }
 
