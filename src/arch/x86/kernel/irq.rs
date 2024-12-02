@@ -26,10 +26,10 @@ pub fn irq_disable() {
 
 /// Determines, if the interrupt flags (IF) is set
 pub fn is_irq_enabled() -> bool {
-	let rflags: u64;
+	let eflags: usize;
 
-	unsafe { asm!("pushf; pop {}", lateout(reg) rflags, options(nomem, nostack, preserves_flags)) };
-	if (rflags & (1u64 << 9)) != 0 {
+	unsafe { asm!("pushf; pop {}", lateout(reg) eflags, options(nomem, nostack, preserves_flags)) };
+	if (eflags & (1usize << 9)) != 0 {
 		return true;
 	}
 
@@ -53,13 +53,13 @@ pub fn irq_nested_disable() -> bool {
 /// Can be used in conjunction with irq_nested_disable() to only enable
 /// interrupts again if they were enabled before.
 pub fn irq_nested_enable(was_enabled: bool) {
-	if was_enabled == true {
+	if was_enabled {
 		irq_enable();
 	}
 }
 
 #[inline(always)]
-pub fn send_eoi_to_slave() {
+pub(crate) fn send_eoi_to_slave() {
 	/*
 	 * If the IDT entry that was invoked was greater-than-or-equal to 40
 	 * and lower than 48 (meaning IRQ8 - 15), then we need to
@@ -71,7 +71,7 @@ pub fn send_eoi_to_slave() {
 }
 
 #[inline(always)]
-pub fn send_eoi_to_master() {
+pub(crate) fn send_eoi_to_master() {
 	/*
 	 * In either case, we need to send an EOI to the master
 	 * interrupt controller of the PIC, too
@@ -354,6 +354,7 @@ struct IdtEntry {
 
 enum Type {
 	InterruptGate,
+	#[allow(dead_code)]
 	TrapGate,
 }
 
@@ -423,6 +424,7 @@ impl InteruptHandler {
 		}
 	}
 
+	#[allow(dead_code)]
 	pub fn add_handler(
 		&mut self,
 		int_no: usize,
@@ -441,6 +443,7 @@ impl InteruptHandler {
 		}
 	}
 
+	#[allow(dead_code)]
 	pub fn remove_handler(&mut self, int_no: usize) {
 		if int_no < IDT_ENTRIES {
 			if int_no < 40 {
@@ -664,7 +667,7 @@ unsafe fn irq_remap() {
 	outb(0xA1, 0x00);
 }
 
-pub fn init() {
+pub(crate) fn init() {
 	debug!("initialize interrupt descriptor table");
 
 	unsafe {
@@ -680,7 +683,7 @@ pub fn init() {
 
 /// Represents the exception stack frame pushed by the CPU on exception entry.
 #[repr(C)]
-pub struct ExceptionStackFrame {
+pub(crate) struct ExceptionStackFrame {
 	/// This value points to the instruction that should be executed when the interrupt
 	/// handler returns. For most interrupts, this value points to the instruction immediately
 	/// following the last executed instruction. However, for some exceptions (e.g., page faults),

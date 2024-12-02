@@ -619,7 +619,7 @@ where
 	}
 }
 
-pub extern "x86-interrupt" fn page_fault_handler(
+pub(crate) extern "x86-interrupt" fn page_fault_handler(
 	stack_frame: irq::ExceptionStackFrame,
 	error_code: u64,
 ) {
