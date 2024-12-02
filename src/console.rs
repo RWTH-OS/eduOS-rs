@@ -15,7 +15,7 @@ impl fmt::Write for Console {
 			if #[cfg(feature = "vga")] {
 				vga::VGA_SCREEN.lock().write_str(s)
 			} else {
-				unsafe { serial::COM1.write_str(s) }
+				serial::COM1.lock().write_str(s)
 			}
 		}
 	}

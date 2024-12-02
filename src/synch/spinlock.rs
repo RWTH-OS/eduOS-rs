@@ -105,7 +105,7 @@ unsafe impl RawMutex for RawSpinlockIrqSave {
 		let irq = arch::irq::irq_nested_disable();
 		let ticket = self.queue.fetch_add(1, Ordering::Relaxed);
 
-		while self.dequeue.load(Ordering::SeqCst) != ticket {
+		while self.dequeue.load(Ordering::Acquire) != ticket {
 			arch::irq::irq_nested_enable(irq);
 			arch::processor::pause();
 			arch::irq::irq_nested_disable();
@@ -135,7 +135,7 @@ unsafe impl RawMutex for RawSpinlockIrqSave {
 	#[inline]
 	unsafe fn unlock(&self) {
 		let irq = self.irq.swap(false, Ordering::SeqCst);
-		self.dequeue.fetch_add(1, Ordering::SeqCst);
+		self.dequeue.fetch_add(1, Ordering::Release);
 		arch::irq::irq_nested_enable(irq);
 	}
 

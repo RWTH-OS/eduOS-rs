@@ -1,8 +1,9 @@
+use crate::synch::spinlock::SpinlockIrqSave;
 use core::fmt;
 use x86::io::*;
 
 /// A COM serial port.
-pub struct ComPort {
+pub(crate) struct ComPort {
 	/// COM ports are identified by the base address of their associated
 	/// I/O registers.
 	base_addr: u16,
@@ -10,8 +11,8 @@ pub struct ComPort {
 
 impl ComPort {
 	/// Create a new COM port with the specified base address.
-	const fn new(base_addr: u16) -> ComPort {
-		ComPort { base_addr }
+	const fn new(base_addr: u16) -> Self {
+		Self { base_addr }
 	}
 }
 
@@ -32,4 +33,4 @@ impl fmt::Write for ComPort {
 }
 
 /// Our primary serial port.
-pub static mut COM1: ComPort = ComPort::new(0x3F8);
+pub(crate) static COM1: SpinlockIrqSave<ComPort> = SpinlockIrqSave::new(ComPort::new(0x3F8));

@@ -6,7 +6,6 @@
 extern crate eduos_rs;
 
 use eduos_rs::arch;
-use eduos_rs::mm;
 use eduos_rs::scheduler;
 use eduos_rs::scheduler::task::NORMAL_PRIORITY;
 use eduos_rs::syscall;

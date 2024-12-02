@@ -62,6 +62,7 @@ bitflags! {
 		const GLOBAL = 1 << 8;
 
 		/// Set if code execution shall be disabled for memory referenced by this entry.
+		#[cfg(target_arch = "x86_64")]
 		const EXECUTE_DISABLE = 1 << 63;
 	}
 }

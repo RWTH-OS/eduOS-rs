@@ -1,5 +1,4 @@
 #![allow(unused_macros)]
-#![allow(dead_code)]
 
 /// An enum representing the available verbosity levels of the logger.
 #[derive(Copy, Clone, PartialEq, PartialOrd)]
