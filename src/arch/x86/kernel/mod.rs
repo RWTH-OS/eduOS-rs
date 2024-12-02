@@ -12,7 +12,7 @@ pub(crate) mod task;
 #[cfg(all(target_arch = "x86", feature = "vga"))]
 pub mod vga;
 
-pub use crate::arch::x86::kernel::syscall::syscall_handler;
+use crate::arch::x86::kernel::syscall::syscall_handler;
 use crate::consts::USER_ENTRY;
 use bootloader::BootInfo;
 use core::arch::asm;

@@ -1,10 +1,9 @@
 use crate::syscall::SYSHANDLER_TABLE;
-use core::arch::asm;
+use core::arch::naked_asm;
 
-#[no_mangle]
 #[naked]
-pub unsafe extern "C" fn syscall_handler() {
-	asm!(
+pub(crate) unsafe extern "C" fn syscall_handler() {
+	naked_asm!(
 		// save context, see x86_64 ABI
 		"push rcx",
 		"push rdx",
