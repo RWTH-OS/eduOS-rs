@@ -35,9 +35,9 @@ pub fn mb() {
 
 /// Search the most significant bit
 #[inline(always)]
-pub(crate) fn msb(value: u64) -> Option<u64> {
+pub(crate) fn msb(value: usize) -> Option<usize> {
 	if value > 0 {
-		let ret: u64;
+		let ret: usize;
 
 		unsafe {
 			asm!("bsr {0}, {1}",
@@ -54,9 +54,9 @@ pub(crate) fn msb(value: u64) -> Option<u64> {
 
 /// Search the least significant bit
 #[inline(always)]
-pub(crate) fn lsb(value: u64) -> Option<u64> {
+pub(crate) fn lsb(value: usize) -> Option<usize> {
 	if value > 0 {
-		let ret: u64;
+		let ret: usize;
 		unsafe {
 			asm!("bsf {0}, {1}",
 				out(reg) ret,
