@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use crate::arch::mm::get_boot_stack;
 use crate::arch::x86::kernel::syscall_handler;
 use crate::logging::*;
@@ -12,13 +10,21 @@ use x86::cpuid::*;
 use x86::msr::*;
 
 // MSR EFER bits
+#[allow(dead_code)]
 const EFER_SCE: u64 = 1 << 0;
+#[allow(dead_code)]
 const EFER_LME: u64 = 1 << 8;
+#[allow(dead_code)]
 const EFER_LMA: u64 = 1 << 10;
+#[allow(dead_code)]
 const EFER_NXE: u64 = 1 << 11;
+#[allow(dead_code)]
 const EFER_SVME: u64 = 1 << 12;
+#[allow(dead_code)]
 const EFER_LMSLE: u64 = 1 << 13;
+#[allow(dead_code)]
 const EFER_FFXSR: u64 = 1 << 14;
+#[allow(dead_code)]
 const EFER_TCE: u64 = 1 << 15;
 
 static mut PHYSICAL_ADDRESS_BITS: u8 = 0;
@@ -27,7 +33,7 @@ static mut SUPPORTS_1GIB_PAGES: bool = false;
 
 /// Force strict CPU ordering, serializes load and store operations.
 #[inline(always)]
-pub fn mb() {
+pub(crate) fn mb() {
 	unsafe {
 		asm!("mfence", options(preserves_flags, nostack));
 	}
@@ -53,6 +59,7 @@ pub(crate) fn msb(value: usize) -> Option<usize> {
 }
 
 /// Search the least significant bit
+#[allow(dead_code)]
 #[inline(always)]
 pub(crate) fn lsb(value: usize) -> Option<usize> {
 	if value > 0 {
@@ -70,6 +77,7 @@ pub(crate) fn lsb(value: usize) -> Option<usize> {
 	}
 }
 
+#[allow(dead_code)]
 #[inline(always)]
 pub(crate) fn halt() {
 	unsafe {
@@ -104,19 +112,19 @@ pub(crate) extern "C" fn shutdown(error_code: i32) -> ! {
 	}
 }
 
-pub fn supports_1gib_pages() -> bool {
+pub(crate) fn supports_1gib_pages() -> bool {
 	unsafe { SUPPORTS_1GIB_PAGES }
 }
 
-pub fn get_linear_address_bits() -> u8 {
+pub(crate) fn get_linear_address_bits() -> u8 {
 	unsafe { LINEAR_ADDRESS_BITS }
 }
 
-pub fn get_physical_address_bits() -> u8 {
+pub(crate) fn get_physical_address_bits() -> u8 {
 	unsafe { PHYSICAL_ADDRESS_BITS }
 }
 
-pub fn init() {
+pub(crate) fn init() {
 	debug!("enable supported processor features");
 
 	let cpuid = CpuId::new();

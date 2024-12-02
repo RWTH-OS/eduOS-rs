@@ -170,13 +170,10 @@ impl Scheduler {
 
 	pub fn schedule(&mut self) {
 		// do we have finished tasks? => drop tasks => deallocate implicitly the stack
-		match self.finished_tasks.pop_front() {
-			Some(id) => {
-				if self.tasks.remove(&id).is_none() {
-					info!("Unable to drop task {}", id);
-				}
+		if let Some(id) = self.finished_tasks.pop_front() {
+			if self.tasks.remove(&id).is_none() {
+				info!("Unable to drop task {}", id);
 			}
-			_ => {}
 		}
 
 		// Get information about the current task.

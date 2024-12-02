@@ -8,21 +8,23 @@ pub mod x86;
 
 // Export our platform-specific modules.
 #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
-pub use self::x86::kernel::{init, irq, jump_to_user_land, processor, register_task, serial};
+pub(crate) use self::x86::kernel::{init, processor, register_task, switch::switch};
 
-#[cfg(all(target_arch = "x86", feature = "vga"))]
-pub use self::x86::kernel::vga;
+#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
+pub use self::x86::kernel::{irq, jump_to_user_land};
+
+#[cfg(feature = "vga")]
+pub(crate) use self::x86::kernel::vga;
+
+#[cfg(not(feature = "vga"))]
+pub(crate) use self::x86::kernel::serial;
 
 // Export our platform-specific modules.
 #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
-pub use self::x86::kernel::switch::switch;
+pub(crate) use self::x86::mm;
 
 // Export our platform-specific modules.
 #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
-pub use self::x86::mm;
-
-// Export our platform-specific modules.
-#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
-pub use self::x86::mm::paging::{
+pub(crate) use self::x86::mm::paging::{
 	drop_user_space, get_kernel_root_page_table, BasePageSize, PageSize,
 };

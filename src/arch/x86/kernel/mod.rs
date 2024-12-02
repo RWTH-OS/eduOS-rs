@@ -1,16 +1,16 @@
-pub mod gdt;
+mod gdt;
 pub mod irq;
 mod pit;
-pub mod processor;
-#[cfg(not(all(target_arch = "x86", feature = "vga")))]
-pub mod serial;
+pub(crate) mod processor;
+#[cfg(not(feature = "vga"))]
+pub(crate) mod serial;
 #[cfg(target_arch = "x86_64")]
 mod start;
 pub(crate) mod switch;
 mod syscall;
 pub(crate) mod task;
-#[cfg(all(target_arch = "x86", feature = "vga"))]
-pub mod vga;
+#[cfg(feature = "vga")]
+pub(crate) mod vga;
 
 use crate::arch::x86::kernel::syscall::syscall_handler;
 use crate::consts::USER_ENTRY;
@@ -20,6 +20,7 @@ use core::arch::asm;
 #[cfg(target_arch = "x86")]
 core::arch::global_asm!(include_str!("entry32.s"));
 
+#[cfg(target_arch = "x86_64")]
 pub(crate) static mut BOOT_INFO: Option<&'static BootInfo> = None;
 
 pub fn register_task() {
@@ -33,7 +34,7 @@ pub fn register_task() {
 pub unsafe fn jump_to_user_land(func: extern "C" fn()) -> ! {
 	let ds = 0x23u64;
 	let cs = 0x2bu64;
-	let addr: u64 = USER_ENTRY.as_u64() | (func as u64 & 0xFFFu64);
+	let addr: usize = USER_ENTRY.as_usize() | (func as usize & 0xFFFusize);
 
 	asm!(
 		"swapgs",
@@ -256,7 +257,7 @@ pub fn syscall6(
 }
 
 /// Initialize module, must be called once, and only once
-pub fn init() {
+pub(crate) fn init() {
 	processor::init();
 	gdt::init();
 	irq::init();
