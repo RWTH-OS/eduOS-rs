@@ -65,7 +65,7 @@ impl Scheduler {
 
 			// Create the new task.
 			let tid = self.get_tid();
-			let task = Rc::new(RefCell::new(Task::new(tid, TaskStatus::TaskReady, prio)));
+			let task = Rc::new(RefCell::new(Task::new(tid, TaskStatus::Ready, prio)));
 
 			task.borrow_mut().create_stack_frame(func);
 
@@ -86,7 +86,7 @@ impl Scheduler {
 		// destroy user space
 		drop_user_space();
 
-		self.current_task.borrow_mut().status = TaskStatus::TaskFinished;
+		self.current_task.borrow_mut().status = TaskStatus::Finished;
 
 		// update the number of tasks
 		NO_TASKS.fetch_sub(1, Ordering::SeqCst);
@@ -94,7 +94,7 @@ impl Scheduler {
 
 	pub fn exit(&mut self) -> ! {
 		let closure = || {
-			if self.current_task.borrow().status != TaskStatus::TaskIdle {
+			if self.current_task.borrow().status != TaskStatus::Idle {
 				info!("finish task with id {}", self.current_task.borrow().id);
 				self.cleanup();
 			} else {
@@ -112,7 +112,7 @@ impl Scheduler {
 
 	pub fn abort(&mut self) -> ! {
 		let closure = || {
-			if self.current_task.borrow().status != TaskStatus::TaskIdle {
+			if self.current_task.borrow().status != TaskStatus::Idle {
 				info!("abort task with id {}", self.current_task.borrow().id);
 				self.cleanup();
 			} else {
@@ -130,10 +130,10 @@ impl Scheduler {
 
 	pub fn block_current_task(&mut self) -> Rc<RefCell<Task>> {
 		let closure = || {
-			if self.current_task.borrow().status == TaskStatus::TaskRunning {
+			if self.current_task.borrow().status == TaskStatus::Running {
 				debug!("block task {}", self.current_task.borrow().id);
 
-				self.current_task.borrow_mut().status = TaskStatus::TaskBlocked;
+				self.current_task.borrow_mut().status = TaskStatus::Blocked;
 				self.current_task.clone()
 			} else {
 				panic!("unable to block task {}", self.current_task.borrow().id);
@@ -145,10 +145,10 @@ impl Scheduler {
 
 	pub fn wakeup_task(&mut self, task: Rc<RefCell<Task>>) {
 		let closure = || {
-			if task.borrow().status == TaskStatus::TaskBlocked {
+			if task.borrow().status == TaskStatus::Blocked {
 				debug!("wakeup task {}", task.borrow().id);
 
-				task.borrow_mut().status = TaskStatus::TaskReady;
+				task.borrow_mut().status = TaskStatus::Ready;
 				self.ready_queue.lock().push(task.clone());
 			}
 		};
@@ -198,15 +198,15 @@ impl Scheduler {
 
 		// do we have a task, which is ready?
 		let mut next_task;
-		if current_status == TaskStatus::TaskRunning {
+		if current_status == TaskStatus::Running {
 			next_task = self.ready_queue.lock().pop_with_prio(current_prio);
 		} else {
 			next_task = self.ready_queue.lock().pop();
 		}
 
 		if next_task.is_none() == true
-			&& current_status != TaskStatus::TaskRunning
-			&& current_status != TaskStatus::TaskIdle
+			&& current_status != TaskStatus::Running
+			&& current_status != TaskStatus::Idle
 		{
 			debug!("Switch to idle task");
 			// current task isn't able to run and no other task available
@@ -218,17 +218,17 @@ impl Scheduler {
 			Some(new_task) => {
 				let (new_id, new_stack_pointer) = {
 					let mut borrowed = new_task.borrow_mut();
-					borrowed.status = TaskStatus::TaskRunning;
+					borrowed.status = TaskStatus::Running;
 					(borrowed.id, borrowed.last_stack_pointer)
 				};
 
-				if current_status == TaskStatus::TaskRunning {
+				if current_status == TaskStatus::Running {
 					debug!("Add task {} to ready queue", current_id);
-					self.current_task.borrow_mut().status = TaskStatus::TaskReady;
+					self.current_task.borrow_mut().status = TaskStatus::Ready;
 					self.ready_queue.lock().push(self.current_task.clone());
-				} else if current_status == TaskStatus::TaskFinished {
+				} else if current_status == TaskStatus::Finished {
 					debug!("Task {} finished", current_id);
-					self.current_task.borrow_mut().status = TaskStatus::TaskInvalid;
+					self.current_task.borrow_mut().status = TaskStatus::Invalid;
 					// release the task later, because the stack is required
 					// to call the function "switch"
 					// => push id to a queue and release the task later

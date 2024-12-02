@@ -16,12 +16,12 @@ use core::fmt;
 /// The status of the task - used for scheduling
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum TaskStatus {
-	TaskInvalid,
-	TaskReady,
-	TaskRunning,
-	TaskBlocked,
-	TaskFinished,
-	TaskIdle,
+	Invalid,
+	Ready,
+	Running,
+	Blocked,
+	Finished,
+	Idle,
 }
 
 /// Unique identifier for a task (i.e. `pid`).
@@ -178,7 +178,7 @@ impl Task {
 		Task {
 			id,
 			prio: LOW_PRIORITY,
-			status: TaskStatus::TaskIdle,
+			status: TaskStatus::Idle,
 			last_stack_pointer: VirtAddr::zero(),
 			stack: Box::new(crate::arch::mm::get_boot_stack()),
 			root_page_table: arch::get_kernel_root_page_table(),
