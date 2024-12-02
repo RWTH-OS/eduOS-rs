@@ -1,13 +1,6 @@
-// Copyright (c) 2017 Stefan Lankes, RWTH Aachen University
-//
-// Licensed under the Apache License, Version 2.0, <LICENSE-APACHE or
-// http://apache.org/licenses/LICENSE-2.0> or the MIT license <LICENSE-MIT or
-// http://opensource.org/licenses/MIT>, at your option. This file may not be
-// copied, modified, or distributed except according to those terms.
-
-pub mod exit;
-pub mod message;
-pub mod write;
+pub(crate) mod exit;
+pub(crate) mod message;
+pub(crate) mod write;
 
 use crate::syscall::exit::sys_exit;
 use crate::syscall::message::sys_message;
@@ -27,7 +20,7 @@ pub const NO_SYSCALLS: usize = 3;
 
 #[repr(align(64))]
 #[repr(C)]
-pub struct SyscallTable {
+pub(crate) struct SyscallTable {
 	handle: [*const usize; NO_SYSCALLS],
 }
 
@@ -52,5 +45,4 @@ impl Default for SyscallTable {
 	}
 }
 
-#[no_mangle]
-pub static SYSHANDLER_TABLE: SyscallTable = SyscallTable::new();
+pub(crate) static SYSHANDLER_TABLE: SyscallTable = SyscallTable::new();
