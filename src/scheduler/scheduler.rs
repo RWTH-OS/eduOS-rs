@@ -6,41 +6,39 @@ use crate::consts::*;
 use crate::errno::*;
 use crate::logging::*;
 use crate::scheduler::task::*;
-use crate::synch::spinlock::*;
 use alloc::collections::{BTreeMap, VecDeque};
 use alloc::rc::Rc;
 use core::cell::RefCell;
 use core::sync::atomic::{AtomicU32, Ordering};
 
-static NO_TASKS: AtomicU32 = AtomicU32::new(0);
 static TID_COUNTER: AtomicU32 = AtomicU32::new(0);
 
-pub struct Scheduler {
+pub(crate) struct Scheduler {
 	/// task id which is currently running
 	current_task: Rc<RefCell<Task>>,
 	/// task id of the idle task
 	idle_task: Rc<RefCell<Task>>,
 	/// queue of tasks, which are ready
-	ready_queue: SpinlockIrqSave<PriorityTaskQueue>,
+	ready_queue: PriorityTaskQueue,
 	/// queue of tasks, which are finished and can be released
-	finished_tasks: SpinlockIrqSave<VecDeque<TaskId>>,
+	finished_tasks: VecDeque<TaskId>,
 	// map between task id and task controll block
-	tasks: SpinlockIrqSave<BTreeMap<TaskId, Rc<RefCell<Task>>>>,
+	tasks: BTreeMap<TaskId, Rc<RefCell<Task>>>,
 }
 
 impl Scheduler {
 	pub fn new() -> Scheduler {
 		let tid = TaskId::from(TID_COUNTER.fetch_add(1, Ordering::SeqCst));
 		let idle_task = Rc::new(RefCell::new(Task::new_idle(tid)));
-		let tasks = SpinlockIrqSave::new(BTreeMap::new());
+		let mut tasks = BTreeMap::new();
 
-		tasks.lock().insert(tid, idle_task.clone());
+		tasks.insert(tid, idle_task.clone());
 
 		Scheduler {
 			current_task: idle_task.clone(),
 			idle_task: idle_task.clone(),
-			ready_queue: SpinlockIrqSave::new(PriorityTaskQueue::new()),
-			finished_tasks: SpinlockIrqSave::new(VecDeque::<TaskId>::new()),
+			ready_queue: PriorityTaskQueue::new(),
+			finished_tasks: VecDeque::<TaskId>::new(),
 			tasks,
 		}
 	}
@@ -49,7 +47,7 @@ impl Scheduler {
 		loop {
 			let id = TaskId::from(TID_COUNTER.fetch_add(1, Ordering::SeqCst));
 
-			if self.tasks.lock().contains_key(&id) == false {
+			if !self.tasks.contains_key(&id) {
 				return id;
 			}
 		}
@@ -57,7 +55,7 @@ impl Scheduler {
 
 	pub fn spawn(&mut self, func: extern "C" fn(), prio: TaskPriority) -> Result<TaskId> {
 		let closure = || {
-			let prio_number = prio.into() as usize;
+			let prio_number: usize = prio.into().into();
 
 			if prio_number >= NO_PRIORITIES {
 				return Err(Error::BadPriority);
@@ -70,9 +68,8 @@ impl Scheduler {
 			task.borrow_mut().create_stack_frame(func);
 
 			// Add it to the task lists.
-			self.ready_queue.lock().push(task.clone());
-			self.tasks.lock().insert(tid, task);
-			NO_TASKS.fetch_add(1, Ordering::SeqCst);
+			self.ready_queue.push(task.clone());
+			self.tasks.insert(tid, task);
 
 			info!("Creating task {}", tid);
 
@@ -87,9 +84,6 @@ impl Scheduler {
 		drop_user_space();
 
 		self.current_task.borrow_mut().status = TaskStatus::Finished;
-
-		// update the number of tasks
-		NO_TASKS.fetch_sub(1, Ordering::SeqCst);
 	}
 
 	pub fn exit(&mut self) -> ! {
@@ -149,7 +143,7 @@ impl Scheduler {
 				debug!("wakeup task {}", task.borrow().id);
 
 				task.borrow_mut().status = TaskStatus::Ready;
-				self.ready_queue.lock().push(task.clone());
+				self.ready_queue.push(task.clone());
 			}
 		};
 
@@ -176,9 +170,9 @@ impl Scheduler {
 
 	pub fn schedule(&mut self) {
 		// do we have finished tasks? => drop tasks => deallocate implicitly the stack
-		match self.finished_tasks.lock().pop_front() {
+		match self.finished_tasks.pop_front() {
 			Some(id) => {
-				if self.tasks.lock().remove(&id).is_none() == true {
+				if self.tasks.remove(&id).is_none() {
 					info!("Unable to drop task {}", id);
 				}
 			}
@@ -199,12 +193,12 @@ impl Scheduler {
 		// do we have a task, which is ready?
 		let mut next_task;
 		if current_status == TaskStatus::Running {
-			next_task = self.ready_queue.lock().pop_with_prio(current_prio);
+			next_task = self.ready_queue.pop_with_prio(current_prio);
 		} else {
-			next_task = self.ready_queue.lock().pop();
+			next_task = self.ready_queue.pop();
 		}
 
-		if next_task.is_none() == true
+		if next_task.is_none()
 			&& current_status != TaskStatus::Running
 			&& current_status != TaskStatus::Idle
 		{
@@ -214,42 +208,39 @@ impl Scheduler {
 			next_task = Some(self.idle_task.clone());
 		}
 
-		match next_task {
-			Some(new_task) => {
-				let (new_id, new_stack_pointer) = {
-					let mut borrowed = new_task.borrow_mut();
-					borrowed.status = TaskStatus::Running;
-					(borrowed.id, borrowed.last_stack_pointer)
-				};
+		if let Some(new_task) = next_task {
+			let (new_id, new_stack_pointer) = {
+				let mut borrowed = new_task.borrow_mut();
+				borrowed.status = TaskStatus::Running;
+				(borrowed.id, borrowed.last_stack_pointer)
+			};
 
-				if current_status == TaskStatus::Running {
-					debug!("Add task {} to ready queue", current_id);
-					self.current_task.borrow_mut().status = TaskStatus::Ready;
-					self.ready_queue.lock().push(self.current_task.clone());
-				} else if current_status == TaskStatus::Finished {
-					debug!("Task {} finished", current_id);
-					self.current_task.borrow_mut().status = TaskStatus::Invalid;
-					// release the task later, because the stack is required
-					// to call the function "switch"
-					// => push id to a queue and release the task later
-					self.finished_tasks.lock().push_back(current_id);
-				}
-
-				debug!(
-					"Switching task from {} to {} (stack {:#X} => {:#X})",
-					current_id,
-					new_id,
-					unsafe { *current_stack_pointer },
-					new_stack_pointer
-				);
-
-				self.current_task = new_task;
-
-				unsafe {
-					switch(current_stack_pointer, new_stack_pointer);
-				}
+			if current_status == TaskStatus::Running {
+				debug!("Add task {} to ready queue", current_id);
+				self.current_task.borrow_mut().status = TaskStatus::Ready;
+				self.ready_queue.push(self.current_task.clone());
+			} else if current_status == TaskStatus::Finished {
+				debug!("Task {} finished", current_id);
+				self.current_task.borrow_mut().status = TaskStatus::Invalid;
+				// release the task later, because the stack is required
+				// to call the function "switch"
+				// => push id to a queue and release the task later
+				self.finished_tasks.push_back(current_id);
 			}
-			_ => {}
+
+			debug!(
+				"Switching task from {} to {} (stack {:#X} => {:#X})",
+				current_id,
+				new_id,
+				unsafe { *current_stack_pointer },
+				new_stack_pointer
+			);
+
+			self.current_task = new_task;
+
+			unsafe {
+				switch(current_stack_pointer, new_stack_pointer);
+			}
 		}
 	}
 

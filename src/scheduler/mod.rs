@@ -14,7 +14,7 @@ use core::cell::RefCell;
 static mut SCHEDULER: Option<scheduler::Scheduler> = None;
 
 /// Initialite module, must be called once, and only once
-pub fn init() {
+pub(crate) fn init() {
 	unsafe {
 		SCHEDULER = Some(scheduler::Scheduler::new());
 	}
@@ -33,12 +33,12 @@ pub fn reschedule() {
 }
 
 /// Timer interrupt  call scheduler to switch to the next available task
-pub fn schedule() {
+pub(crate) fn schedule() {
 	unsafe { SCHEDULER.as_mut().unwrap().schedule() }
 }
 
 /// Terminate the current running task
-pub fn do_exit() {
+pub fn do_exit() -> ! {
 	unsafe {
 		SCHEDULER.as_mut().unwrap().exit();
 	}
@@ -49,25 +49,25 @@ pub fn abort() -> ! {
 	unsafe { SCHEDULER.as_mut().unwrap().abort() }
 }
 
-pub fn get_current_stack() -> VirtAddr {
+pub(crate) fn get_current_stack() -> VirtAddr {
 	unsafe { SCHEDULER.as_mut().unwrap().get_current_stack() }
 }
 
-pub fn get_root_page_table() -> PhysAddr {
+pub(crate) fn get_root_page_table() -> PhysAddr {
 	unsafe { SCHEDULER.as_mut().unwrap().get_root_page_table() }
 }
 
-pub fn set_root_page_table(addr: PhysAddr) {
+pub(crate) fn set_root_page_table(addr: PhysAddr) {
 	unsafe {
 		SCHEDULER.as_mut().unwrap().set_root_page_table(addr);
 	}
 }
 
-pub fn block_current_task() -> Rc<RefCell<Task>> {
+pub(crate) fn block_current_task() -> Rc<RefCell<Task>> {
 	unsafe { SCHEDULER.as_mut().unwrap().block_current_task() }
 }
 
-pub fn wakeup_task(task: Rc<RefCell<Task>>) {
+pub(crate) fn wakeup_task(task: Rc<RefCell<Task>>) {
 	unsafe { SCHEDULER.as_mut().unwrap().wakeup_task(task) }
 }
 
@@ -76,7 +76,7 @@ pub fn get_current_taskid() -> task::TaskId {
 	unsafe { SCHEDULER.as_ref().unwrap().get_current_taskid() }
 }
 
-pub struct DisabledPreemption {
+pub(crate) struct DisabledPreemption {
 	irq_enabled: bool,
 }
 

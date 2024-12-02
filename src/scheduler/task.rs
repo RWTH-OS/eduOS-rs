@@ -15,7 +15,7 @@ use core::fmt;
 
 /// The status of the task - used for scheduling
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum TaskStatus {
+pub(crate) enum TaskStatus {
 	Invalid,
 	Ready,
 	Running,
@@ -132,9 +132,8 @@ pub(crate) trait Stack {
 }
 
 #[derive(Copy, Clone)]
-#[repr(align(64))]
-#[repr(C)]
-pub struct TaskStack {
+#[repr(C, align(64))]
+pub(crate) struct TaskStack {
 	buffer: [u8; STACK_SIZE],
 }
 
@@ -158,7 +157,7 @@ impl Stack for TaskStack {
 
 /// A task control block, which identifies either a process or a thread
 #[repr(align(64))]
-pub struct Task {
+pub(crate) struct Task {
 	/// The ID of this context
 	pub id: TaskId,
 	/// Task Priority
