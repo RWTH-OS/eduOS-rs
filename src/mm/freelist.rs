@@ -1,16 +1,14 @@
-// Copyright (c) 2017 Colin Finck, RWTH Aachen University
-//
-// Licensed under the Apache License, Version 2.0, <LICENSE-APACHE or
-// http://apache.org/licenses/LICENSE-2.0> or the MIT license <LICENSE-MIT or
-// http://opensource.org/licenses/MIT>, at your option. This file may not be
-// copied, modified, or distributed except according to those terms.
-
 use crate::arch::mm::{PhysAddr, VirtAddr};
 use crate::logging::*;
 use alloc::collections::linked_list::LinkedList;
 use core::cmp::Ordering;
 
-pub struct FreeListEntry<
+#[derive(Copy, Clone, Debug)]
+pub(crate) enum FreeListError {
+	NoValidEntry,
+}
+
+pub(crate) struct FreeListEntry<
 	T: core::marker::Copy
 		+ core::cmp::PartialEq
 		+ core::cmp::PartialOrd
@@ -42,7 +40,7 @@ impl<
 	}
 }
 
-pub struct FreeList<
+pub(crate) struct FreeList<
 	T: core::marker::Copy
 		+ core::cmp::PartialEq
 		+ core::cmp::PartialOrd
@@ -210,7 +208,11 @@ fn deallocate() {
 }
 
 impl FreeList<PhysAddr> {
-	pub fn allocate(&mut self, size: usize, alignment: Option<usize>) -> Result<PhysAddr, ()> {
+	pub fn allocate(
+		&mut self,
+		size: usize,
+		alignment: Option<usize>,
+	) -> Result<PhysAddr, FreeListError> {
 		debug!(
 			"Allocating {} bytes from Free List {:#X}",
 			size, self as *const Self as usize
@@ -264,12 +266,16 @@ impl FreeList<PhysAddr> {
 			cursor.move_next();
 		}
 
-		Err(())
+		Err(FreeListError::NoValidEntry)
 	}
 }
 
 impl FreeList<VirtAddr> {
-	pub fn allocate(&mut self, size: usize, alignment: Option<usize>) -> Result<VirtAddr, ()> {
+	pub fn allocate(
+		&mut self,
+		size: usize,
+		alignment: Option<usize>,
+	) -> Result<VirtAddr, FreeListError> {
 		debug!(
 			"Allocating {} bytes from Free List {:#X}",
 			size, self as *const Self as usize
@@ -323,6 +329,6 @@ impl FreeList<VirtAddr> {
 			cursor.move_next();
 		}
 
-		Err(())
+		Err(FreeListError::NoValidEntry)
 	}
 }

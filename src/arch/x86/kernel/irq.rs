@@ -352,9 +352,9 @@ struct IdtEntry {
 	pub reserved1: u16,
 }
 
+#[allow(dead_code)]
 enum Type {
 	InterruptGate,
-	#[allow(dead_code)]
 	TrapGate,
 }
 

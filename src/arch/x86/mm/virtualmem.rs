@@ -7,18 +7,18 @@ static mut KERNEL_FREE_LIST: FreeList<VirtAddr> = FreeList::new();
 
 /// Start of the virtual memory address space reserved for kernel memory.
 /// This also marks the start of the virtual memory address space reserved for the task heap.
-pub const KERNEL_VIRTUAL_MEMORY_START: VirtAddr = VirtAddr(0x8000_0000u64);
+pub(crate) const KERNEL_VIRTUAL_MEMORY_START: VirtAddr = VirtAddr(0x8000_0000u64);
 
 /// End of the virtual memory address space reserved for kernel memory (32 GiB).
 /// This also marks the start of the virtual memory address space reserved for the task heap.
-pub const KERNEL_VIRTUAL_MEMORY_END: VirtAddr = VirtAddr(0x800_0000_0000u64);
+pub(crate) const KERNEL_VIRTUAL_MEMORY_END: VirtAddr = VirtAddr(0x800_0000_0000u64);
 
 /// End of the virtual memory address space reserved for kernel memory (128 TiB).
 /// This is the maximum contiguous virtual memory area possible with current x86-64 CPUs, which only support 48-bit
 /// linear addressing (in two 47-bit areas).
 const TASK_VIRTUAL_MEMORY_END: VirtAddr = VirtAddr(0x8000_0000_0000u64);
 
-pub fn init() {
+pub(crate) fn init() {
 	let entry = FreeListEntry {
 		start: KERNEL_VIRTUAL_MEMORY_START,
 		end: KERNEL_VIRTUAL_MEMORY_END,
@@ -28,7 +28,8 @@ pub fn init() {
 	}
 }
 
-pub fn allocate(size: usize) -> VirtAddr {
+#[allow(dead_code)]
+pub(crate) fn allocate(size: usize) -> VirtAddr {
 	assert!(size > 0);
 	assert!(
 		size % BasePageSize::SIZE == 0,
@@ -47,7 +48,7 @@ pub fn allocate(size: usize) -> VirtAddr {
 	result.unwrap()
 }
 
-pub fn allocate_aligned(size: usize, alignment: usize) -> VirtAddr {
+pub(crate) fn allocate_aligned(size: usize, alignment: usize) -> VirtAddr {
 	assert!(size > 0);
 	assert!(alignment > 0);
 	assert!(
@@ -74,7 +75,7 @@ pub fn allocate_aligned(size: usize, alignment: usize) -> VirtAddr {
 	result.unwrap()
 }
 
-pub fn deallocate(virtual_address: VirtAddr, size: usize) {
+pub(crate) fn deallocate(virtual_address: VirtAddr, size: usize) {
 	assert!(
 		virtual_address < KERNEL_VIRTUAL_MEMORY_END,
 		"Virtual address {:#X} is not < KERNEL_VIRTUAL_MEMORY_END",
@@ -100,47 +101,12 @@ pub fn deallocate(virtual_address: VirtAddr, size: usize) {
 	}
 }
 
-/*pub fn reserve(virtual_address: usize, size: usize) {
-	assert!(
-		virtual_address >= mm::kernel_end_address(),
-		"Virtual address {:#X} is not >= KERNEL_END_ADDRESS",
-		virtual_address
-	);
-	assert!(
-		virtual_address < KERNEL_VIRTUAL_MEMORY_END,
-		"Virtual address {:#X} is not < KERNEL_VIRTUAL_MEMORY_END",
-		virtual_address
-	);
-	assert!(
-		virtual_address % BasePageSize::SIZE == 0,
-		"Virtual address {:#X} is not a multiple of {:#X}",
-		virtual_address,
-		BasePageSize::SIZE
-	);
-	assert!(size > 0);
-	assert!(
-		size % BasePageSize::SIZE == 0,
-		"Size {:#X} is not a multiple of {:#X}",
-		size,
-		BasePageSize::SIZE
-	);
-
-	let _preemption = DisabledPreemption::new();
-	let result = unsafe {
-		KERNEL_FREE_LIST.reserve(virtual_address, size)
-	};
-	assert!(
-		result.is_ok(),
-		"Could not reserve {:#X} bytes of virtual memory at {:#X}",
-		size,
-		virtual_address
-	);
-}*/
-
-pub fn task_heap_start() -> VirtAddr {
+#[allow(dead_code)]
+pub(crate) fn task_heap_start() -> VirtAddr {
 	KERNEL_VIRTUAL_MEMORY_END
 }
 
-pub fn task_heap_end() -> VirtAddr {
+#[allow(dead_code)]
+pub(crate) fn task_heap_end() -> VirtAddr {
 	TASK_VIRTUAL_MEMORY_END
 }

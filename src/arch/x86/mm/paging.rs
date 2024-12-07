@@ -1,3 +1,5 @@
+#![allow(clippy::upper_case_acronyms)]
+
 use crate::arch::x86::kernel::irq;
 use crate::arch::x86::kernel::processor;
 use crate::arch::x86::kernel::BOOT_INFO;
@@ -100,7 +102,7 @@ impl PageTableEntryFlags {
 
 /// An entry in either table (PML4, PDPT, PD, PT)
 #[derive(Clone, Copy)]
-pub struct PageTableEntry {
+pub(crate) struct PageTableEntry {
 	/// Physical memory address this entry refers, combined with flags from PageTableEntryFlags.
 	physical_address_and_flags: PhysAddr,
 }
@@ -120,6 +122,7 @@ impl PageTableEntry {
 		(self.physical_address_and_flags.as_usize() & PageTableEntryFlags::PRESENT.bits()) != 0
 	}
 
+	#[allow(dead_code)]
 	fn is_huge(&self) -> bool {
 		(self.physical_address_and_flags.as_usize() & PageTableEntryFlags::HUGE_PAGE.bits()) != 0
 	}
@@ -175,7 +178,7 @@ impl PageTableEntry {
 ///
 /// This is defined as a subtrait of Copy to enable #[derive(Clone, Copy)] for Page.
 /// Currently, deriving implementations for these traits only works if all dependent types implement it as well.
-pub trait PageSize: Copy {
+pub(crate) trait PageSize: Copy {
 	/// The page size in bytes.
 	const SIZE: usize;
 
@@ -190,7 +193,7 @@ pub trait PageSize: Copy {
 
 /// A 4 KiB page mapped in the PT.
 #[derive(Clone, Copy)]
-pub enum BasePageSize {}
+pub(crate) enum BasePageSize {}
 impl PageSize for BasePageSize {
 	const SIZE: usize = 0x1000;
 	const MAP_LEVEL: usize = 0;
@@ -199,7 +202,7 @@ impl PageSize for BasePageSize {
 
 /// A 2 MiB page mapped in the PD.
 #[derive(Clone, Copy)]
-pub enum LargePageSize {}
+pub(crate) enum LargePageSize {}
 impl PageSize for LargePageSize {
 	const SIZE: usize = 0x200000;
 	const MAP_LEVEL: usize = 1;
@@ -207,8 +210,9 @@ impl PageSize for LargePageSize {
 }
 
 /// A 1 GiB page mapped in the PDPT.
+#[allow(dead_code)]
 #[derive(Clone, Copy)]
-pub enum HugePageSize {}
+pub(crate) enum HugePageSize {}
 impl PageSize for HugePageSize {
 	const SIZE: usize = 0x40000000;
 	const MAP_LEVEL: usize = 2;
@@ -228,6 +232,7 @@ struct Page<S: PageSize> {
 
 impl<S: PageSize> Page<S> {
 	/// Return the stored virtual address.
+	#[allow(dead_code)]
 	fn address(&self) -> VirtAddr {
 		self.virtual_address
 	}
@@ -375,7 +380,7 @@ struct PageTable<L> {
 /// This additional trait is necessary to make use of Rust's specialization feature and provide a default
 /// implementation of some methods.
 trait PageTableMethods {
-	fn get_page_table_entry<S: PageSize>(&self, page: Page<S>) -> Option<PageTableEntry>;
+	fn get_page_table_entry<S: PageSize>(&mut self, page: Page<S>) -> Option<PageTableEntry>;
 	fn map_page_in_this_table<S: PageSize>(
 		&mut self,
 		page: Page<S>,
@@ -422,7 +427,10 @@ impl<L: PageTableLevel> PageTableMethods for PageTable<L> {
 	///
 	/// This is the default implementation called only for PT.
 	/// It is overridden by a specialized implementation for all tables with sub tables (all except PT).
-	default fn get_page_table_entry<S: PageSize>(&self, page: Page<S>) -> Option<PageTableEntry> {
+	default fn get_page_table_entry<S: PageSize>(
+		&mut self,
+		page: Page<S>,
+	) -> Option<PageTableEntry> {
 		assert!(L::LEVEL == S::MAP_LEVEL);
 		let index = page.table_index::<L>();
 
@@ -469,7 +477,7 @@ where
 	///
 	/// This is the implementation for all tables with subtables (PML4, PDPT, PDT).
 	/// It overrides the default implementation above.
-	fn get_page_table_entry<S: PageSize>(&self, page: Page<S>) -> Option<PageTableEntry> {
+	fn get_page_table_entry<S: PageSize>(&mut self, page: Page<S>) -> Option<PageTableEntry> {
 		assert!(L::LEVEL >= S::MAP_LEVEL);
 		let index = page.table_index::<L>();
 
@@ -563,7 +571,7 @@ where
 	/// Returns the next subtable for the given page in the page table hierarchy.
 	///
 	/// Must only be called if a page of this size is mapped in a subtable!
-	fn subtable<S: PageSize>(&self, page: Page<S>) -> &mut PageTable<L::SubtableLevel> {
+	fn subtable<S: PageSize>(&mut self, page: Page<S>) -> &mut PageTable<L::SubtableLevel> {
 		assert!(L::LEVEL > S::MAP_LEVEL);
 
 		// Calculate the address of the subtable.
@@ -683,7 +691,10 @@ fn get_page_range<S: PageSize>(virtual_address: VirtAddr, count: usize) -> PageI
 	Page::range(first_page, last_page)
 }
 
-pub fn get_page_table_entry<S: PageSize>(virtual_address: VirtAddr) -> Option<PageTableEntry> {
+#[allow(dead_code)]
+pub(crate) fn get_page_table_entry<S: PageSize>(
+	virtual_address: VirtAddr,
+) -> Option<PageTableEntry> {
 	debug!("Looking up Page Table Entry for {:#X}", virtual_address);
 
 	let page = Page::<S>::including_address(virtual_address);
@@ -691,7 +702,7 @@ pub fn get_page_table_entry<S: PageSize>(virtual_address: VirtAddr) -> Option<Pa
 	root_pagetable.get_page_table_entry(page)
 }
 
-pub fn get_physical_address<S: PageSize>(virtual_address: VirtAddr) -> PhysAddr {
+pub(crate) fn get_physical_address<S: PageSize>(virtual_address: VirtAddr) -> PhysAddr {
 	debug!("Getting physical address for {:#X}", virtual_address);
 
 	let page = Page::<S>::including_address(virtual_address);
@@ -706,11 +717,11 @@ pub fn get_physical_address<S: PageSize>(virtual_address: VirtAddr) -> PhysAddr 
 
 /// Translate a virtual memory address to a physical one.
 /// Just like get_physical_address, but automatically uses the correct page size for the respective memory address.
-pub fn virtual_to_physical(virtual_address: VirtAddr) -> PhysAddr {
+pub(crate) fn virtual_to_physical(virtual_address: VirtAddr) -> PhysAddr {
 	get_physical_address::<BasePageSize>(virtual_address)
 }
 
-pub fn unmap<S: PageSize>(virtual_address: VirtAddr, count: usize) {
+pub(crate) fn unmap<S: PageSize>(virtual_address: VirtAddr, count: usize) {
 	debug!(
 		"Unmapping virtual address {:#X} ({} pages)",
 		virtual_address, count
@@ -721,7 +732,7 @@ pub fn unmap<S: PageSize>(virtual_address: VirtAddr, count: usize) {
 	root_pagetable.map_pages(range, PhysAddr::zero(), PageTableEntryFlags::BLANK);
 }
 
-pub fn map<S: PageSize>(
+pub(crate) fn map<S: PageSize>(
 	virtual_address: VirtAddr,
 	physical_address: PhysAddr,
 	count: usize,
@@ -740,7 +751,7 @@ pub fn map<S: PageSize>(
 static mut ROOT_PAGE_TABLE: PhysAddr = PhysAddr::zero();
 
 #[inline(always)]
-pub fn get_kernel_root_page_table() -> PhysAddr {
+pub(crate) fn get_kernel_root_page_table() -> PhysAddr {
 	unsafe { ROOT_PAGE_TABLE }
 }
 
@@ -758,7 +769,7 @@ pub fn map_usr_entry(func: extern "C" fn()) {
 	);
 }
 
-pub fn drop_user_space() {
+pub(crate) fn drop_user_space() {
 	let root_pagetable = unsafe { &mut *PML4_ADDRESS };
 
 	root_pagetable.drop_user_space();
@@ -809,7 +820,7 @@ pub fn create_usr_pgd() -> PhysAddr {
 	}
 }
 
-pub fn init() {
+pub(crate) fn init() {
 	let recursive_pgt = unsafe { BOOT_INFO.unwrap().recursive_page_table_addr } as *mut u64;
 	let recursive_pgt_idx = unsafe { BOOT_INFO.unwrap().recursive_index() };
 

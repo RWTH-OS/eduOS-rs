@@ -202,7 +202,7 @@ unsafe fn set_kernel_stack(stack: VirtAddr) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn set_current_kernel_stack() {
+pub(crate) unsafe extern "C" fn set_current_kernel_stack() {
 	cr3_write(scheduler::get_root_page_table().as_u64());
 
 	let rsp = scheduler::get_current_stack();

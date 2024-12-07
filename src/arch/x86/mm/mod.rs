@@ -17,7 +17,7 @@ pub use x86::bits64::paging::PAddr as PhysAddr;
 pub use x86::bits64::paging::VAddr as VirtAddr;
 
 #[derive(Copy, Clone)]
-pub struct BootStack {
+pub(crate) struct BootStack {
 	start: VirtAddr,
 	end: VirtAddr,
 }
@@ -66,7 +66,8 @@ pub(crate) fn get_boot_stack() -> BootStack {
 	}
 }
 
-pub fn is_kernel(addr: VirtAddr) -> bool {
+#[allow(dead_code)]
+pub(crate) fn is_kernel(addr: VirtAddr) -> bool {
 	unsafe {
 		let regions = BOOT_INFO.unwrap().memory_map.deref();
 
@@ -90,7 +91,7 @@ pub fn is_kernel(addr: VirtAddr) -> bool {
 	false
 }
 
-pub fn get_memory_size() -> usize {
+pub(crate) fn get_memory_size() -> usize {
 	let mut sz: u64 = 0;
 
 	unsafe {
@@ -117,7 +118,7 @@ pub fn get_memory_size() -> usize {
 	sz.try_into().unwrap()
 }
 
-pub fn init() {
+pub(crate) fn init() {
 	paging::init();
 	physicalmem::init();
 	virtualmem::init();

@@ -4,20 +4,19 @@ use crate::arch::x86::mm::PhysAddr;
 use crate::logging::*;
 use crate::mm::freelist::{FreeList, FreeListEntry};
 use crate::scheduler::DisabledPreemption;
-use core::convert::TryInto;
 use core::ops::Deref;
 
 static mut PHYSICAL_FREE_LIST: FreeList<PhysAddr> = FreeList::new();
 
-pub fn init() {
+pub(crate) fn init() {
 	unsafe {
 		let regions = BOOT_INFO.unwrap().memory_map.deref();
 
 		for i in regions {
 			if i.region_type == bootloader::bootinfo::MemoryRegionType::Usable {
 				let entry = FreeListEntry {
-					start: (i.range.start_frame_number * 0x1000).try_into().unwrap(),
-					end: (i.range.end_frame_number * 0x1000).try_into().unwrap(),
+					start: (i.range.start_frame_number * 0x1000).into(),
+					end: (i.range.end_frame_number * 0x1000).into(),
 				};
 
 				debug!(
