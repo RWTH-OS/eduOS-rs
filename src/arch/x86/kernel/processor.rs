@@ -6,7 +6,7 @@ use x86::controlregs::*;
 
 /// Force strict CPU ordering, serializes load and store operations.
 #[inline(always)]
-pub fn mb() {
+pub(crate) fn mb() {
 	unsafe {
 		asm!("mfence", options(preserves_flags, nostack));
 	}
