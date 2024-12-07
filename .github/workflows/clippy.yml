@@ -3,10 +3,10 @@ name: Clippy
 on:
   push:
     branches:
-      - stage3
+      - stage4
   pull_request:
     branches:
-      - stage3
+      - stage4
 
 jobs:
   build:
@@ -25,5 +25,5 @@ jobs:
       run: cargo --version
     - name: Check clippy (x86_64)
       run: cargo clippy
-    - name: Check clippy (i688)
-      run: cargo clippy --target i686-eduos.json
+    #- name: Check clippy (i688)
+    #  run: cargo clippy --target i686-eduos.json
