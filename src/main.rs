@@ -6,18 +6,25 @@
 extern crate eduos_rs;
 
 use eduos_rs::arch;
+use eduos_rs::fd::STDOUT_FILENO;
 use eduos_rs::scheduler;
 use eduos_rs::scheduler::task::NORMAL_PRIORITY;
 use eduos_rs::syscall;
-use eduos_rs::syscall::{SYSNO_EXIT, SYSNO_MESSAGE};
+use eduos_rs::syscall::{SYSNO_EXIT, SYSNO_WRITE};
 use eduos_rs::{LogLevel, LOGGER};
 use x86::controlregs;
 
 extern "C" fn user_foo() {
 	// try to call a kernel function => page fault
 	//scheduler::do_exit();
+	let message = ['H', 'e', 'l', 'l', 'o', '!', '\n'];
 
-	syscall!(SYSNO_MESSAGE);
+	syscall!(
+		SYSNO_WRITE,
+		STDOUT_FILENO,
+		message.as_ptr(),
+		message.len() * core::mem::size_of::<char>()
+	);
 	syscall!(SYSNO_EXIT);
 
 	// we should never reach this point

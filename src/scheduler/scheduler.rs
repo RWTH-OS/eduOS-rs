@@ -4,10 +4,12 @@ use crate::arch::switch;
 use crate::collections::irqsave;
 use crate::consts::*;
 use crate::errno::*;
+use crate::fd::{FileDescriptor, IoInterface};
 use crate::logging::*;
 use crate::scheduler::task::*;
 use alloc::collections::{BTreeMap, VecDeque};
 use alloc::rc::Rc;
+use alloc::sync::Arc;
 use core::cell::RefCell;
 use core::sync::atomic::{AtomicU32, Ordering};
 
@@ -148,6 +150,21 @@ impl Scheduler {
 		};
 
 		irqsave(closure);
+	}
+
+	pub(crate) fn get_io_interface(
+		&self,
+		fd: FileDescriptor,
+	) -> crate::io::Result<Arc<dyn IoInterface>> {
+		let closure = || {
+			if let Some(io_interface) = self.current_task.borrow().fd_map.get(&fd) {
+				Ok(io_interface.clone())
+			} else {
+				Err(crate::io::Error::ENOENT)
+			}
+		};
+
+		irqsave(closure)
 	}
 
 	pub fn get_current_taskid(&self) -> TaskId {

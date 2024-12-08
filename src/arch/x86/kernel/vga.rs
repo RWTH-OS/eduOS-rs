@@ -110,6 +110,16 @@ impl VgaScreen {
 			self.current_col += 1;
 		}
 	}
+
+	pub fn write_bytes(&mut self, buf: &[u8]) {
+		unsafe {
+			// Output each byte of our string.
+			for &b in buf {
+				// Write our byte.
+				self.write_byte(b);
+			}
+		}
+	}
 }
 
 unsafe impl Send for VgaScreen {}

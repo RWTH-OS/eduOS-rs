@@ -14,6 +14,16 @@ impl ComPort {
 	const fn new(base_addr: u16) -> Self {
 		Self { base_addr }
 	}
+
+	pub fn write_bytes(&mut self, buf: &[u8]) {
+		unsafe {
+			// Output each byte of our string.
+			for &b in buf {
+				// Write our byte.
+				outb(self.base_addr, b);
+			}
+		}
+	}
 }
 
 impl fmt::Write for ComPort {

@@ -4,6 +4,7 @@
 #![feature(naked_functions)]
 #![feature(abi_x86_interrupt)]
 #![feature(specialization)]
+#![feature(map_try_insert)]
 #![allow(clippy::module_inception)]
 #![allow(incomplete_features)]
 #![allow(static_mut_refs)]
@@ -32,6 +33,8 @@ pub mod collections;
 pub mod console;
 pub mod consts;
 pub mod errno;
+pub mod fd;
+pub mod io;
 pub mod mm;
 pub mod scheduler;
 pub mod synch;

@@ -7,8 +7,10 @@ pub mod task;
 use crate::arch;
 use crate::arch::mm::{PhysAddr, VirtAddr};
 use crate::errno::*;
+use crate::fd::{FileDescriptor, IoInterface};
 use crate::scheduler::task::{Task, TaskPriority};
 use alloc::rc::Rc;
+use alloc::sync::Arc;
 use core::cell::RefCell;
 
 static mut SCHEDULER: Option<scheduler::Scheduler> = None;
@@ -69,6 +71,10 @@ pub(crate) fn block_current_task() -> Rc<RefCell<Task>> {
 
 pub(crate) fn wakeup_task(task: Rc<RefCell<Task>>) {
 	unsafe { SCHEDULER.as_mut().unwrap().wakeup_task(task) }
+}
+
+pub(crate) fn get_io_interface(fd: FileDescriptor) -> crate::io::Result<Arc<dyn IoInterface>> {
+	unsafe { SCHEDULER.as_mut().unwrap().get_io_interface(fd) }
 }
 
 /// Get the TaskID of the current running task

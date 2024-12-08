@@ -112,6 +112,10 @@ Currently, following stages of development are available:
 
    Add support of paging and a simple demo for process creation
 
+7. stage 7 - Basic IO interface
+
+   Add basic support of file descriptors
+
 ## Useful Links
 
 1. [http://www.gnu.org/software/grub/manual/multiboot/](http://www.gnu.org/software/grub/manual/multiboot/)

@@ -6,10 +6,13 @@ use crate::arch::mm::VirtAddr;
 use crate::arch::processor::msb;
 use crate::arch::{BasePageSize, PageSize};
 use crate::consts::*;
+use crate::fd::stdio::{GenericStderr, GenericStdin, GenericStdout};
+use crate::fd::{FileDescriptor, IoInterface, STDERR_FILENO, STDIN_FILENO, STDOUT_FILENO};
 use crate::logging::*;
 use alloc::boxed::Box;
-use alloc::collections::VecDeque;
+use alloc::collections::{BTreeMap, VecDeque};
 use alloc::rc::Rc;
+use alloc::sync::Arc;
 use core::cell::RefCell;
 use core::fmt;
 
@@ -170,6 +173,8 @@ pub(crate) struct Task {
 	pub stack: Box<dyn Stack>,
 	/// Physical address of the 1st level page table
 	pub root_page_table: PhysAddr,
+	/// Mapping between file descriptor and the referenced IO interface
+	pub fd_map: BTreeMap<FileDescriptor, Arc<dyn IoInterface>>,
 }
 
 impl Task {
@@ -181,10 +186,22 @@ impl Task {
 			last_stack_pointer: VirtAddr::zero(),
 			stack: Box::new(crate::arch::mm::get_boot_stack()),
 			root_page_table: arch::get_kernel_root_page_table(),
+			fd_map: BTreeMap::new(),
 		}
 	}
 
 	pub fn new(id: TaskId, status: TaskStatus, prio: TaskPriority) -> Task {
+		let mut fd_map: BTreeMap<FileDescriptor, Arc<dyn IoInterface>> = BTreeMap::new();
+		fd_map
+			.try_insert(STDIN_FILENO, Arc::new(GenericStdin::new()))
+			.unwrap();
+		fd_map
+			.try_insert(STDOUT_FILENO, Arc::new(GenericStdout::new()))
+			.unwrap();
+		fd_map
+			.try_insert(STDERR_FILENO, Arc::new(GenericStderr::new()))
+			.unwrap();
+
 		Task {
 			id,
 			prio,
@@ -192,6 +209,7 @@ impl Task {
 			last_stack_pointer: VirtAddr::zero(),
 			stack: Box::new(TaskStack::new()),
 			root_page_table: arch::get_kernel_root_page_table(),
+			fd_map,
 		}
 	}
 }
