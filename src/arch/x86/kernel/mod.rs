@@ -15,7 +15,7 @@ pub(crate) mod vga;
 use crate::arch::x86::kernel::syscall::syscall_handler;
 use crate::consts::USER_ENTRY;
 use bootloader::BootInfo;
-use core::arch::asm;
+use core::arch::{asm, naked_asm};
 
 #[cfg(target_arch = "x86_64")]
 pub(crate) static mut BOOT_INFO: Option<&'static BootInfo> = None;
@@ -23,34 +23,32 @@ pub(crate) static mut BOOT_INFO: Option<&'static BootInfo> = None;
 #[cfg(target_arch = "x86")]
 core::arch::global_asm!(include_str!("entry32.s"));
 
+#[naked]
+unsafe extern "C" fn __jump_to_user_land(ds: usize, stack: usize, cs: usize, entry: usize) -> ! {
+	naked_asm!(
+		"swapgs",
+		"push rdi",
+		"push rsi",
+		"pushf",
+		"push rdx",
+		"push rcx",
+		"iretq",
+		options(noreturn)
+	)
+}
+
 /// Helper function to jump into the user space
 ///
 /// # Safety
 ///
 /// Be sure the the user-level function mapped into the user space.
 pub unsafe fn jump_to_user_land(func: extern "C" fn()) -> ! {
-	let ds = 0x23u64;
-	let cs = 0x2bu64;
-	let addr: usize = USER_ENTRY.as_usize() | (func as usize & 0xFFFusize);
-
-	asm!(
-		"swapgs",
-		"push {0}",
-		"push {1}",
-		"pushf",
-		"push {2}",
-		"push {3}",
-		"iretq",
-		in(reg) ds,
-		in(reg) USER_ENTRY.as_u64() + 0x400000u64,
-		in(reg) cs,
-		in(reg) addr,
-		options(nostack)
-	);
-
-	loop {
-		processor::halt();
-	}
+	__jump_to_user_land(
+		0x23,
+		USER_ENTRY.as_usize() + 0x400000usize,
+		0x2b,
+		USER_ENTRY.as_usize() | (func as usize & 0xFFFusize),
+	)
 }
 
 pub fn register_task() {
