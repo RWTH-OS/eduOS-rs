@@ -24,7 +24,7 @@ pub(crate) struct Scheduler {
 	ready_queue: PriorityTaskQueue,
 	/// queue of tasks, which are finished and can be released
 	finished_tasks: VecDeque<TaskId>,
-	// map between task id and task controll block
+	/// map between task id and task control block
 	tasks: BTreeMap<TaskId, Rc<RefCell<Task>>>,
 }
 
@@ -173,8 +173,8 @@ impl Scheduler {
 
 	/// Determines the start address of the stack
 	#[no_mangle]
-	pub fn get_current_stack(&self) -> VirtAddr {
-		irqsave(|| (*self.current_task.borrow().stack).bottom())
+	pub fn get_current_interrupt_stack(&self) -> VirtAddr {
+		irqsave(|| (*self.current_task.borrow().stack).interrupt_top())
 	}
 
 	pub fn get_root_page_table(&self) -> PhysAddr {

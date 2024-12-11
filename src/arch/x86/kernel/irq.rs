@@ -489,7 +489,7 @@ impl InteruptHandler {
 			KERNEL_CODE_SELECTOR,
 			Ring::Ring0,
 			Type::InterruptGate,
-			1,
+			0,
 		);
 		self.idt[3] = IdtEntry::new(
 			VAddr::from_usize(int3_exception as usize),
@@ -531,7 +531,7 @@ impl InteruptHandler {
 			KERNEL_CODE_SELECTOR,
 			Ring::Ring0,
 			Type::InterruptGate,
-			2,
+			0,
 		);
 		self.idt[9] = IdtEntry::new(
 			VAddr::from_usize(overrun_exception as usize),
@@ -601,7 +601,7 @@ impl InteruptHandler {
 			KERNEL_CODE_SELECTOR,
 			Ring::Ring0,
 			Type::InterruptGate,
-			3,
+			0,
 		);
 		for i in 19..32 {
 			self.idt[i] = IdtEntry::new(
