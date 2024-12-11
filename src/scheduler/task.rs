@@ -129,29 +129,47 @@ impl PriorityTaskQueue {
 pub(crate) trait Stack {
 	fn top(&self) -> VirtAddr;
 	fn bottom(&self) -> VirtAddr;
+	fn interrupt_top(&self) -> VirtAddr;
+	fn interrupt_bottom(&self) -> VirtAddr;
 }
 
 #[derive(Copy, Clone)]
 #[repr(C, align(64))]
 pub(crate) struct TaskStack {
 	buffer: [u8; STACK_SIZE],
+	ist_buffer: [u8; INTERRUPT_STACK_SIZE],
+}
+
+impl Default for TaskStack {
+	fn default() -> Self {
+		Self::new()
+	}
 }
 
 impl TaskStack {
 	pub const fn new() -> TaskStack {
 		TaskStack {
 			buffer: [0; STACK_SIZE],
+			ist_buffer: [0; INTERRUPT_STACK_SIZE],
 		}
 	}
 }
 
 impl Stack for TaskStack {
 	fn top(&self) -> VirtAddr {
-		VirtAddr::from((&(self.buffer[STACK_SIZE - 16]) as *const _) as usize)
+		VirtAddr::from(self.buffer.as_ptr() as usize + STACK_SIZE - 16)
 	}
 
 	fn bottom(&self) -> VirtAddr {
-		VirtAddr::from((&(self.buffer[0]) as *const _) as usize)
+		VirtAddr::from(self.buffer.as_ptr() as usize)
+	}
+
+	fn interrupt_top(&self) -> VirtAddr {
+		VirtAddr::from(self.ist_buffer.as_ptr() as usize + INTERRUPT_STACK_SIZE - 16)
+	}
+
+	fn interrupt_bottom(&self) -> VirtAddr {
+		VirtAddr::from(self.ist_buffer.as_ptr() as usize)
 	}
 }
 

@@ -1,6 +1,7 @@
+use crate::arch::mm::get_boot_stack;
 use crate::arch::mm::VirtAddr;
-use crate::consts::*;
 use crate::scheduler;
+use crate::scheduler::task::Stack;
 use core::mem;
 use x86::bits64::segmentation::*;
 use x86::bits64::task::*;
@@ -28,16 +29,10 @@ const TSS_ENTRIES: usize = 2;
 const TSS_ENTRIES: usize = 1;
 const GDT_ENTRIES: usize = GDT_FIRST_TSS + TSS_ENTRIES;
 
-/// We use IST1 through IST4.
-/// Each critical exception (NMI, Double Fault, Machine Check) gets a dedicated one while IST1 is shared for all other
-/// interrupts. See also irq.rs.
-const IST_ENTRIES: usize = 4;
-
 // thread_local on a static mut, signals that the value of this static may
 // change depending on the current thread.
 static mut GDT: [Descriptor; GDT_ENTRIES] = [Descriptor::NULL; GDT_ENTRIES];
 static mut TSS: Tss = Tss::from(TaskStateSegment::new());
-static IST: [u8; IST_ENTRIES * STACK_SIZE] = [0; IST_ENTRIES * STACK_SIZE];
 
 // workaround to use the new repr(align) feature
 // currently, it is only supported by structs
@@ -111,18 +106,18 @@ pub(crate) fn init() {
 				.finish();
 
 		/*
-		 * Create code segment for 32bit user-space applications (ring 3)
+		 * Create data segment for 32bit user-space applications (ring 3)
 		 */
 		GDT[GDT_USER32_DATA] = DescriptorBuilder::data_descriptor(0, 0, DataSegmentType::ReadWrite)
 			.present()
 			.dpl(Ring::Ring3)
 			.finish();
 
+		/*
+		 * Create code segment for 64bit user-space applications (ring 3)
+		 */
 		#[cfg(target_arch = "x86_64")]
 		{
-			/*
-			 * Create code segment for 64bit user-space applications (ring 3)
-			 */
 			GDT[GDT_USER64_CODE] =
 				DescriptorBuilder::code_descriptor(0, 0, CodeSegmentType::ExecuteRead)
 					.present()
@@ -140,7 +135,7 @@ pub(crate) fn init() {
 			let tss_descriptor: Descriptor64 =
 				<DescriptorBuilder as GateDescriptorBuilder<u64>>::tss_descriptor(
 					base,
-					mem::size_of::<TaskStateSegment>() as u64 - 1,
+					base + mem::size_of::<TaskStateSegment>() as u64 - 1,
 					true,
 				)
 				.present()
@@ -152,10 +147,7 @@ pub(crate) fn init() {
 					tss_descriptor,
 				));
 
-			// Allocate all ISTs for this core.
-			for i in 0..IST_ENTRIES {
-				TSS.0.ist[i] = &IST[i * STACK_SIZE] as *const _ as u64 + STACK_SIZE as u64 - 0x10;
-			}
+			TSS.0.rsp[0] = get_boot_stack().interrupt_top().into();
 		}
 		#[cfg(target_arch = "x86")]
 		{
@@ -201,10 +193,7 @@ unsafe fn set_kernel_stack(stack: VirtAddr) {
 	TSS.0.esp = stack.as_u32();
 }
 
-#[no_mangle]
 pub(crate) unsafe extern "C" fn set_current_kernel_stack() {
 	cr3_write(scheduler::get_root_page_table().as_u64());
-
-	let rsp = scheduler::get_current_stack();
-	set_kernel_stack(rsp + STACK_SIZE - 0x10u64);
+	set_kernel_stack(scheduler::get_current_interrupt_stack());
 }
