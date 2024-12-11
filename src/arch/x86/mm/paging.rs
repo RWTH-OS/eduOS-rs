@@ -1,6 +1,7 @@
 #![allow(clippy::upper_case_acronyms)]
 
 use crate::arch::x86::kernel::irq;
+use crate::arch::x86::kernel::irq::{irq_nested_disable, irq_nested_enable};
 use crate::arch::x86::kernel::processor;
 use crate::arch::x86::kernel::BOOT_INFO;
 use crate::arch::x86::mm::{physicalmem, virtualmem};
@@ -756,6 +757,8 @@ pub(crate) fn get_kernel_root_page_table() -> PhysAddr {
 }
 
 pub fn map_usr_entry(func: extern "C" fn()) {
+	let irq = irq_nested_disable();
+
 	let addr = VirtAddr::from_usize(align_down!(
 		(func as *const ()) as usize,
 		BasePageSize::SIZE
@@ -767,6 +770,8 @@ pub fn map_usr_entry(func: extern "C" fn()) {
 		2,
 		PageTableEntryFlags::WRITABLE | PageTableEntryFlags::USER_ACCESSIBLE,
 	);
+
+	irq_nested_enable(irq);
 }
 
 pub(crate) fn drop_user_space() {
@@ -778,6 +783,8 @@ pub(crate) fn drop_user_space() {
 // just an workaround to explaine the difference between
 // kernel and user space
 pub fn create_usr_pgd() -> PhysAddr {
+	let irq = irq_nested_disable();
+
 	debug!("Create 1st level page table for the user-level task");
 
 	unsafe {
@@ -815,6 +822,8 @@ pub fn create_usr_pgd() -> PhysAddr {
 		virtualmem::deallocate(user_page_table, BasePageSize::SIZE);
 
 		scheduler::set_root_page_table(physical_address);
+
+		irq_nested_enable(irq);
 
 		physical_address
 	}
