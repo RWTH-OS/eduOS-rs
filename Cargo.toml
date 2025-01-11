@@ -20,7 +20,7 @@ default = ["qemu-exit"]
 vga = []
 
 [dependencies]
-bitflags = "1.0"
+bitflags = "2.7"
 lock_api = "0"
 qemu-exit = { version = "3.0", optional = true }
 x86 = { version = "0.52", default-features = false }
