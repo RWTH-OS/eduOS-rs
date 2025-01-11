@@ -34,6 +34,7 @@ bitflags! {
 	/// Possible flags for an entry in either table (PML4, PDPT, PD, PT)
 	///
 	/// See Intel Vol. 3A, Tables 4-14 through 4-19
+	#[derive(Debug, Copy, Clone)]
 	pub struct PageTableEntryFlags: usize {
 		/// Set if this entry is valid and points to a page or table.
 		const PRESENT = 1 << 0;
@@ -73,7 +74,7 @@ bitflags! {
 impl PageTableEntryFlags {
 	/// An empty set of flags for unused/zeroed table entries.
 	/// Needed as long as empty() is no const function.
-	const BLANK: PageTableEntryFlags = PageTableEntryFlags { bits: 0 };
+	const BLANK: PageTableEntryFlags = PageTableEntryFlags::empty();
 
 	pub fn device(&mut self) -> &mut Self {
 		self.insert(PageTableEntryFlags::CACHE_DISABLE);
