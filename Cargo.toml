@@ -21,6 +21,7 @@ vga = []
 
 [dependencies]
 bitflags = "2.7"
+spinning_top = "0.3"
 lock_api = "0"
 qemu-exit = { version = "3.0", optional = true }
 x86 = { version = "0.52", default-features = false }

@@ -4,9 +4,13 @@
 
 #[macro_use]
 extern crate eduos_rs;
+extern crate alloc;
 
+use alloc::string::String;
 use eduos_rs::arch;
 use eduos_rs::fd::STDOUT_FILENO;
+use eduos_rs::fs::File;
+use eduos_rs::io::{Read, Write};
 use eduos_rs::scheduler;
 use eduos_rs::scheduler::task::NORMAL_PRIORITY;
 use eduos_rs::syscall;
@@ -57,6 +61,18 @@ pub extern "C" fn main() -> i32 {
 	eduos_rs::init();
 
 	println!("Hello from eduOS-rs!");
+
+	// write data into file
+	println!("Create file...");
+	let mut file = File::create("/bin/bla.txt").expect("Unable to create file");
+	file.write_all(b"Hello World!!!")
+		.expect("Unable to write data");
+	drop(file);
+
+	let mut s: String = Default::default();
+	let mut file = File::open("/bin/bla.txt").expect("Unable to create file");
+	file.read_to_string(&mut s).expect("Unable to read file");
+	println!("Read file: {}", s);
 
 	for _i in 0..2 {
 		scheduler::spawn(foo, NORMAL_PRIORITY).unwrap();

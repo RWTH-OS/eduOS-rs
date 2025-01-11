@@ -9,12 +9,22 @@ pub type Result<T> = result::Result<T, Error>;
 pub enum Error {
 	/// Usage of a invalid priority
 	BadPriority,
+	BadFsKind,
+	BadFsOperation,
+	BadFsPermission,
+	InvalidFsPath,
+	InvalidArgument,
 }
 
 impl fmt::Display for Error {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		match *self {
 			Error::BadPriority => write!(f, "Invalid priority number"),
+			Error::BadFsKind => write!(f, "Bad file system kind"),
+			Error::BadFsOperation => write!(f, "Bad file system operation"),
+			Error::BadFsPermission => write!(f, "Bad file permission"),
+			Error::InvalidFsPath => write!(f, "Invalid file system path"),
+			Error::InvalidArgument => write!(f, "Inavlid argument"),
 		}
 	}
 }

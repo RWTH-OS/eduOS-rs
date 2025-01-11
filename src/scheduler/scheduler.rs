@@ -5,6 +5,7 @@ use crate::collections::irqsave;
 use crate::consts::*;
 use crate::errno::*;
 use crate::fd::{FileDescriptor, IoInterface};
+use crate::io;
 use crate::logging::*;
 use crate::scheduler::task::*;
 use alloc::collections::{BTreeMap, VecDeque};
@@ -150,6 +151,40 @@ impl Scheduler {
 		};
 
 		irqsave(closure);
+	}
+
+	pub(crate) fn insert_io_interface(
+		&mut self,
+		io_interface: Arc<dyn IoInterface>,
+	) -> io::Result<FileDescriptor> {
+		let new_fd = || -> io::Result<FileDescriptor> {
+			let mut fd: FileDescriptor = 0;
+			loop {
+				if !self.current_task.borrow().fd_map.contains_key(&fd) {
+					break Ok(fd);
+				} else if fd == FileDescriptor::MAX {
+					break Err(io::Error::EOVERFLOW);
+				}
+
+				fd = fd.saturating_add(1);
+			}
+		};
+
+		let fd = new_fd()?;
+		self.current_task
+			.borrow_mut()
+			.fd_map
+			.insert(fd, io_interface.clone());
+
+		Ok(fd)
+	}
+
+	pub fn remove_io_interface(&self, fd: FileDescriptor) -> io::Result<Arc<dyn IoInterface>> {
+		self.current_task
+			.borrow_mut()
+			.fd_map
+			.remove(&fd)
+			.ok_or(io::Error::EBADF)
 	}
 
 	pub(crate) fn get_io_interface(

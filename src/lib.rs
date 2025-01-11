@@ -34,6 +34,7 @@ pub mod console;
 pub mod consts;
 pub mod errno;
 pub mod fd;
+pub mod fs;
 pub mod io;
 pub mod mm;
 pub mod scheduler;
@@ -61,6 +62,7 @@ pub fn init() {
 	crate::arch::init();
 	crate::mm::init();
 	crate::scheduler::init();
+	crate::fs::init();
 }
 
 /// This function is called on panic.
