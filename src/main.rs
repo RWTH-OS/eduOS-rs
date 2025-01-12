@@ -50,7 +50,12 @@ extern "C" fn create_user_foo() {
 }
 
 extern "C" fn foo() {
-	println!("hello from task {}", scheduler::get_current_taskid());
+	let mut s: String = Default::default();
+	let mut file = File::open("/bin/bla.txt").expect("Unable to create file");
+	file.read_to_string(&mut s).expect("Unable to read file");
+	println!("Task {} read file: {}", scheduler::get_current_taskid(), s);
+
+	drop(file);
 }
 
 /// This function is the entry point, since the linker looks for a function
