@@ -147,6 +147,11 @@ impl File {
 			path: path.to_string(),
 		})
 	}
+
+	pub fn len(&self) -> io::Result<usize> {
+		let fstat = fd::fstat(self.fd)?;
+		Ok(fstat.file_size)
+	}
 }
 
 impl crate::io::Read for File {

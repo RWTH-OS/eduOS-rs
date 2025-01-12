@@ -1,8 +1,8 @@
 //! Implements a simple virtual file system
 
 use crate::errno::*;
-use crate::fd::IoInterface;
 use crate::fd::OpenOption;
+use crate::fd::{FileStatus, IoInterface};
 use crate::fs::initrd::{RamHandle, RomHandle};
 use crate::fs::{check_path, NodeKind, SeekFrom, Vfs, VfsNode, VfsNodeDirectory, VfsNodeFile};
 use crate::io;
@@ -226,6 +226,15 @@ impl IoInterface for VfsFile {
 			DataHandle::RAM(ref data) => data.seek(style),
 			DataHandle::ROM(ref data) => data.seek(style),
 		}
+	}
+
+	fn fstat(&self) -> io::Result<FileStatus> {
+		let file_size = match self.data {
+			DataHandle::RAM(ref data) => data.len(),
+			DataHandle::ROM(ref data) => data.len(),
+		};
+
+		Ok(FileStatus { file_size })
 	}
 }
 
