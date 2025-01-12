@@ -181,7 +181,7 @@ pub(crate) fn init() {
 	if DEMO.len() > 0 {
 		info!(
 			"Found mountable file at 0x{:x} (len 0x{:x})",
-			&DEMO as *const _ as u64,
+			DEMO.as_ptr() as u64,
 			DEMO.len()
 		);
 		root.mount(
@@ -192,7 +192,7 @@ pub(crate) fn init() {
 		.expect("Unable to mount file");
 	}
 
-	//root.lsdir().unwrap();
+	root.lsdir().unwrap();
 	//info!("root {:?}", root);
 	unsafe {
 		VFS_ROOT = Some(root);
