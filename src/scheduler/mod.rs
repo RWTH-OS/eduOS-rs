@@ -74,6 +74,8 @@ pub(crate) fn wakeup_task(task: Rc<RefCell<Task>>) {
 }
 
 pub(crate) fn get_io_interface(fd: FileDescriptor) -> crate::io::Result<Arc<dyn IoInterface>> {
+	let _preemption = DisabledPreemption::new();
+
 	unsafe { SCHEDULER.as_mut().unwrap().get_io_interface(fd) }
 }
 
