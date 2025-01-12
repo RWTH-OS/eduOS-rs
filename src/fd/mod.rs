@@ -29,7 +29,6 @@ pub enum SeekFrom {
 /// Describes information about a file.
 pub struct FileStatus {
 	/// Size of the file
-	#[allow(dead_code)]
 	pub file_size: usize,
 }
 
@@ -90,4 +89,8 @@ pub(crate) fn write(fd: FileDescriptor, buf: &[u8]) -> io::Result<usize> {
 	}
 
 	obj.write(buf)
+}
+
+pub(crate) fn fstat(fd: FileDescriptor) -> io::Result<FileStatus> {
+	get_io_interface(fd)?.fstat()
 }
