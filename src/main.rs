@@ -53,8 +53,7 @@ extern "C" fn foo() {
 	let mut s: String = Default::default();
 	let mut file = File::open("/bin/bla.txt").expect("Unable to create file");
 	file.read_to_string(&mut s).expect("Unable to read file");
-	println!("Task {} read file: {}", scheduler::get_current_taskid(), s);
-
+	println!("Task {} read {}", scheduler::get_current_taskid(), s);
 	drop(file);
 }
 
@@ -73,11 +72,6 @@ pub extern "C" fn main() -> i32 {
 	file.write_all(b"Hello World!!!")
 		.expect("Unable to write data");
 	drop(file);
-
-	let mut s: String = Default::default();
-	let mut file = File::open("/bin/bla.txt").expect("Unable to create file");
-	file.read_to_string(&mut s).expect("Unable to read file");
-	println!("Read file: {}", s);
 
 	for _i in 0..2 {
 		scheduler::spawn(foo, NORMAL_PRIORITY).unwrap();
