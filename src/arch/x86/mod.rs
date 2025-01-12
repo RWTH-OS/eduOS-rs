@@ -19,13 +19,14 @@ use goblin::{elf, elf64};
 use x86::controlregs;
 
 pub fn load_application(path: &String) -> io::Result<()> {
-	debug!("Try to load application!");
+	info!("Try to load application!");
 	unsafe {
 		controlregs::cr3_write(paging::create_usr_pgd().as_u64());
 	}
 
 	let mut file = fs::File::open(path)?;
 	let len = file.len()?;
+    info!("File has a size of {} bytes", len);
 	let mut buffer: Vec<u8> = Vec::new();
 
 	buffer.resize(len, 0);
