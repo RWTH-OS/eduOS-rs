@@ -37,7 +37,15 @@ pub fn load_application(path: &String) -> io::Result<()> {
 	drop(file); // close file
 	debug!("elf information: {:#?}", &elf);
 
-	if elf.is_lib == true || elf.is_64 == false {
+    if !elf.is_lib {
+        info!("File is an ELF executable");
+    } else {
+        return Err(io::Error::EINVAL);
+    }
+
+	if elf.is_64 {
+        info!("File is a 64bit ELF executable");
+    } else {
 		return Err(io::Error::EINVAL);
 	}
 
