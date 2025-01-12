@@ -19,14 +19,14 @@ use goblin::{elf, elf64};
 use x86::controlregs;
 
 pub fn load_application(path: &String) -> io::Result<()> {
-	info!("Try to load application!");
+	debug!("Try to load application!");
 	unsafe {
 		controlregs::cr3_write(paging::create_usr_pgd().as_u64());
 	}
 
 	let mut file = fs::File::open(path)?;
 	let len = file.len()?;
-    info!("File has a size of {} bytes", len);
+	debug!("File has a size of {} bytes", len);
 	let mut buffer: Vec<u8> = Vec::new();
 
 	buffer.resize(len, 0);
@@ -38,21 +38,19 @@ pub fn load_application(path: &String) -> io::Result<()> {
 	drop(file); // close file
 	debug!("elf information: {:#?}", &elf);
 
-    if !elf.is_lib {
-        info!("File is an ELF executable");
-    } else {
-        return Err(io::Error::EINVAL);
-    }
+	if elf.is_lib {
+		error!("Error: File is an ELF library");
+		return Err(io::Error::EINVAL);
+	}
 
-	if elf.is_64 {
-        info!("File is a 64bit ELF executable");
-    } else {
+	if !elf.is_64 {
+		error!("Error: File isn't a 64bit ELF executable");
 		return Err(io::Error::EINVAL);
 	}
 
 	if elf.libraries.len() > 0 {
 		error!(
-			"Error: file depends on following libraries: {:?}",
+			"Error: File depends on following libraries: {:?}",
 			elf.libraries
 		);
 		return Err(io::Error::EINVAL);
