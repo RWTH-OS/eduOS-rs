@@ -120,6 +120,10 @@ Currently, following stages of development are available:
 
    Introduce a virtual file system with an in-memory file system as example file system.
 
+9. stage9 - Run Linux application as common process
+
+   Start a simple Linux application (_HelloWorld_) on top of eduOS-rs. The application is a _position-independent executable_ (PIE) and use [musl-libc](http://www.musl-libc.org) as standard C library. The FPU support is disabled.
+
 ## Useful Links
 
 1. [http://www.gnu.org/software/grub/manual/multiboot/](http://www.gnu.org/software/grub/manual/multiboot/)
