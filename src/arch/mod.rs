@@ -11,7 +11,10 @@ pub mod x86;
 pub(crate) use self::x86::kernel::{init, processor, register_task, switch::switch};
 
 #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
-pub use self::x86::kernel::{irq, jump_to_user_land};
+pub use self::x86::kernel::irq;
+
+#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
+pub use self::x86::load_application;
 
 #[cfg(feature = "vga")]
 pub(crate) use self::x86::kernel::vga;

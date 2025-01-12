@@ -37,3 +37,8 @@ features = ["recursive_page_table"]
 [dependencies.num-traits]
 version = "0.2"
 default-features = false
+
+[dependencies.goblin]
+version = "0.9"
+default-features = false
+features = ["elf64", "elf32", "endian_fd"]

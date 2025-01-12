@@ -42,12 +42,12 @@ unsafe extern "C" fn __jump_to_user_land(ds: usize, stack: usize, cs: usize, ent
 /// # Safety
 ///
 /// Be sure the the user-level function mapped into the user space.
-pub unsafe fn jump_to_user_land(func: extern "C" fn()) -> ! {
+pub(crate) unsafe fn jump_to_user_land(func: usize) -> ! {
 	__jump_to_user_land(
 		0x23,
 		USER_ENTRY.as_usize() + 0x400000usize,
 		0x2b,
-		USER_ENTRY.as_usize() | (func as usize & 0xFFFusize),
+		USER_ENTRY.as_usize() | func,
 	)
 }
 

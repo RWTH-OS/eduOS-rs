@@ -783,7 +783,7 @@ pub(crate) fn drop_user_space() {
 
 // just an workaround to explaine the difference between
 // kernel and user space
-pub fn create_usr_pgd() -> PhysAddr {
+pub(crate) fn create_usr_pgd() -> PhysAddr {
 	let irq = irq_nested_disable();
 
 	debug!("Create 1st level page table for the user-level task");
