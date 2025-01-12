@@ -40,16 +40,6 @@ pub(crate) fn schedule() {
 	unsafe { SCHEDULER.as_mut().unwrap().schedule() }
 }
 
-/// Insert IoInterface and create a new FileDescriptor
-pub(crate) fn insert_io_interface(obj: Arc<dyn IoInterface>) -> io::Result<FileDescriptor> {
-	unsafe { SCHEDULER.as_mut().unwrap().insert_io_interface(obj) }
-}
-
-/// Remove a IO interface, which is named by the file descriptor
-pub(crate) fn remove_io_interface(fd: FileDescriptor) -> io::Result<Arc<dyn IoInterface>> {
-	unsafe { SCHEDULER.as_mut().unwrap().remove_io_interface(fd) }
-}
-
 /// Terminate the current running task
 pub fn do_exit() -> ! {
 	unsafe {
@@ -85,7 +75,23 @@ pub(crate) fn wakeup_task(task: Rc<RefCell<Task>>) {
 }
 
 pub(crate) fn get_io_interface(fd: FileDescriptor) -> crate::io::Result<Arc<dyn IoInterface>> {
+	let _preemption = DisabledPreemption::new();
+
 	unsafe { SCHEDULER.as_mut().unwrap().get_io_interface(fd) }
+}
+
+/// Insert IoInterface and create a new FileDescriptor
+pub(crate) fn insert_io_interface(obj: Arc<dyn IoInterface>) -> io::Result<FileDescriptor> {
+	let _preemption = DisabledPreemption::new();
+
+	unsafe { SCHEDULER.as_mut().unwrap().insert_io_interface(obj) }
+}
+
+/// Remove a IO interface, which is named by the file descriptor
+pub(crate) fn remove_io_interface(fd: FileDescriptor) -> io::Result<Arc<dyn IoInterface>> {
+	let _preemption = DisabledPreemption::new();
+
+	unsafe { SCHEDULER.as_mut().unwrap().remove_io_interface(fd) }
 }
 
 /// Get the TaskID of the current running task
