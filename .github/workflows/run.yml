@@ -3,10 +3,10 @@ name: Build
 on:
   push:
     branches:
-      - stage7
+      - stage8
   pull_request:
     branches:
-      - stage7
+      - stage8
   schedule:
     - cron: '0 0 * * 6'
 
@@ -65,7 +65,7 @@ jobs:
     #   if: ${{ matrix.os == 'ubuntu-latest' }}
     #   uses: actions/upload-artifact@v4
     #   with:
-    #     name: i686-eduos-stage7
+    #     name: i686-eduos-stage8
     #     path: |
     #       target/i686-eduos/release/eduos-rs
 
@@ -78,17 +78,17 @@ jobs:
   #     - uses: dev-drprasad/delete-tag-and-release@v1.1
   #       with:
   #         delete_release: true
-  #         tag_name: stage7
+  #         tag_name: stage8
   #         github_token: ${{ secrets.GITHUB_TOKEN }}
 
   #     - name: Get artifacts
   #       uses: actions/download-artifact@v4
   #       with:
-  #         name: i686-eduos-stage7
+  #         name: i686-eduos-stage8
   #         path: .
 
   #     - name: Rename file
-  #       run: mv eduos-rs i686-eduos-stage7
+  #       run: mv eduos-rs i686-eduos-stage8
 
   #     - name: Display structure of downloaded files
   #       run: ls -R
@@ -97,8 +97,8 @@ jobs:
   #       uses: ncipollo/release-action@v1
   #       with:
   #         name: Latest Stage6 Release
-  #         tag: stage7
-  #         commit: stage7
+  #         tag: stage8
+  #         commit: stage8
   #         body: ${{ github.event.head_commit.message }}
-  #         artifacts: "i686-eduos-stage7"
+  #         artifacts: "i686-eduos-stage8"
   #         prerelease: true
