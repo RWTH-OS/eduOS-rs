@@ -37,7 +37,7 @@ trait VfsNode: core::fmt::Debug + core::marker::Send + core::marker::Sync {
 
 /// VfsNodeFile represents a file node of the virtual file system.
 trait VfsNodeFile: VfsNode + core::fmt::Debug + core::marker::Send + core::marker::Sync {
-	/// Create a file handle to the current file
+	/// Create an IO interface to the current file
 	fn get_handle(&self, _opt: OpenOption) -> Result<Arc<dyn IoInterface>>;
 }
 
