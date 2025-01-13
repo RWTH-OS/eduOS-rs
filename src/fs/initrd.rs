@@ -7,7 +7,6 @@ use crate::synch::spinlock::*;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::ops::{Deref, DerefMut};
-use core::slice;
 use spinning_top::RwSpinlock;
 
 #[derive(Debug)]
@@ -19,10 +18,10 @@ pub(crate) struct RomHandle {
 }
 
 impl RomHandle {
-	pub fn new(addr: *const u8, len: usize) -> Self {
+	pub fn new(slice: &'static [u8]) -> Self {
 		RomHandle {
 			pos: Spinlock::new(0),
-			data: Arc::new(RwSpinlock::new(unsafe { slice::from_raw_parts(addr, len) })),
+			data: Arc::new(RwSpinlock::new(slice)),
 		}
 	}
 

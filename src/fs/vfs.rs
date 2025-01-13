@@ -127,20 +127,20 @@ impl VfsNodeDirectory for VfsDirectory {
 		}
 	}
 
-	fn traverse_mount(&mut self, components: &mut Vec<&str>, addr: u64, len: u64) -> Result<()> {
+	fn traverse_mount(&mut self, components: &mut Vec<&str>, slice: &'static [u8]) -> Result<()> {
 		if let Some(component) = components.pop() {
 			let node_name = String::from(component);
 
 			if components.is_empty() == true {
 				// Create file on demand
-				let file = Box::new(VfsFile::new_from_rom(addr, len));
+				let file = Box::new(VfsFile::new_from_rom(slice));
 				self.children.insert(node_name, file);
 
 				Ok(())
 			} else {
 				// traverse to the directories to the endpoint
 				if let Some(directory) = self.get_mut::<VfsDirectory>(&node_name) {
-					directory.traverse_mount(components, addr, len)
+					directory.traverse_mount(components, slice)
 				} else {
 					Err(Error::InvalidArgument)
 				}
@@ -171,9 +171,9 @@ impl VfsFile {
 		}
 	}
 
-	pub fn new_from_rom(addr: u64, len: u64) -> Self {
+	pub fn new_from_rom(slice: &'static [u8]) -> Self {
 		VfsFile {
-			data: DataHandle::ROM(RomHandle::new(addr as *const u8, len as usize)),
+			data: DataHandle::ROM(RomHandle::new(slice)),
 		}
 	}
 }
@@ -286,16 +286,14 @@ impl Vfs for Fs {
 	}
 
 	/// Mound memory region as file
-	fn mount(&mut self, path: &String, addr: u64, len: u64) -> Result<()> {
+	fn mount(&mut self, path: &String, slice: &'static [u8]) -> Result<()> {
 		if check_path(path) {
 			let mut components: Vec<&str> = path.split("/").collect();
 
 			components.reverse();
 			components.pop();
 
-			self.handle
-				.lock()
-				.traverse_mount(&mut components, addr, len)
+			self.handle.lock().traverse_mount(&mut components, slice)
 		} else {
 			Err(Error::InvalidFsPath)
 		}
