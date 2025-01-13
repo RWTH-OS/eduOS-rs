@@ -15,7 +15,6 @@ use crate::scheduler::{insert_io_interface, remove_io_interface};
 use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
-use core::convert::TryInto;
 use core::include_bytes;
 
 static DEMO: &[u8] = include_bytes!("../../demo/hello");
@@ -57,7 +56,7 @@ trait VfsNodeDirectory: VfsNode + core::fmt::Debug + core::marker::Send + core::
 	) -> Result<Arc<dyn IoInterface>>;
 
 	/// Mound memory region as file
-	fn traverse_mount(&mut self, _components: &mut Vec<&str>, addr: u64, len: u64) -> Result<()>;
+	fn traverse_mount(&mut self, _components: &mut Vec<&str>, slice: &'static [u8]) -> Result<()>;
 }
 
 /// The trait `Vfs` specifies all operation on the virtual file systems.
@@ -73,7 +72,7 @@ trait Vfs: core::fmt::Debug + core::marker::Send + core::marker::Sync {
 	fn open(&mut self, path: &str, flags: OpenOption) -> Result<Arc<dyn IoInterface>>;
 
 	/// Mound memory region as file
-	fn mount(&mut self, path: &String, addr: u64, len: u64) -> Result<()>;
+	fn mount(&mut self, path: &String, slice: &'static [u8]) -> Result<()>;
 }
 
 /// Entrypoint of the file system
@@ -105,9 +104,9 @@ pub fn open(name: &str, flags: OpenOption) -> io::Result<FileDescriptor> {
 	}
 }
 
-/// A symbolic link `path2` is created to `path1`
-pub fn mount(path: &String, addr: u64, len: u64) -> Result<()> {
-	unsafe { VFS_ROOT.as_mut().unwrap().mount(path, addr, len) }
+/// Mount slice to to `path`
+pub fn mount(path: &String, slice: &'static [u8]) -> Result<()> {
+	unsafe { VFS_ROOT.as_mut().unwrap().mount(path, slice) }
 }
 
 /// Help function to check if the argument is an abolute path
@@ -184,12 +183,8 @@ pub(crate) fn init() {
 			DEMO.as_ptr() as u64,
 			DEMO.len()
 		);
-		root.mount(
-			&String::from("/bin/demo"),
-			DEMO.as_ptr() as u64,
-			DEMO.len().try_into().unwrap(),
-		)
-		.expect("Unable to mount file");
+		root.mount(&String::from("/bin/demo"), &DEMO)
+			.expect("Unable to mount file");
 	}
 
 	root.lsdir().unwrap();
