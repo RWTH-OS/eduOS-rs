@@ -6,13 +6,15 @@ title : eduOS-rs
 <h1 id="introduction">Introduction</h1>
 
 <p>eduOS-rs is a Unix-like operating system based on a monolithic architecture for educational purposes.
-It is developed for the course <a href="https://www.os.rwth-aachen.de/">Operating Systems</a> at the RWTH Aachen University and includes a modified hypervisor that simplifies the boot process to increase intelligibility of the OS.
+It is developed for the course <a href="https://www.acs.eonerc.rwth-aachen.de/cms/e-on-erc-acs/studium/lehrveranstaltungen/~xwyom/grundgebiete-der-informatik-4-betriebs/?lidx=1">Operating Systems</a> at the RWTH Aachen University and includes a modified hypervisor that simplifies the boot process to increase intelligibility of the OS.
 eduOS-rs is derived from following tutorials and software distributions.</p>
 
 <ol>
   <li>Philipp Oppermann’s <a href="https://blog.phil-opp.com/">excellent series of blog posts</a>.</li>
   <li>Erik Kidd’s <a href="http://www.randomhacks.net/bare-metal-rust/">toyos-rs</a>, which is an extension of Philipp Opermann’s kernel.</li>
   <li>The original version of <a href="https://rwth-os.github.io/eduOS/">eduOS</a>, which was the old teaching kernel written in C.</li>
+  <li>eduOS-rs' uses a memory allocator, which is derived from the <a href="https://github.com/rcore-os/buddy_system_allocator">buddy_system_allocator</a>.</li>
+  <li>The first version of paging is derived from a version, which was developed by <a href="https://github.com/ColinFinck">Colin Finck's</a>.</li>
 </ol>
 
 <p align="center"><img src="img/demo.gif?raw=true"/></p>
