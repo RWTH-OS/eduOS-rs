@@ -33,17 +33,17 @@ $ choco install qemu git
 ### Linux
 
 Linux users should install common developer tools.
-For instance, on Ubuntu 18.04 the following command installs the required tools:
+For instance, on Ubuntu 22.04 the following command installs the required tools:
 
 ```sh
-$ apt-get install -y git nasm qemu-system-x86 build-essential
+$ apt-get install -y git qemu-system-x86 build-essential
 ```
 
 ### Common for macOS, Windows and Linux
 This project uses Rustup to set its Rust toolchain.
 Follow the instructions to [install Rust using Rustup](https://www.rust-lang.org/tools/install).
 
-In addition, the tool https://github.com/rust-osdev/bootimage[bootimage] is required, which creates a bootable diskimage.
+In addition, the tool [bootimage](https://github.com/rust-osdev/bootimage) is required, which creates a bootable diskimage.
 Please install the tool with following command.
 
 ```sh
@@ -94,10 +94,14 @@ Currently, following stages of development are available:
 
    Add support of paging and a simple demo for process creation
 
-7. stage 7 - Integration of an in-memory file system
+7. stage 7 - Basic IO interface
+
+   Add basic support of file descriptors
+
+8. stage 8 - Integration of an in-memory file system
 
    Introduce a virtual file system with an in-memory file system as example file system.
 
-8. stage8 - Run Linux application as common process
+9. stage9 - Run Linux application as common process
 
-   Start a simple Linux application (_HelloWorld_) on top of eduOS-rs. The application is a _position-independent executable_ (PIE) and use [musl-libc](http://www.musl-libc.org) as standard C library.
+   Start a simple Linux application (_HelloWorld_) on top of eduOS-rs. The application is a _position-independent executable_ (PIE) and use [musl-libc](http://www.musl-libc.org) as standard C library. The FPU support is disabled.
