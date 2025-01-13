@@ -12,6 +12,7 @@ eduOS-rs is derived from following tutorials and software distributions:
 2. Erik Kidd's [toyos-rs][kidd], which is an extension of Philipp Opermann's kernel.
 3. The original version of [eduOS][stlankes], which was the old teaching kernel written in C.
 4. eduOS-rs' uses a memory allocator, which is derived from the [buddy_system_allocator][buddy].
+5. The first version of paging is derived from a version, which was developed by [Colin Finck][colin].
 
 [opp]: http://blog.phil-opp.com/
 [kidd]: http://www.randomhacks.net/bare-metal-rust/
