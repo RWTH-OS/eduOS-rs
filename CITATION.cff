@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Lankes"
+  given-names: "Stefan"
+  orcid: "https://orcid.org/0000-0003-4718-2238"
+- family-names: "Klimt"
+  given-names: "Jonathan"
+  orcid: "https://orcid.org/0000-0002-5980-2214"
+- family-names: "Kröning"
+  given-names: "Martin"
+  orcid: "https://orcid.org/0009-0005-0622-4229"
+
+title: "eduOS-rs - A teaching operating system written in Rust"
+version: 0.1.0
+doi: 10.5281/zenodo.14675628
+date-released: 2025-01-16
+url: "https://github.com/RWTH-OS/eduOS-rs"
