@@ -1,7 +1,4 @@
-#![feature(const_mut_refs)]
 #![feature(alloc_error_handler)]
-#![feature(naked_functions)]
-#![feature(const_refs_to_static)]
 #![feature(const_trait_impl)]
 #![allow(clippy::module_inception)]
 #![no_std]
