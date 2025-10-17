@@ -23,7 +23,7 @@ pub(crate) static mut BOOT_INFO: Option<&'static BootInfo> = None;
 #[cfg(target_arch = "x86")]
 core::arch::global_asm!(include_str!("entry32.s"));
 
-#[naked]
+#[unsafe(naked)]
 unsafe extern "C" fn __jump_to_user_land(ds: usize, stack: usize, cs: usize, entry: usize) -> ! {
 	naked_asm!(
 		"swapgs",
@@ -33,7 +33,6 @@ unsafe extern "C" fn __jump_to_user_land(ds: usize, stack: usize, cs: usize, ent
 		"push rdx",
 		"push rcx",
 		"iretq",
-		options(noreturn)
 	)
 }
 

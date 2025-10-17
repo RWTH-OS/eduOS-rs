@@ -58,7 +58,7 @@ macro_rules! restore_context {
 }
 
 #[cfg(target_arch = "x86_64")]
-#[naked]
+#[unsafe(naked)]
 /// # Safety
 ///
 /// Only the scheduler itself should call this function to switch the
@@ -91,12 +91,11 @@ pub(crate) unsafe extern "C" fn switch(_old_stack: *mut VirtAddr, _new_stack: Vi
 		"wrfsbase r15",
 		restore_context!(),
 		set_stack = sym set_current_kernel_stack,
-		options(noreturn)
 	);
 }
 
 #[cfg(target_arch = "x86")]
-#[naked]
+#[unsafe(naked)]
 /// # Safety
 ///
 /// Only the scheduler itself should call this function to switch the
@@ -116,6 +115,5 @@ pub unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
 		"popad",
 		"popfd",
 		"ret",
-		options(noreturn)
 	);
 }
