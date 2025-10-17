@@ -47,7 +47,7 @@ pub unsafe extern "C" fn _start() -> ! {
 #[cfg(not(test))]
 #[cfg(target_arch = "x86")]
 #[no_mangle]
-#[naked]
+#[unsafe(naked)]
 /// # Safety
 ///
 /// This function is the entry point of the kernel.
@@ -63,6 +63,5 @@ pub unsafe extern "C" fn _start() -> ! {
 		stack = sym BOOT_STACK,
 		offset = const BOOT_STACK_SIZE - 16,
 		entry = sym entry,
-		options(noreturn)
 	);
 }
