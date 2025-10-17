@@ -1,14 +1,14 @@
 use crate::syscall::SYSHANDLER_TABLE;
-use core::arch::asm;
+use core::arch::naked_asm;
 
 /// Helper function to save and to restore the register states
 /// during a system call. `rax` is the system call identifier.
 /// The identifier is used to determine the address of the function,
 /// which implements the system call.
-#[naked]
+#[unsafe(naked)]
 pub(crate) extern "C" fn syscall_handler() {
 	unsafe {
-		asm!(
+		naked_asm!(
 		// save context, see x86_64 ABI
 		"push rcx",
 		"push rdx",
@@ -33,7 +33,6 @@ pub(crate) extern "C" fn syscall_handler() {
 		"pop rdx",
 		"pop rcx",
 		"sysretq",
-		sys_handler = sym SYSHANDLER_TABLE,
-		options(noreturn));
+		sys_handler = sym SYSHANDLER_TABLE);
 	}
 }

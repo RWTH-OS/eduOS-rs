@@ -57,7 +57,7 @@ macro_rules! restore_context {
 }
 
 #[cfg(target_arch = "x86_64")]
-#[naked]
+#[unsafe(naked)]
 /// # Safety
 ///
 /// Only the scheduler itself should call this function to switch the
@@ -86,7 +86,7 @@ pub(crate) unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize
 }
 
 #[cfg(target_arch = "x86")]
-#[naked]
+#[unsafe(naked)]
 /// # Safety
 ///
 /// Only the scheduler itself should call this function to switch the

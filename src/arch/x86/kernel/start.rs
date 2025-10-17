@@ -45,7 +45,11 @@ pub unsafe extern "C" fn _start(boot_info: &'static bootloader::BootInfo) -> ! {
 #[cfg(not(test))]
 #[cfg(target_arch = "x86")]
 #[no_mangle]
-#[naked]
+#[unsafe(naked)]
+/// # Safety
+///
+/// This function is the entry point of the kernel.
+/// The kernel itself should not call this function.
 pub unsafe extern "C" fn _start() -> ! {
 	use crate::arch::mm::{BOOT_STACK, BOOT_STACK_SIZE};
 	use core::arch::naked_asm;
@@ -57,6 +61,5 @@ pub unsafe extern "C" fn _start() -> ! {
 		stack = sym BOOT_STACK,
 		offset = const BOOT_STACK_SIZE - 16,
 		entry = sym entry,
-		options(noreturn)
 	);
 }
