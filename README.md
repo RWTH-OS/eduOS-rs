@@ -51,7 +51,7 @@ $ choco install qemu git
 
 ### Linux
 Linux users should install common developer tools.
-For instance, on Ubuntu 22.04 the following command installs the required tools:
+For instance, on Ubuntu 24.04 the following command installs the required tools:
 
 ```sh
 $ apt-get install -y git qemu-system-x86 build-essential
@@ -76,6 +76,19 @@ After cloning the repository, you can run the kernel with following command:
 
 ```sh
 $ cargo run
+```
+
+## Supported processors
+
+Per default, cargo uses `x86_64` as target platform.
+eduOS-rs is also supporting `x86` (32 bit) and the `aarch64` processor.
+To test these processors, specify the processor with the help of the cargo flag `--target`.
+
+```sh
+$ % running on x86
+$ cargo run --target i686-eduos.json
+$ % running on aarch64
+$ cargo run --target aarch64-eduos.json
 ```
 
 ## Overview of all branches
