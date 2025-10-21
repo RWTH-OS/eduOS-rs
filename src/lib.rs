@@ -1,3 +1,4 @@
+#![feature(allocator_api)]
 #![feature(alloc_error_handler)]
 #![feature(const_trait_impl)]
 #![allow(clippy::module_inception)]
@@ -5,13 +6,12 @@
 #![no_std]
 
 extern crate alloc;
-#[cfg(target_arch = "x86_64")]
-extern crate x86;
 
 // These need to be visible to the linker, so we need to export them.
 use crate::arch::processor::shutdown;
 use crate::consts::HEAP_SIZE;
 use crate::mm::buddy::LockedHeap;
+
 use core::panic::PanicInfo;
 
 #[macro_use]
