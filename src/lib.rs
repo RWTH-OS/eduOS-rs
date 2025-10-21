@@ -5,6 +5,8 @@
 // These need to be visible to the linker, so we need to export them.
 #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
 pub(crate) use arch::processor::*;
+#[cfg(target_arch = "aarch64")]
+pub(crate) use arch::processor::*;
 
 #[macro_use]
 pub mod macros;
