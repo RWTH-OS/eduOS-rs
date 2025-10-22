@@ -1,6 +1,7 @@
 #![feature(alloc_error_handler)]
 #![feature(const_trait_impl)]
 #![allow(clippy::module_inception)]
+#![allow(static_mut_refs)]
 #![no_std]
 
 extern crate alloc;
