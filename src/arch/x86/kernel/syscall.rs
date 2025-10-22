@@ -7,8 +7,7 @@ use core::arch::naked_asm;
 /// which implements the system call.
 #[unsafe(naked)]
 pub(crate) extern "C" fn syscall_handler() {
-	unsafe {
-		naked_asm!(
+	naked_asm!(
 		// save context, see x86_64 ABI
 		"push rcx",
 		"push rdx",
@@ -43,5 +42,4 @@ pub(crate) extern "C" fn syscall_handler() {
 		"pop rcx",
 		"sysretq",
 		sys_handler = sym SYSHANDLER_TABLE);
-	}
 }
