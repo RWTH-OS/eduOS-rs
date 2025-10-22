@@ -147,12 +147,12 @@ impl<const ORDER: usize> fmt::Debug for BuddySystem<ORDER> {
 
 /// A memory allocator that can be registered as default allocator through
 /// the #[global_allocator] attribute.
-pub(crate) struct LockedHeap<const ORDER: usize>(spin::Mutex<BuddySystem<ORDER>>);
+pub(crate) struct LockedHeap<const ORDER: usize>(spinning_top::Spinlock<BuddySystem<ORDER>>);
 
 impl<const ORDER: usize> LockedHeap<ORDER> {
 	/// Constructs an empty buddy system
 	pub const fn new() -> Self {
-		LockedHeap(spin::Mutex::new(BuddySystem::<ORDER>::new()))
+		LockedHeap(spinning_top::Spinlock::new(BuddySystem::<ORDER>::new()))
 	}
 
 	pub unsafe fn init(&self, start: *mut u8, len: usize) {

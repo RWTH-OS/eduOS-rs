@@ -32,5 +32,4 @@ pub(crate) use self::x86::kernel::switch::switch;
 
 // Export our platform-specific modules.
 #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
-pub(crate) use self::x86::mm;
-
+pub use self::x86::mm;
