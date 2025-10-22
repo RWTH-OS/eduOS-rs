@@ -1,7 +1,5 @@
-#![feature(const_mut_refs)]
 #![feature(linked_list_cursors)]
 #![feature(alloc_error_handler)]
-#![feature(naked_functions)]
 #![feature(abi_x86_interrupt)]
 #![feature(specialization)]
 #![allow(clippy::module_inception)]
