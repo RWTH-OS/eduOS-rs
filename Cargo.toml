@@ -39,6 +39,6 @@ version = "0.2"
 default-features = false
 
 [dependencies.goblin]
-version = "0.9"
+version = "0.10"
 default-features = false
 features = ["elf64", "elf32", "endian_fd"]
