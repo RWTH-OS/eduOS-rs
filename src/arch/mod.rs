@@ -26,9 +26,15 @@ pub(crate) use self::x86::kernel::serial;
 #[cfg(target_arch = "aarch64")]
 pub(crate) use self::aarch64::kernel::serial;
 
+#[cfg(target_arch = "aarch64")]
+pub use self::aarch64::mm;
+
 // Export our platform-specific modules.
 #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
 pub(crate) use self::x86::kernel::switch::switch;
+
+#[cfg(target_arch = "aarch64")]
+pub(crate) use self::aarch64::kernel::switch::switch;
 
 // Export our platform-specific modules.
 #[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
