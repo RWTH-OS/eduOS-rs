@@ -18,7 +18,7 @@ jobs:
         os: [ubuntu-latest]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
          submodules: true
     - name: Check Cargo availability
@@ -27,3 +27,5 @@ jobs:
       run: cargo clippy
     - name: Check clippy (i688)
       run: cargo clippy --target i686-eduos.json
+    - name: Check clippy (aarch64)
+      run: cargo clippy --target aarch64-eduos.json
