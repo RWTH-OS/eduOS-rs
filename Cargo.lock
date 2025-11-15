@@ -12,6 +12,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "align-address"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4ac6c08a67736554282858203cd9b7ff53cf55f54c34e85689962748a350cbf0"
+
+[[package]]
 name = "bit_field"
 version = "0.10.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -42,6 +48,7 @@ dependencies = [
  "aarch64-cpu",
  "bootloader",
  "cfg-if",
+ "memory_addresses",
  "qemu-exit",
  "semihosting",
  "spinning_top",
@@ -55,6 +62,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "224399e74b87b5f3557511d98dff8b14089b3dadafcab6bb93eab67d3aace965"
 dependencies = [
  "scopeguard",
+]
+
+[[package]]
+name = "memory_addresses"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "01af0509edc73791972185a4ed1e3e8b2d0f21c3c527f96078586446b61750c4"
+dependencies = [
+ "align-address",
+ "cfg-if",
 ]
 
 [[package]]

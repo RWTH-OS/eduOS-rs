@@ -1,4 +1,13 @@
+use core::arch::asm;
+
 use semihosting::process::exit;
+
+/// The halt function stops the processor until the next interrupt arrives
+pub(crate) fn halt() {
+	unsafe {
+		asm!("wfi", options(nostack, nomem),);
+	}
+}
 
 /// Shutdown the system
 #[allow(unused_variables)]
