@@ -10,6 +10,10 @@ pub(crate) const STACK_SIZE: usize = 0x3000;
 #[cfg(target_arch = "x86")]
 pub(crate) const STACK_SIZE: usize = 0x2000;
 
+/// Define the size of the kernel stack
+#[cfg(target_arch = "aarch64")]
+pub(crate) const STACK_SIZE: usize = 0x3000;
+
 /// Size of a cache line
 pub(crate) const CACHE_LINE: usize = 64;
 
