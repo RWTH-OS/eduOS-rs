@@ -84,7 +84,6 @@ impl TaskFrame for Task {
 		unsafe {
 			let mut stack: *mut u64 = ((*self.stack).top()).as_mut_ptr();
 
-			println!("Size of State: {}", size_of::<State>());
 			/* Only marker for debugging purposes, ... */
 			*stack = 0xDEADBEEFu64;
 			stack = (stack as usize - size_of::<u64>()) as *mut u64;
