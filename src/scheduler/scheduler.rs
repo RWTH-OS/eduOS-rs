@@ -95,11 +95,10 @@ impl Scheduler {
 
 	/// determine the next task, which is ready and priority is a greater than or equal to prio
 	fn get_next_task(&mut self, prio: TaskPriority) -> Option<Rc<RefCell<Task>>> {
-		let lsb = self.prio_bitmap.lowest_one();
 		let mut task = None;
 
-		if let Some(i) = lsb {
-			let i = i as usize;
+		if let Some(i) = self.prio_bitmap.lowest_one() {
+			let i: usize = i.try_into().unwrap();
 			if i <= prio.into().into() {
 				task = self.ready_queues[i].pop();
 
