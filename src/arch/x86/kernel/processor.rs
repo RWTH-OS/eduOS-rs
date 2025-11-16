@@ -3,26 +3,6 @@ use core::arch::asm;
 use qemu_exit::QEMUExit;
 use x86::controlregs::*;
 
-/// Search the least significant bit
-#[inline(always)]
-pub(crate) fn lsb(i: usize) -> usize {
-	let ret;
-
-	if i == 0 {
-		ret = !0usize;
-	} else {
-		unsafe {
-			asm!("bsf {0}, {1}",
-				lateout(reg) ret,
-				in(reg) i,
-				options(nomem, nostack)
-			);
-		}
-	}
-
-	ret
-}
-
 pub(crate) fn halt() {
 	unsafe {
 		asm!("hlt", options(nomem, nostack));

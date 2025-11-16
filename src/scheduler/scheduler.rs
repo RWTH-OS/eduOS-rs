@@ -1,4 +1,3 @@
-use crate::arch::processor::lsb;
 use crate::arch::switch;
 use crate::consts::*;
 use crate::errno::*;
@@ -96,15 +95,18 @@ impl Scheduler {
 
 	/// determine the next task, which is ready and priority is a greater than or equal to prio
 	fn get_next_task(&mut self, prio: TaskPriority) -> Option<Rc<RefCell<Task>>> {
-		let i = lsb(self.prio_bitmap);
+		let lsb = self.prio_bitmap.lowest_one();
 		let mut task = None;
 
-		if i <= prio.into().into() {
-			task = self.ready_queues[i].pop();
+		if let Some(i) = lsb {
+			let i = i as usize;
+			if i <= prio.into().into() {
+				task = self.ready_queues[i].pop();
 
-			// clear bitmap entry for the priority i if the queues is empty
-			if self.ready_queues[i].is_empty() {
-				self.prio_bitmap &= !(1 << i);
+				// clear bitmap entry for the priority i if the queues is empty
+				if self.ready_queues[i].is_empty() {
+					self.prio_bitmap &= !(1 << i);
+				}
 			}
 		}
 
