@@ -1,6 +1,6 @@
+use crate::synch::spinlock::Spinlock;
 use core::fmt;
 use semihosting::io::*;
-use spinning_top::Spinlock;
 
 /// A serial interface to print messages.
 pub(crate) struct ComPort;

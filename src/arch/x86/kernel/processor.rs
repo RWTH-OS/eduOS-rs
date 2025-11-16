@@ -3,55 +3,9 @@ use core::arch::asm;
 use qemu_exit::QEMUExit;
 use x86::controlregs::*;
 
-/// Search the most significant bit
-#[inline(always)]
-#[allow(dead_code)]
-pub(crate) fn msb(value: usize) -> Option<usize> {
-	if value > 0 {
-		let ret: usize;
-
-		unsafe {
-			asm!("bsr {0}, {1}",
-				out(reg) ret,
-				in(reg) value,
-				options(nomem, nostack)
-			);
-		}
-		Some(ret)
-	} else {
-		None
-	}
-}
-
-/// Search the least significant bit
-#[inline(always)]
-#[allow(dead_code)]
-pub(crate) fn lsb(value: usize) -> Option<usize> {
-	if value > 0 {
-		let ret: usize;
-
-		unsafe {
-			asm!("bsf {0}, {1}",
-				out(reg) ret,
-				in(reg) value,
-				options(nomem, nostack)
-			);
-		}
-		Some(ret)
-	} else {
-		None
-	}
-}
-
 pub(crate) fn halt() {
 	unsafe {
 		asm!("hlt", options(nomem, nostack));
-	}
-}
-
-pub(crate) fn pause() {
-	unsafe {
-		asm!("pause", options(nomem, nostack));
 	}
 }
 

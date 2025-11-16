@@ -1,4 +1,3 @@
-use crate::arch;
 use core::sync::atomic::{AtomicUsize, Ordering};
 use lock_api::{GuardSend, RawMutex, RawMutexFair};
 
@@ -24,7 +23,7 @@ unsafe impl RawMutex for RawSpinlock {
 	fn lock(&self) {
 		let ticket = self.queue.fetch_add(1, Ordering::Relaxed);
 		while self.dequeue.load(Ordering::Acquire) != ticket {
-			arch::processor::pause();
+			core::hint::spin_loop();
 		}
 	}
 
