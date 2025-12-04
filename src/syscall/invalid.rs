@@ -1,6 +1,6 @@
 use crate::logging::*;
 use crate::scheduler::*;
-use core::arch::asm;
+use core::arch::naked_asm;
 
 extern "C" fn invalid_syscall(sys_no: u64) -> ! {
 	error!("Invalid syscall {}", sys_no);
@@ -8,11 +8,10 @@ extern "C" fn invalid_syscall(sys_no: u64) -> ! {
 }
 
 #[allow(unused_assignments)]
-#[naked]
+#[unsafe(naked)]
 pub(crate) unsafe extern "C" fn sys_invalid() {
-	asm!("mov rdi, rax",
+	naked_asm!("mov rdi, rax",
 		"call {}",
 		sym invalid_syscall,
-		options(noreturn)
 	);
 }
