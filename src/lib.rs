@@ -6,6 +6,8 @@
 pub(crate) use arch::processor::*;
 #[cfg(target_arch = "aarch64")]
 pub(crate) use arch::processor::*;
+#[cfg(target_arch = "riscv64")]
+pub(crate) use arch::processor::*;
 
 #[macro_use]
 pub mod macros;
