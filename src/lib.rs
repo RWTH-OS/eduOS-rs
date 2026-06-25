@@ -1,4 +1,3 @@
-#![feature(allocator_api)]
 #![no_std]
 #![no_main]
 
