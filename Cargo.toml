@@ -22,18 +22,18 @@ vga = []
 [dependencies]
 spinning_top = "0.3.0"
 cfg-if = "1.0"
-qemu-exit = { version = "3.0", optional = true }
+qemu-exit = { version = "4.0.0", optional = true }
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
-bootloader = "0.9.29"
+bootloader = "0.9.34"
 x86 = { version = "0.52", default-features = false }
 
 [target.'cfg(target_arch = "x86")'.dependencies]
 x86 = { version = "0.52", default-features = false }
 
 [target.'cfg(target_arch = "aarch64")'.dependencies]
-aarch64-cpu = "10"
-semihosting = { version = "0.1", features = ["stdio"] }
+aarch64-cpu = "11.2.0"
+semihosting = { version = "0.1.25", features = ["stdio"] }
 
 [target.'cfg(target_arch = "riscv64")'.dependencies]
 semihosting = { version = "0.1", features = ["stdio"] }
