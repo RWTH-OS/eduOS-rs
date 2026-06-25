@@ -1,6 +1,5 @@
 #![feature(alloc_error_handler)]
 #![feature(const_trait_impl)]
-#![feature(int_lowest_highest_one)]
 #![allow(clippy::module_inception)]
 #![allow(static_mut_refs)]
 #![no_std]
