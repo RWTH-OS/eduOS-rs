@@ -53,6 +53,9 @@ jobs:
     - name: Build (aarch64)
       run:
         cargo build --target=aarch64-eduos.json
+    - name: Build (riscv64)
+      run:
+        cargo build --target=riscv64-eduos.json
     - name: run (ubuntu)
       if: ${{ matrix.os == 'ubuntu-latest' }}
       run: ./test.sh

@@ -29,3 +29,5 @@ jobs:
       run: cargo clippy --target i686-eduos.json
     - name: Check clippy (aarch64)
       run: cargo clippy --target aarch64-eduos.json
+    - name: Check clippy (riscv64)
+      run: cargo clippy --target riscv64-eduos.json
