@@ -24,7 +24,7 @@ jobs:
       if: ${{ matrix.os == 'ubuntu-latest' }}
       run: |
         sudo apt-get update
-        sudo apt-get install qemu-system-x86
+        sudo apt-get install qemu-system-x86 qemu-system-arm
     - name: Install QEMU (macos)
       if: ${{ matrix.os == 'macos-latest' }}
       run: |
@@ -46,59 +46,24 @@ jobs:
     - name: Build (x86_64)
       run:
          cargo build
-    #- name: Build (i686)
-    #  run:
-    #    cargo build --target=i686-eduos.json
+    - name: Build (aarch64)
+      run:
+        cargo build --target=aarch64-eduos.json
     - name: run (ubuntu)
       if: ${{ matrix.os == 'ubuntu-latest' }}
       run: ./test.sh
+    - name: run aarch64 (ubuntu)
+      if: ${{ matrix.os == 'ubuntu-latest' }}
+      # The demo prints many lines over (slow) semihosting while the tasks
+      # convoy on the console lock, so the emulated run can take several
+      # minutes. Allow plenty of time before it is considered a hang.
+      timeout-minutes: 20
+      run: |
+        cargo run --target=aarch64-eduos.json | tee output.log
+        grep -q "Shutdown system!" output.log
     - name: run (macos)
       if: ${{ matrix.os == 'macos-latest' }}
       run: ./test.sh
     - name: run (windows)
       if: ${{ matrix.os == 'windows-latest' }}
       run: pwsh -command ".\$GITHUB_WORKSPACE\test.ps1"
-    #- name: Build release for v86 (i686)
-    #  run:
-    #    cargo build --target=i686-eduos.json --release --features vga --no-default-features
-    #- name: Upload the artifact
-    #  if: ${{ matrix.os == 'ubuntu-latest' }}
-    #  uses: actions/upload-artifact@v4
-    #  with:
-    #    name: i686-eduos-stage4
-    #    path: |
-    #      target/i686-eduos/release/eduos-rs
-
-  #publish:
-  #  name: Upload release
-  #  runs-on: ubuntu-latest
-  #  needs: build
-
-  #  steps:
-  #    - uses: dev-drprasad/delete-tag-and-release@v1.1
-  #      with:
-  #        delete_release: true
-  #        tag_name: stage4
-  #        github_token: ${{ secrets.GITHUB_TOKEN }}
-
-  #    - name: Get artifacts
-  #      uses: actions/download-artifact@v4
-  #      with:
-  #        name: i686-eduos-stage4
-  #        path: .
-
-  #    - name: Rename file
-  #      run: mv eduos-rs i686-eduos-stage4
-
-  #    - name: Display structure of downloaded files
-  #      run: ls -R
-
-  #    - name: Release to GitHub
-  #      uses: ncipollo/release-action@v1
-  #      with:
-  #        name: Latest Stage4 Release
-  #        tag: stage4
-  #        commit: stage4
-  #        body: ${{ github.event.head_commit.message }}
-  #        artifacts: "i686-eduos-stage4"
-  #        prerelease: true
