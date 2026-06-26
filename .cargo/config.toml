@@ -14,3 +14,9 @@ runner = "qemu-system-x86_64 -display none -serial stdio -smp 1 -m 256M -device 
 
 [target.x86_64-eduos]
 runner = "bootimage runner"
+
+[target.aarch64-eduos]
+rustflags = [
+  "-C", "link-arg=-Tsrc/arch/aarch64/kernel/link.ld"
+]
+runner = "qemu-system-aarch64 -machine virt,gic-version=3 -display none -serial stdio -smp 1 -m 256M -cpu cortex-a72 -semihosting -kernel "

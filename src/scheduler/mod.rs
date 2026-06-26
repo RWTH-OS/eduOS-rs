@@ -4,6 +4,7 @@ mod scheduler;
 /// task control block
 pub mod task;
 
+#[cfg(not(target_arch = "aarch64"))]
 use crate::arch::mm::VirtAddr;
 use crate::errno::*;
 use crate::scheduler::task::{Task, TaskPriority};
@@ -46,6 +47,7 @@ pub fn abort() -> ! {
 	unsafe { SCHEDULER.as_mut().unwrap().abort() }
 }
 
+#[cfg(not(target_arch = "aarch64"))]
 pub(crate) fn get_current_interrupt_stack() -> VirtAddr {
 	unsafe { SCHEDULER.as_mut().unwrap().get_current_interrupt_stack() }
 }
