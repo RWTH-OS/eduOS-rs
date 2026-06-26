@@ -4,9 +4,9 @@ version = 4
 
 [[package]]
 name = "aarch64-cpu"
-version = "10.0.0"
+version = "11.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a21cd0131c25c438e19cd6a774adf7e3f64f7f4d723022882facc2dee0f8bc9"
+checksum = "44171e22925ec72b63d86747bc3655c7849a5b8d865c980222128839f45ac034"
 dependencies = [
  "tock-registers",
 ]
@@ -19,14 +19,26 @@ checksum = "4ac6c08a67736554282858203cd9b7ff53cf55f54c34e85689962748a350cbf0"
 
 [[package]]
 name = "arm-gic"
-version = "0.6.1"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6bfdb03424c95b58315a4cb0ff4ca919568a5a28ae5ba960a1ad92c9ccaf49b9"
+checksum = "84372c6068152f635a04870779f0fa0d1b0273dd09dbe1c6747688693d061f06"
 dependencies = [
+ "arm-sysregs",
  "bitflags 2.13.0",
  "safe-mmio",
  "thiserror",
  "zerocopy",
+]
+
+[[package]]
+name = "arm-sysregs"
+version = "0.2.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "27f98a99c7c6da5d54aa4d6e54504956aade8cdb0de9cd9a2363eb66b1d659a9"
+dependencies = [
+ "bitflags 2.13.0",
+ "num_enum",
+ "paste",
 ]
 
 [[package]]
@@ -49,9 +61,9 @@ checksum = "b4388bee8683e3d04af747c73422af53102d2bd24d9eadb6cbc100baef4b43f8"
 
 [[package]]
 name = "bootloader"
-version = "0.9.33"
+version = "0.9.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7bdfddac270bbdd45903296bc1caf29a7fdce6b326aaf0bbab7f04c5f98b7447"
+checksum = "13f6a8a495d2f93fe3d6eb3a224f9aa749a63cfd746ed03eb5ddcbd00ade7d8f"
 
 [[package]]
 name = "cfg-if"
@@ -94,6 +106,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "num_enum"
+version = "0.7.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5d0bca838442ec211fa11de3a8b0e0e8f3a4522575b5c4c06ed722e005036f26"
+dependencies = [
+ "num_enum_derive",
+ "rustversion",
+]
+
+[[package]]
+name = "num_enum_derive"
+version = "0.7.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "680998035259dcfcafe653688bf2aa6d3e2dc05e98be6ab46afb089dc84f1df8"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "paste"
+version = "1.0.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
+
+[[package]]
 name = "proc-macro2"
 version = "1.0.106"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -104,9 +143,9 @@ dependencies = [
 
 [[package]]
 name = "qemu-exit"
-version = "3.0.2"
+version = "4.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8bb0fd6580eeed0103c054e3fba2c2618ff476943762f28a645b63b8692b21c9"
+checksum = "8189cbf0422ac15d7d544ed5f331fbe4e5b9da88133568fd359083b186a547f3"
 
 [[package]]
 name = "quote"
@@ -127,10 +166,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "safe-mmio"
-version = "0.2.7"
+name = "rustversion"
+version = "1.0.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a0a69f884a1511aa811aa94e04559414a66b18ca63f50f84ca31e304f38bad0d"
+checksum = "b39cdef0fa800fc44525c84ccb54a029961a8215f9619753635a9c0d2538d46d"
+
+[[package]]
+name = "safe-mmio"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4813ee49326057f105d6d8ca3d8f9265095f26aa7b42094e487028403a594f4c"
 dependencies = [
  "zerocopy",
 ]
@@ -180,9 +225,9 @@ dependencies = [
 
 [[package]]
 name = "tock-registers"
-version = "0.9.0"
+version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b9e2fdb3a1e862c0661768b7ed25390811df1947a8acbfbefe09b47078d93c4"
+checksum = "8d2d250f87fb3fb6f225c907cf54381509f47b40b74b1d1f12d2dccbc915bdfe"
 
 [[package]]
 name = "unicode-ident"

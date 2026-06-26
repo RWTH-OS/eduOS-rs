@@ -28,7 +28,7 @@ pub(crate) extern "C" fn shutdown(error_code: i32) -> ! {
 		let code = if error_code == 0 { 5 } else { 1 };
 
 		// shutdown, works like Qemu's shutdown command
-		let qemu_exit_handle = qemu_exit::X86::new(0xf4, code);
+		let qemu_exit_handle = unsafe { qemu_exit::X86::new(0xf4, code) };
 		qemu_exit_handle.exit_success();
 	}
 
