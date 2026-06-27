@@ -1,4 +1,4 @@
-#[cfg(not(target_arch = "aarch64"))]
+#[cfg(target_arch = "x86_64")]
 use crate::arch::mm::VirtAddr;
 use crate::arch::switch;
 use crate::collections::irqsave;
@@ -148,7 +148,7 @@ impl Scheduler {
 	}
 
 	/// Determines the start address of the stack
-	#[cfg(not(target_arch = "aarch64"))]
+	#[cfg(target_arch = "x86_64")]
 	pub fn get_current_interrupt_stack(&self) -> VirtAddr {
 		irqsave(|| (*self.current_task.borrow().stack).interrupt_top())
 	}

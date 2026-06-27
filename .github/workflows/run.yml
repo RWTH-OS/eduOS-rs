@@ -24,7 +24,7 @@ jobs:
       if: ${{ matrix.os == 'ubuntu-latest' }}
       run: |
         sudo apt-get update
-        sudo apt-get install qemu-system-x86 qemu-system-arm
+        sudo apt-get install qemu-system-x86 qemu-system-arm qemu-system-misc
     - name: Install QEMU (macos)
       if: ${{ matrix.os == 'macos-latest' }}
       run: |
@@ -49,6 +49,9 @@ jobs:
     - name: Build (aarch64)
       run:
         cargo build --target=aarch64-eduos.json
+    - name: Build (riscv64)
+      run:
+        cargo build --target=riscv64-eduos.json
     - name: run (ubuntu)
       if: ${{ matrix.os == 'ubuntu-latest' }}
       run: ./test.sh
@@ -61,6 +64,13 @@ jobs:
       run: |
         cargo run --target=aarch64-eduos.json | tee output.log
         grep -q "Shutdown system!" output.log
+    - name: run riscv64 (ubuntu)
+      if: ${{ matrix.os == 'ubuntu-latest' }}
+      # Like aarch64, the emulated run is slow over semihosting; give it room.
+      timeout-minutes: 20
+      run: |
+        cargo run --target=riscv64-eduos.json | tee output-riscv64.log
+        grep -q "Shutdown system!" output-riscv64.log
     - name: run (macos)
       if: ${{ matrix.os == 'macos-latest' }}
       run: ./test.sh
