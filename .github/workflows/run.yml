@@ -47,9 +47,6 @@ jobs:
     - name: Build (x86_64)
       run:
          cargo build
-    - name: Build (i686)
-      run:
-        cargo build --target=i686-eduos.json
     - name: Build (aarch64)
       run:
         cargo build --target=aarch64-eduos.json
@@ -65,47 +62,3 @@ jobs:
     - name: run (windows)
       if: ${{ matrix.os == 'windows-latest' }}
       run: pwsh -command ".\$GITHUB_WORKSPACE\test.ps1"
-    - name: Build release for v86 (i686)
-      run:
-        cargo build --target=i686-eduos.json --release --features vga --no-default-features
-    - name: Upload the artifact
-      if: ${{ matrix.os == 'ubuntu-latest' }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: i686-eduos-stage2
-        path: |
-          target/i686-eduos/release/eduos-rs
-
-  publish:
-    name: Upload release
-    runs-on: ubuntu-latest
-    needs: build
-
-    steps:
-      - uses: dev-drprasad/delete-tag-and-release@v1.1
-        with:
-          delete_release: true
-          tag_name: stage2
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Get artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: i686-eduos-stage2
-          path: .
-
-      - name: Rename file
-        run: mv eduos-rs i686-eduos-stage2
-
-      - name: Display structure of downloaded files
-        run: ls -R
-
-      - name: Release to GitHub
-        uses: ncipollo/release-action@v1
-        with:
-          name: Latest Stage2 Release
-          tag: stage2
-          commit: stage2
-          body: ${{ github.event.head_commit.message }}
-          artifacts: "i686-eduos-stage2"
-          prerelease: true
