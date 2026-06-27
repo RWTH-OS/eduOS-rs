@@ -36,13 +36,11 @@ bootloader = "0.9.34"
 [target.'cfg(target_arch = "aarch64")'.dependencies]
 aarch64-cpu = "11.2.0"
 arm-gic = "0.8.1"
-semihosting = { version = "0.1", features = ["stdio"] }
 memory_addresses = { version = "0.2.3", default-features = false, features = [
         "aarch64",
 ] }
 
 [target.'cfg(target_arch = "riscv64")'.dependencies]
-semihosting = { version = "0.1", features = ["stdio"] }
 memory_addresses = { version = "0.2.3", default-features = false, features = [
         "riscv64",
 ] }
