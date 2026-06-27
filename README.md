@@ -81,15 +81,13 @@ $ cargo run
 ## Supported processors
 
 Per default, cargo uses `x86_64` as target platform.
-eduOS-rs is also supporting the `x86` (32 bit), the `aarch64` and `riscv64` architecture.
+eduOS-rs is also supporting the `aarch64` and `riscv64` architecture.
 To test these processors, specify the processor with the help of the cargo flag `--target`.
 
 ```sh
-$ % running on x86
-$ cargo run --target i686-eduos.json
 $ % running on aarch64
 $ cargo run --target aarch64-eduos.json
-$ % runnung ón riscv64
+$ % running on riscv64
 $ cargo run --target riscv64-eduos.json
 ```
 
