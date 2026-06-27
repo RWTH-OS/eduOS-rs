@@ -18,4 +18,3 @@ pub unsafe extern "C" fn _start() -> ! {
 
 	shutdown(ret)
 }
-
