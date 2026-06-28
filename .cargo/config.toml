@@ -14,3 +14,9 @@ rustflags = [
   "-C", "link-arg=-Tsrc/arch/aarch64/kernel/link.ld"
 ]
 runner = "qemu-system-aarch64 -machine virt,gic-version=3 -display none -serial stdio -smp 1 -m 256M -cpu cortex-a72 -kernel "
+
+[target.riscv64-eduos]
+rustflags = [
+  "-C", "link-arg=-Tsrc/arch/riscv64/kernel/link.ld"
+]
+runner = "qemu-system-riscv64 -machine virt -bios none -display none -serial stdio -smp 1 -m 256M -kernel "

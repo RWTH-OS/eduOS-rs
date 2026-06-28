@@ -49,6 +49,7 @@ pub fn abort() -> ! {
 	unsafe { SCHEDULER.as_mut().unwrap().abort() }
 }
 
+#[allow(dead_code)] // unused on riscv64, which traps onto the task's own stack
 pub(crate) fn get_current_interrupt_stack() -> VirtAddr {
 	unsafe { SCHEDULER.as_mut().unwrap().get_current_interrupt_stack() }
 }

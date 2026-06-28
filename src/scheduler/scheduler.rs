@@ -147,6 +147,7 @@ impl Scheduler {
 	}
 
 	/// Determines the start address of the stack
+	#[allow(dead_code)] // unused on riscv64
 	pub fn get_current_interrupt_stack(&self) -> VirtAddr {
 		irqsave(|| (*self.current_task.borrow().stack).interrupt_top())
 	}
