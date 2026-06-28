@@ -33,7 +33,6 @@ aarch64-cpu = "11.2.0"
 memory_addresses = { version = "0.4.0", default-features = false, features = [
         "aarch64",
 ] }
-arm-gic = "0.8.1"
 
 [target.'cfg(target_arch = "riscv64")'.dependencies]
 memory_addresses = { version = "0.4.0", default-features = false, features = [
