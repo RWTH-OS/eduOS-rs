@@ -24,7 +24,7 @@ jobs:
       if: ${{ matrix.os == 'ubuntu-latest' }}
       run: |
         sudo apt-get update
-        sudo apt-get install qemu-system-x86
+        sudo apt-get install qemu-system-x86 qemu-system-arm
     - name: Install QEMU (macos)
       if: ${{ matrix.os == 'macos-latest' }}
       run: |
@@ -46,12 +46,19 @@ jobs:
     - name: Build (x86_64)
       run:
          cargo build
-    #- name: Build (i686)
-    #  run:
-    #    cargo build --target=i686-eduos.json
+    - name: Build (aarch64)
+      run:
+        cargo build --target=aarch64-eduos.json
     - name: run (ubuntu)
       if: ${{ matrix.os == 'ubuntu-latest' }}
       run: ./test.sh
+    - name: run aarch64 (ubuntu)
+      if: ${{ matrix.os == 'ubuntu-latest' }}
+      timeout-minutes: 5
+      run: |
+        cargo run --target=aarch64-eduos.json | tee output.log
+        grep -q "Hello from user_foo!" output.log
+        grep -q "Shutdown system!" output.log
     - name: run (macos)
       if: ${{ matrix.os == 'macos-latest' }}
       run: ./test.sh

@@ -1,7 +1,9 @@
-#![feature(abi_x86_interrupt)]
+#![cfg_attr(
+	any(target_arch = "x86_64", target_arch = "x86"),
+	feature(abi_x86_interrupt)
+)]
 #![feature(alloc_error_handler)]
 #![feature(const_trait_impl)]
-#![feature(int_lowest_highest_one)]
 #![allow(clippy::module_inception)]
 #![allow(static_mut_refs)]
 #![no_std]

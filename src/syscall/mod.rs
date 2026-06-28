@@ -25,6 +25,16 @@ impl SyscallTable {
 			handle: [sys_exit as *const _, sys_write as *const _],
 		}
 	}
+
+	/// Returns the handler pointer for the system call `no`, if it exists.
+	#[allow(dead_code)]
+	pub(crate) fn get(&self, no: usize) -> Option<*const usize> {
+		if no < NO_SYSCALLS {
+			Some(self.handle[no])
+		} else {
+			None
+		}
+	}
 }
 
 unsafe impl Send for SyscallTable {}
