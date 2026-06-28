@@ -1,7 +1,7 @@
 // eduOS supports x86_64 and aarch64.
 
 // Implementations for x86_64 and x86.
-#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
+#[cfg(target_arch = "x86_64")]
 pub mod x86;
 
 // Implementations for aarch64.
@@ -9,36 +9,36 @@ pub mod x86;
 pub mod aarch64;
 
 // Export our platform-specific modules.
-#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
+#[cfg(target_arch = "x86_64")]
 pub use self::x86::kernel::{irq, jump_to_user_land};
 
 #[cfg(target_arch = "aarch64")]
 pub use self::aarch64::kernel::{irq, jump_to_user_land};
 
-#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
+#[cfg(target_arch = "x86_64")]
 pub(crate) use self::x86::kernel::{init, processor, register_task};
 
 #[cfg(target_arch = "aarch64")]
 pub(crate) use self::aarch64::kernel::{init, processor, register_task};
 
-#[cfg(all(any(target_arch = "x86_64", target_arch = "x86"), feature = "vga"))]
+#[cfg(all(target_arch = "x86_64", feature = "vga"))]
 pub(crate) use self::x86::kernel::vga;
 
-#[cfg(all(any(target_arch = "x86_64", target_arch = "x86"), not(feature = "vga")))]
+#[cfg(all(target_arch = "x86_64", not(feature = "vga")))]
 pub(crate) use self::x86::kernel::serial;
 
 #[cfg(target_arch = "aarch64")]
 pub(crate) use self::aarch64::kernel::serial;
 
 // Export our platform-specific modules.
-#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
+#[cfg(target_arch = "x86_64")]
 pub(crate) use self::x86::kernel::switch::switch;
 
 #[cfg(target_arch = "aarch64")]
 pub(crate) use self::aarch64::kernel::switch::switch;
 
 // Export our platform-specific modules.
-#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
+#[cfg(target_arch = "x86_64")]
 pub(crate) use self::x86::mm;
 
 #[cfg(target_arch = "aarch64")]

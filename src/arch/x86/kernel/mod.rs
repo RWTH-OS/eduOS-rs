@@ -17,9 +17,6 @@ use core::arch::asm;
 
 pub(crate) static mut BOOT_INFO: Option<&'static BootInfo> = None;
 
-#[cfg(target_arch = "x86")]
-core::arch::global_asm!(include_str!("entry32.s"));
-
 /// Helper function to jump into the user space
 ///
 /// # Safety

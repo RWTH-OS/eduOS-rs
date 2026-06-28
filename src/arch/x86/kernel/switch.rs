@@ -1,7 +1,6 @@
 use crate::arch::x86::kernel::gdt::set_current_kernel_stack;
 use core::arch::naked_asm;
 
-#[cfg(target_arch = "x86_64")]
 macro_rules! save_context {
 	() => {
 		concat!(
@@ -28,7 +27,6 @@ macro_rules! save_context {
 	};
 }
 
-#[cfg(target_arch = "x86_64")]
 macro_rules! restore_context {
 	() => {
 		concat!(
@@ -56,7 +54,6 @@ macro_rules! restore_context {
 	};
 }
 
-#[cfg(target_arch = "x86_64")]
 #[unsafe(naked)]
 /// # Safety
 ///
@@ -81,37 +78,6 @@ pub(crate) unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize
 		// set stack pointer in TSS
 		"call {set_stack}",
 		restore_context!(),
-		set_stack = sym set_current_kernel_stack,
-	);
-}
-
-#[cfg(target_arch = "x86")]
-#[unsafe(naked)]
-/// # Safety
-///
-/// Only the scheduler itself should call this function to switch the
-/// context. `old_stack` is a pointer, where the address to the old
-/// stack is stored. `new_stack` provides the stack pointer of the
-/// next task.
-pub(crate) unsafe extern "C" fn switch(_old_stack: *mut usize, _new_stack: usize) {
-	naked_asm!(
-		// store all registers
-		"pushfd",
-		"pushad",
-		// switch stack
-		"mov edi, [esp+10*4]",
-		"mov [edi], esp",
-		"mov esp, [esp+11*4]",
-		// Set task switched flag
-		"mov eax, cr0",
-		"or eax, 8",
-		"mov cr0, eax",
-		// set stack pointer in TSS
-		"call {set_stack}",
-		// restore registers
-		"popad",
-		"popfd",
-		"ret",
 		set_stack = sym set_current_kernel_stack,
 	);
 }
