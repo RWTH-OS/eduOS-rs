@@ -1,4 +1,4 @@
-use crate::synch::spinlock::SpinlockIrqSave;
+use crate::synch::spinlock::Spinlock;
 
 use core::fmt;
 use core::ptr::{read_volatile, write_volatile};
@@ -44,4 +44,4 @@ impl fmt::Write for ComPort {
 }
 
 /// Our primary serial port.
-pub(crate) static COM1: SpinlockIrqSave<ComPort> = SpinlockIrqSave::new(ComPort::new());
+pub(crate) static COM1: Spinlock<ComPort> = Spinlock::new(ComPort::new());
