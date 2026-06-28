@@ -13,9 +13,9 @@ dependencies = [
 
 [[package]]
 name = "align-address"
-version = "0.3.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ac6c08a67736554282858203cd9b7ff53cf55f54c34e85689962748a350cbf0"
+checksum = "cee078b3ed87e2621e0389729e2f032cc0408a4548768ced01678c9451c62237"
 
 [[package]]
 name = "arm-gic"
@@ -96,9 +96,9 @@ dependencies = [
 
 [[package]]
 name = "memory_addresses"
-version = "0.2.3"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "01af0509edc73791972185a4ed1e3e8b2d0f21c3c527f96078586446b61750c4"
+checksum = "a33ce19da78c437cf69f8c3265a77ca61e08395678b7b9eac42039add3f4f4fb"
 dependencies = [
  "align-address",
  "cfg-if",
