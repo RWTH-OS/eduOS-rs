@@ -23,7 +23,7 @@ vga = []
 bitflags = "2.10"
 spinning_top = "0.3"
 lock_api = "0"
-qemu-exit = { version = "3.0", optional = true }
+qemu-exit = { version = "4.0", optional = true }
 x86 = { version = "0.52", default-features = false }
 cfg-if = "1.0"
 num = { version = "0.4", default-features = false }
