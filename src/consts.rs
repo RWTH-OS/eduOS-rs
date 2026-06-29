@@ -8,7 +8,6 @@ use crate::arch::mm::VirtAddr;
 pub(crate) const STACK_SIZE: usize = 0x3000;
 
 /// Define the size of the interrupt stack
-#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
 pub(crate) const INTERRUPT_STACK_SIZE: usize = 0x3000;
 
 /// Size of a cache line

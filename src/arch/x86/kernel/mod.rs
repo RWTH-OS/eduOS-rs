@@ -17,11 +17,7 @@ use crate::consts::USER_ENTRY;
 use bootloader::BootInfo;
 use core::arch::{asm, naked_asm};
 
-#[cfg(target_arch = "x86_64")]
 pub(crate) static mut BOOT_INFO: Option<&'static BootInfo> = None;
-
-#[cfg(target_arch = "x86")]
-core::arch::global_asm!(include_str!("entry32.s"));
 
 #[unsafe(naked)]
 unsafe extern "C" fn __jump_to_user_land(ds: usize, stack: usize, cs: usize, entry: usize) -> ! {
