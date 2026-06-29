@@ -148,7 +148,10 @@ pub(crate) fn init() {
 	unsafe {
 		wrmsr(IA32_EFER, rdmsr(IA32_EFER) | EFER_LMA | EFER_SCE | EFER_NXE);
 		wrmsr(IA32_STAR, (0x1Bu64 << 48) | (0x08u64 << 32));
-		wrmsr(IA32_LSTAR, (syscall_handler as *const () as usize).try_into().unwrap());
+		wrmsr(
+			IA32_LSTAR,
+			(syscall_handler as *const () as usize).try_into().unwrap(),
+		);
 		wrmsr(IA32_FMASK, 1 << 9); // clear IF flag during system call
 
 		// reset GS registers
