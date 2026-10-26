@@ -28,7 +28,7 @@ pub fn irq_disable() {
 pub fn is_irq_enabled() -> bool {
 	let eflags: usize;
 
-	unsafe { asm!("pushf; pop {}", lateout(reg) eflags, options(nomem, nostack, preserves_flags)) };
+	unsafe { asm!("pushf; pop {}", lateout(reg) eflags, options(nomem, preserves_flags)) };
 	if (eflags & (1usize << 9)) != 0 {
 		return true;
 	}
