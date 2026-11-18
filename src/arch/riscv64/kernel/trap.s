@@ -1,12 +1,12 @@
-// RISC-V machine-mode trap vector.
+// RISC-V supervisor-mode trap vector.
 //
-// The kernel runs in M-mode (QEMU `virt` with `-bios none`), so all traps are
-// delivered here through `mtvec` (direct mode). On entry the full integer
-// context is saved onto the current (task) stack, the Rust dispatcher
-// `handle_trap(frame)` is called, and finally the context is restored and the
-// trap returns with `mret`.
+// The kernel runs in S-mode and the M-mode shim in `start.s` delegates all
+// traps to S-mode, so they are delivered here through `stvec` (direct mode).
+// On entry the full integer context is saved onto the current (task) stack,
+// the Rust dispatcher `handle_trap(frame)` is called, and finally the context
+// is restored and the trap returns with `sret`.
 //
-// Frame layout (30 general purpose registers + mepc + mstatus = 256 bytes,
+// Frame layout (30 general purpose registers + sepc + sstatus = 256 bytes,
 // 16-byte aligned). x0 (zero) and x2 (sp, managed by the frame) are not saved.
 
 .equ FRAME_SIZE, 256
@@ -46,20 +46,20 @@ trap_entry:
 	sd		x29, 27*8(sp)  // t4
 	sd		x30, 28*8(sp)  // t5
 	sd		x31, 29*8(sp)  // t6
-	csrr	t0, mepc
+	csrr	t0, sepc
 	sd		t0, 30*8(sp)
-	csrr	t0, mstatus
+	csrr	t0, sstatus
 	sd		t0, 31*8(sp)
 
 	// Call the Rust dispatcher with a pointer to the saved frame.
 	mv		a0, sp
 	call	{handle_trap}
 
-	// Restore mepc and mstatus first (using t0 as scratch, restored below).
+	// Restore sepc and sstatus first (using t0 as scratch, restored below).
 	ld		t0, 31*8(sp)
-	csrw	mstatus, t0
+	csrw	sstatus, t0
 	ld		t0, 30*8(sp)
-	csrw	mepc, t0
+	csrw	sepc, t0
 
 	ld		x1, 0*8(sp)
 	ld		x3, 1*8(sp)
@@ -92,7 +92,7 @@ trap_entry:
 	ld		x30, 28*8(sp)
 	ld		x31, 29*8(sp)
 	addi	sp, sp, FRAME_SIZE
-	mret
+	sret
 
 .size	trap_entry, . - trap_entry
 .type	trap_entry, function
