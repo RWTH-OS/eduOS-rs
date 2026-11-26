@@ -41,7 +41,7 @@ struct State {
 
 extern "C" fn entry_point(func: extern "C" fn()) -> ! {
 	// A new task is entered through the cooperative `switch` (via `ret`), which
-	// does not restore `mstatus`. As the very first task is started from within
+	// does not restore `sstatus`. As the very first task is started from within
 	// the timer trap handler, interrupts are still globally masked here. Enable
 	// them so that this task can be preempted as well.
 	irq::irq_enable();

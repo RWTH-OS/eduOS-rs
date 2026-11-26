@@ -10,12 +10,11 @@ use core::arch::asm;
 
 /// Initialize the architecture specific interrupt infrastructure.
 ///
-/// This installs the trap vector and starts the periodic CLINT timer that
+/// This installs the trap vector and starts the periodic Sstc timer that
 /// drives the preemptive scheduler. Interrupts stay globally masked
-/// (`mstatus.MIE` is cleared at reset) until the kernel explicitly enables them
+/// (`sstatus.SIE` is cleared at reset) until the kernel explicitly enables them
 /// via `irq::irq_enable`.
 pub(crate) fn init() {
-	setup_pmp();
 	irq::init();
 	timer::init();
 }
@@ -26,26 +25,26 @@ pub(crate) fn init() {
 /// denied by default, so a user task could not even fetch its first instruction.
 /// As there is no paging yet, we grant U-mode read/write/execute access to the
 /// entire address space via a single Top-Of-Range PMP entry.
-fn setup_pmp() {
-	unsafe {
-		asm!(
-			"csrw pmpaddr0, {addr}",
-			"csrw pmpcfg0, {cfg}",
-			addr = in(reg) usize::MAX,
-			cfg = in(reg) 0x0f_usize, // A = TOR, R | W | X
-			options(nostack, nomem),
-		);
-	}
-}
+// fn setup_pmp() {
+// 	unsafe {
+// 		asm!(
+// 			"csrw pmpaddr0, {addr}",
+// 			"csrw pmpcfg0, {cfg}",
+// 			addr = in(reg) usize::MAX,
+// 			cfg = in(reg) 0x0f_usize, // A = TOR, R | W | X
+// 			options(nostack, nomem),
+// 		);
+// 	}
+// }
 
 /// Architectures with a hardware task register load it here. RISC-V dispatches
-/// traps through `mtvec` and needs no such registration.
+/// traps through `stvec` and needs no such registration.
 pub fn register_task() {}
 
 /// Helper function to jump into the user space (privilege mode U).
 ///
 /// The user task keeps using the current (main) stack and runs in U-mode; on a
-/// trap (system call via `ecall` or a timer interrupt) the machine-mode handler
+/// trap (system call via `ecall` or a timer interrupt) the supervisor-mode handler
 /// reuses that same stack, which is fine because there is no paging yet and
 /// U-mode shares the kernel's flat address space, separated only by its
 /// privilege level.
@@ -54,16 +53,18 @@ pub fn register_task() {}
 ///
 /// `func` must be a valid entry point for the user task.
 pub unsafe fn jump_to_user_land(func: extern "C" fn()) -> ! {
-	// mstatus.MPP (bits 12:11) selects the privilege mode `mret` returns to;
-	// clearing it selects U-mode. mstatus.MPIE (bit 7) is restored into MIE.
+	// sstatus.SPP (bit 8) selects the privilege mode `sret` returns to;
+	// clearing it selects U-mode. sstatus.SPIE (bit 5) is restored into SIE.
 	unsafe {
 		asm!(
-			"csrc mstatus, {mpp}",   // MPP = 0b00 => U-mode
-			"csrs mstatus, {mpie}",  // MPIE = 1
-			"csrw mepc, {entry}",
-			"mret",
-			mpp = in(reg) 0b11usize << 11,
-			mpie = in(reg) 1usize << 7,
+			"csrc sstatus, {spp}",   // SPP = 0 => U-mode
+			"csrs sstatus, {spie}",  // SPIE = 1
+			"csrw sepc, {entry}",
+			"sret",
+			//mpp = in(reg) 0b11usize << 11,
+			//mpie = in(reg) 1usize << 7,
+			spp = in(reg) 1usize << 8,
+			spie = in(reg) 1usize << 5,
 			entry = in(reg) func as usize,
 			options(noreturn),
 		);
