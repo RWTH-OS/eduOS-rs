@@ -1,8 +1,9 @@
-//! Interrupt handling for RISC-V 64 (machine mode).
+//! Interrupt handling for RISC-V 64 (supervisor mode).
 //!
-//! This installs the machine trap vector (see `trap.s`), provides the `irq_*`
+//! This installs the supervisor trap vector (see `trap.s`), provides the `irq_*`
 //! primitives used by the rest of the kernel, and dispatches incoming traps.
-//! The periodic CLINT timer interrupt drives the preemptive scheduler.
+//! The periodic supervisor timer interrupt (Sstc) drives the preemptive
+//! scheduler.
 
 use crate::arch::riscv64::kernel::timer;
 use crate::logging::*;
@@ -21,11 +22,11 @@ extern "C" {
 	fn trap_entry();
 }
 
-/// `mstatus.MIE` — global machine interrupt enable.
-const MSTATUS_MIE: usize = 1 << 3;
-/// `mcause` interrupt code of the machine timer interrupt.
-const IRQ_MACHINE_TIMER: usize = 7;
-/// `mcause` exception code of an environment call (`ecall`) from U-mode.
+/// `sstatus.SIE` — global supervisor interrupt enable.
+const SSTATUS_SIE: usize = 1 << 1;
+/// `scause` interrupt code of the supervisor timer interrupt.
+const IRQ_SUPERVISOR_TIMER: usize = 5;
+/// `scause` exception code of an environment call (`ecall`) from U-mode.
 const EXC_ENV_CALL_FROM_U: usize = 8;
 
 /// Saved integer register state on trap entry. The layout has to match the
@@ -34,27 +35,27 @@ const EXC_ENV_CALL_FROM_U: usize = 8;
 pub struct TrapFrame {
 	/// general purpose registers (ra, gp, tp, t0-t2, s0-s1, a0-a7, s2-s11, t3-t6)
 	pub regs: [usize; 30],
-	/// machine exception program counter
-	pub mepc: usize,
-	/// saved machine status register
-	pub mstatus: usize,
+	/// supervisor exception program counter
+	pub sepc: usize,
+	/// saved supervisor status register
+	pub sstatus: usize,
 }
 
-/// Enable interrupts by setting `mstatus.MIE`.
+/// Enable interrupts by setting `sstatus.SIE`.
 pub fn irq_enable() {
-	unsafe { asm!("csrs mstatus, {}", in(reg) MSTATUS_MIE, options(nostack, nomem)) };
+	unsafe { asm!("csrs sstatus, {}", in(reg) SSTATUS_SIE, options(nostack, nomem)) };
 }
 
-/// Disable interrupts by clearing `mstatus.MIE`.
+/// Disable interrupts by clearing `sstatus.SIE`.
 pub fn irq_disable() {
-	unsafe { asm!("csrc mstatus, {}", in(reg) MSTATUS_MIE, options(nostack, nomem)) };
+	unsafe { asm!("csrc sstatus, {}", in(reg) SSTATUS_SIE, options(nostack, nomem)) };
 }
 
 /// Determines whether interrupts are currently enabled.
 pub fn is_irq_enabled() -> bool {
-	let mstatus: usize;
-	unsafe { asm!("csrr {}, mstatus", out(reg) mstatus, options(nostack, nomem)) };
-	mstatus & MSTATUS_MIE != 0
+	let sstatus: usize;
+	unsafe { asm!("csrr {}, sstatus", out(reg) sstatus, options(nostack, nomem)) };
+	sstatus & SSTATUS_SIE != 0
 }
 
 /// Disable IRQs and return whether they were enabled before.
@@ -72,26 +73,26 @@ pub fn irq_nested_enable(was_enabled: bool) {
 	}
 }
 
-/// Install the machine trap vector (direct mode).
+/// Install the supervisor trap vector (direct mode).
 pub(crate) fn init() {
 	debug!("install trap vector");
 
 	unsafe {
-		asm!("csrw mtvec, {}", in(reg) trap_entry as *const () as usize, options(nostack, nomem));
+		asm!("csrw stvec, {}", in(reg) trap_entry as *const () as usize, options(nostack, nomem));
 	}
 }
 
 /// Rust dispatcher called from `trap_entry` with a pointer to the saved frame.
 extern "C" fn handle_trap(frame: *mut TrapFrame) {
-	let mcause: usize;
-	unsafe { asm!("csrr {}, mcause", out(reg) mcause, options(nostack, nomem)) };
+	let scause: usize;
+	unsafe { asm!("csrr {}, scause", out(reg) scause, options(nostack, nomem)) };
 
 	// The most significant bit distinguishes interrupts from exceptions.
-	let is_interrupt = (mcause >> (usize::BITS - 1)) != 0;
-	let code = mcause & !(1 << (usize::BITS - 1));
+	let is_interrupt = (scause >> (usize::BITS - 1)) != 0;
+	let code = scause & !(1 << (usize::BITS - 1));
 
 	if is_interrupt {
-		if code == IRQ_MACHINE_TIMER {
+		if code == IRQ_SUPERVISOR_TIMER {
 			// Re-arm the timer (this also clears the pending bit) before
 			// potentially switching to another task.
 			timer::handle();
@@ -104,25 +105,25 @@ extern "C" fn handle_trap(frame: *mut TrapFrame) {
 	if code == EXC_ENV_CALL_FROM_U {
 		// Resume after the `ecall` instruction (4 bytes) instead of retrying it.
 		unsafe {
-			(*frame).mepc += 4;
+			(*frame).sepc += 4;
 			handle_syscall(&mut *frame);
 		}
 		return;
 	}
 
-	let mepc: usize;
-	let mtval: usize;
+	let sepc: usize;
+	let stval: usize;
 	unsafe {
-		asm!("csrr {}, mepc", out(reg) mepc, options(nostack, nomem));
-		asm!("csrr {}, mtval", out(reg) mtval, options(nostack, nomem));
+		asm!("csrr {}, sepc", out(reg) sepc, options(nostack, nomem));
+		asm!("csrr {}, stval", out(reg) stval, options(nostack, nomem));
 	}
 
 	error!(
-		"Task {}: Unhandled exception: mcause {:#x}, mepc {:#x}, mtval {:#x}",
+		"Task {}: Unhandled exception: scause {:#x}, sepc {:#x}, stval {:#x}",
 		get_current_taskid(),
-		mcause,
-		mepc,
-		mtval
+		scause,
+		sepc,
+		stval
 	);
 
 	abort();
